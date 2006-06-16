@@ -175,7 +175,7 @@ void read_variables(const char *filename) {
     return;
 
   strcpy(name, demodir); 
-  strcat (name, "data/tessconfigs/");
+  strcat (name, "tessdata/tessconfigs/");
   strcat(name, filename); 
   if ((fp = fopen (name, "r")) == NULL)
     strcpy(name, filename); 

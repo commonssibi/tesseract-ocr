@@ -333,7 +333,7 @@ void init_permdawg() {
   frequent_words = (EDGE_ARRAY) memalloc (sizeof (EDGE_RECORD) *
     MAX_FREQ_EDGES);
   strcpy(name, demodir); 
-  strcat (name, "data/freq-dawg");
+  strcat (name, "tessdata/freq-dawg");
   read_squished_dawg(name, frequent_words, MAX_FREQ_EDGES); 
 }
 

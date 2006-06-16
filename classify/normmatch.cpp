@@ -31,7 +31,7 @@
 #include <math.h>
 
 /* define default filenames for training data */
-#define NORM_PROTO_FILE   "data/normproto"
+#define NORM_PROTO_FILE   "tessdata/normproto"
 
 typedef struct
 {

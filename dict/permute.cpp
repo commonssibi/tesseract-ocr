@@ -1003,7 +1003,7 @@ void init_permute() {
 
   word_dawg = (EDGE_ARRAY) memalloc (sizeof (EDGE_RECORD) * MAX_NUM_EDGES);
   strcpy(name, demodir); 
-  strcat (name, "data/word-dawg");
+  strcat (name, "tessdata/word-dawg");
   read_squished_dawg(name, word_dawg, MAX_NUM_EDGES); 
 
   document_words =
@@ -1016,7 +1016,7 @@ void init_permute() {
 
   user_words = (EDGE_ARRAY) memalloc (sizeof (EDGE_RECORD) * MAX_USER_EDGES);
   strcpy(name, demodir); 
-  strcat (name, "data/user-words");
+  strcat (name, "tessdata/user-words");
   read_word_list(name, user_words, MAX_USER_EDGES, USER_RESERVED_EDGES); 
   case_sensative = FALSE;
 }

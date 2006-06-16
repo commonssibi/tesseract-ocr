@@ -26,8 +26,8 @@ MaxNormScaleX				0.325
 MinNormScaleY				0.0
 MaxNormScaleY				0.325
 
-BuiltInTemplatesFile		data/inttemp
-BuiltInCutoffsFile		data/pffmtable
+BuiltInTemplatesFile		tessdata/inttemp
+BuiltInCutoffsFile		tessdata/pffmtable
 
 EnableLearning				0
 SaveAdaptedTemplates		0

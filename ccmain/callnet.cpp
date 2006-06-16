@@ -37,7 +37,7 @@ void init_net() {  /* Initialise net */
     NETINIT.error ("Init_net", EXIT, "Errcode %s", nmatch_error_string ());
   }
   strcpy(wts_filename, demodir); 
-  strcat (wts_filename, "data/netwts");
+  strcat (wts_filename, "tessdata/netwts");
 
   if (nmatch_load_network (wts_filename) != 0) {
     NETINIT.error ("Init_net", EXIT, "Weights failed, Errcode %s",

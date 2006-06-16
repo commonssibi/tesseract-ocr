@@ -53,8 +53,8 @@
 #endif
 
 #define ADAPT_TEMPLATE_SUFFIX ".a"
-#define BUILT_IN_TEMPLATES_FILE "data/inttemp"
-#define BUILT_IN_CUTOFFS_FILE "data/pffmtable"
+#define BUILT_IN_TEMPLATES_FILE "tessdata/inttemp"
+#define BUILT_IN_CUTOFFS_FILE "tessdata/pffmtable"
 
 #define MAX_MATCHES         10
 #define UNLIKELY_NUM_FEAT 200

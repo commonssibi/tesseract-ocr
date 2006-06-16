@@ -45,7 +45,7 @@ extern float CertaintyScale;     /* from subfeat.h */
 
 #define MAX_WERD_SIZE   100
 #define MAX_AMBIG_SIZE    3
-#define DANGEROUS_AMBIGS  "data/DangAmbigs"
+#define DANGEROUS_AMBIGS  "tessdata/DangAmbigs"
 
 typedef LIST AMBIG_TABLE;
 
