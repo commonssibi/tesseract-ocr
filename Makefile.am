@@ -11,6 +11,5 @@ dist-hook:
 	rm -rf `find $(distdir) -name CVS`
 # Also remove extra files not needed in a distribution
 	rm -rf `find $(distdir) -name configure.ac`
-	rm -rf `find $(distdir) -name Makefile.am`
 	rm -rf `find $(distdir) -name acinclude.m4`
 	rm -rf `find $(distdir) -name aclocal.m4`

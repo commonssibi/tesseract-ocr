@@ -174,7 +174,7 @@ void add_word(                             //to block list
               BLOCK *src_block,            //source block
               BLOCK_LIST *dest_block_list  //add to this
              ) {
-  BLOCK_IT block_it(dest_block_list); 
+  BLOCK_IT block_it(dest_block_list);
   BLOCK *block;                  //current block
   BLOCK *dest_block = NULL;      //destination block
   ROW_IT row_it;
@@ -314,9 +314,9 @@ WINDOW bln_word_window_handle() {  //return handle
  *  new window needs to be. Create it and re-display.
  **********************************************************************/
 
-void build_image_window(BOX page_bounding_box) { 
+void build_image_window(BOX page_bounding_box) {
   if (image_win != NO_WINDOW)
-    destroy_window(image_win); 
+    destroy_window(image_win);
 
                                  // xmin
   image_win = create_window (editor_image_win_name.string (), SCROLLINGWIN, editor_image_xpos, editor_image_ypos, editor_image_width, editor_image_height, 0.0,
@@ -335,7 +335,7 @@ void build_image_window(BOX page_bounding_box) {
  *  Construct the menu tree used by the command window
  **********************************************************************/
 
-MENU_ROOT *build_menu() { 
+MENU_ROOT *build_menu() {
   NON_RADIO_MENU *parent_menu;
   MENU_ROOT *root_menu_item;
 
@@ -449,8 +449,8 @@ void display_bln_lines(WINDOW window,
                        float y_offset,
                        float minx,
                        float maxx) {
-  line_color_index(window, colour); 
-  line_type(window, SOLID); 
+  line_color_index(window, colour);
+  line_type(window, SOLID);
   move2d (window, minx, y_offset + scale_factor * DESC_HEIGHT);
   draw2d (window, maxx, y_offset + scale_factor * DESC_HEIGHT);
   move2d (window, minx, y_offset + scale_factor * BL_HEIGHT);
@@ -475,7 +475,7 @@ void do_new_source(            //serialise
                   ) {
   FILE *infp;                    //input file
   char msg_str[MAX_CHARS + 1];
-  STRING name_str(name); 
+  STRING name_str(name);
   char response_str[MAX_CHARS + 1];
   char *token;                   //first response token
 
@@ -495,16 +495,16 @@ void do_new_source(            //serialise
     return;
   }
 
-  fclose(infp); 
+  fclose(infp);
   sprintf (msg_str, "Reading file " "%s" "...", name);
   command_window->msg (msg_str);
   source_block_list.clear ();
                                  //appends to SOURCE
-  pgeditor_read_file(name_str, &source_block_list); 
+  pgeditor_read_file(name_str, &source_block_list);
   source_changed = FALSE;
   command_window->msg ("Doing automatic Tidy Target...");
   viewing_source = FALSE;        //Force viewing source
-  do_tidy_cmd(); 
+  do_tidy_cmd();
   command_window->msg ("Doing automatic Tidy Target...Done");
 }
 
@@ -519,7 +519,7 @@ void
                                  //function to call
 do_re_display (BOOL8 word_painter (
 BLOCK *, ROW *, WERD *)) {
-  BLOCK_IT block_it(current_block_list); 
+  BLOCK_IT block_it(current_block_list);
   BLOCK *block;
   int block_count = 1;
 
@@ -529,7 +529,7 @@ BLOCK *, ROW *, WERD *)) {
   WERD_IT word_it;
   WERD *word;
 
-  clear_view_surface(image_win); 
+  clear_view_surface(image_win);
   if (display_image) {
     show_sub_image (&page_image, 0, 0,
       page_image.get_xsize (), page_image.get_ysize (),
@@ -546,7 +546,7 @@ BLOCK *, ROW *, WERD *)) {
       for (word_it.mark_cycle_pt ();
       !word_it.cycled_list (); word_it.forward ()) {
         word = word_it.data ();
-        word_painter(block, row, word); 
+        word_painter(block, row, word);
       }
       if (display_baselines)
         row->plot_baseline (image_win, GREEN);
@@ -578,13 +578,13 @@ const BOX do_tidy_cmd() {  //tidy
 
     shift_vector = ICOORD (0, source_box.top () + BLOCK_SPACING)
       - tidy_box.botleft ();
-    block_list_move(&target_block_list, shift_vector); 
+    block_list_move(&target_block_list, shift_vector);
     tidy_box.move (shift_vector);
   }
   source_box += tidy_box;
                                  //big enough for both
-  build_image_window(source_box); 
-  do_view_cmd(); 
+  build_image_window(source_box);
+  do_view_cmd();
   return tidy_box;
 }
 
@@ -595,15 +595,15 @@ const BOX do_tidy_cmd() {  //tidy
  *  View TARGET/View SOURCE command
  **********************************************************************/
 
-void do_view_cmd() { 
+void do_view_cmd() {
   viewing_source = !viewing_source;
-  clear_view_surface(image_win); 
+  clear_view_surface(image_win);
   if (viewing_source) {
     current_block_list = &source_block_list;
     current_image_changed = &source_changed;
     other_block_list = &target_block_list;
     other_image_changed = &target_changed;
-    do_re_display(&word_display); 
+    do_re_display(&word_display);
 
     command_window->replace_menu_text (view_menu_item, "View TARGET");
     command_window->replace_menu_text (copy_menu_item, "Copy to TARGET");
@@ -614,7 +614,7 @@ void do_view_cmd() {
     current_image_changed = &target_changed;
     other_block_list = &source_block_list;
     other_image_changed = &source_changed;
-    do_re_display(&word_display); 
+    do_re_display(&word_display);
 
     command_window->replace_menu_text (view_menu_item, "View SOURCE");
     command_window->replace_menu_text (copy_menu_item, "");
@@ -642,7 +642,7 @@ void do_write_file(            //serialise
 
                                  //if file exists
   if ((infp = fopen (name, "r")) != NULL) {
-    fclose(infp); 
+    fclose(infp);
     sprintf (msg_str, "Overwrite file " "%s" "? (Y/N)", name);
     response_str[0] = '\0';
     if (!command_window->prompt (msg_str, response_str))
@@ -658,7 +658,7 @@ void do_write_file(            //serialise
     command_window->msg (msg_str);
     return;
   }
-  fclose(infp); 
+  fclose(infp);
 
   if (!viewing_source && !target_block_list.empty ()) {
                                  //Tidy & move to (0,0)
@@ -667,21 +667,21 @@ void do_write_file(            //serialise
     enclosing_box = do_tidy_cmd ();
     block_list_move (&target_block_list, -enclosing_box.botleft ());
     command_window->msg ("Writing file...");
-    pgeditor_write_file(name, &target_block_list); 
+    pgeditor_write_file(name, &target_block_list);
                                  //move back
     block_list_move (&target_block_list,
       enclosing_box.botleft ());
   }
   else {
     command_window->msg ("Writing file...");
-    pgeditor_write_file(name, current_block_list); 
+    pgeditor_write_file(name, current_block_list);
   }
   command_window->msg ("Writing file...Done");
   *current_image_changed = FALSE;
 }
 
 
-void smd_cmd() { 
+void smd_cmd() {
   char response_str[MAX_CHARS + 1];
   WINDOW display_window;         //temp
   ICOORD tr, bl;
@@ -702,7 +702,7 @@ void smd_cmd() {
     0.0,                         // ymin
     page_box.height (),          // ymax
     FALSE, FALSE, FALSE, FALSE); //down and up only
-  do_re_display(&word_display); 
+  do_re_display(&word_display);
   destroy_window(image_win);  //Dumps sbd file
   image_win = display_window;
 }
@@ -716,7 +716,7 @@ void smd_cmd() {
  *
  **********************************************************************/
 
-void pgeditor_main() { 
+void pgeditor_main() {
   GRAPHICS_EVENT event;
   INT32 cmd_event = 0;
   char new_value[MAX_CHARS + 1];
@@ -727,11 +727,11 @@ void pgeditor_main() {
 
   command_window = new COMMAND_WINDOW ("WordEditorCmd", build_menu ());
   build_image_window (block_list_bounding_box (&source_block_list));
-  do_re_display(&word_display); 
+  do_re_display(&word_display);
   word_display_mode.turn_on_bit (DF_BOX);
 
   while (!exit) {
-    overlap_picture_ops(TRUE); 
+    overlap_picture_ops(TRUE);
     await_event (0,              //all windows
       TRUE,                      //wait for event
       ANY_EVENT, &event);
@@ -743,14 +743,14 @@ void pgeditor_main() {
     }
     else {
       if (event.fd == image_win)
-        process_image_event(event); 
+        process_image_event(event);
       else
-        pgeditor_show_point(&event); 
+        pgeditor_show_point(&event);
     }
     current_word_quit.set_value (FALSE);
     selection_quit.set_value (FALSE);
                                  //replot all var wins
-    VARIABLES_WINDOW::plot_all(); 
+    VARIABLES_WINDOW::plot_all();
   }
 }
 
@@ -764,7 +764,7 @@ void pgeditor_main() {
 void pgeditor_msg(  //message display
                   const char *msg) {
   if (command_window == NO_WINDOW) {
-    tprintf(msg); 
+    tprintf(msg);
     tprintf ("\n");
   }
   else
@@ -827,31 +827,25 @@ void pgeditor_read_file(                    //of serialised file
   }
   else
   #endif
-                                 //xiaofan, a hack here
-  if (strcmp (filename_extension, ".tif") == 0) {
-    //              tprintf( "Interpreting .bl file format.\n" );
-                                 //construct blocks
-    edges_and_textord (name.string (), blocks);
-  }
-  else {
-    if ((strcmp (filename_extension, ".pg") == 0) ||
-      // read a .pg file
-                                 // or a .sp file
-    (strcmp (filename_extension, ".sp") == 0)) {
-      tprintf ("Reading %s file format.\n", filename_extension);
-      infp = fopen (name.string (), "r");
-      if (infp == NULL)
-        CANTOPENFILE.error ("pgeditor_read_file", EXIT, name.string ());
-      //can't open file
+  if ((strcmp (filename_extension, ".pg") == 0) ||
+    // read a .pg file
+                               // or a .sp file
+  (strcmp (filename_extension, ".sp") == 0)) {
+    tprintf ("Reading %s file format.\n", filename_extension);
+    infp = fopen (name.string (), "r");
+    if (infp == NULL)
+      CANTOPENFILE.error ("pgeditor_read_file", EXIT, name.string ());
+    //can't open file
 
-      while (((c = fgetc (infp)) != EOF) && (ungetc (c, infp) != EOF)) {
-                                 //get one
-        block = BLOCK::de_serialise (infp);
-                                 //add to list
-        block_it.add_after_then_move (block);
-      }
-      fclose(infp); 
+    while (((c = fgetc (infp)) != EOF) && (ungetc (c, infp) != EOF)) {
+                               //get one
+      block = BLOCK::de_serialise (infp);
+                               //add to list
+      block_it.add_after_then_move (block);
     }
+    fclose(infp);
+  } else {
+    edges_and_textord (name.string (), blocks);
   }
 }
 
@@ -903,7 +897,7 @@ void pgeditor_write_file(                    //serialise
     block->serialise (infp);     //serialize     non-empty
     block_it.add_after_then_move (block);
   }
-  fclose(infp); 
+  fclose(infp);
 }
 
 
@@ -928,7 +922,7 @@ BOOL8 process_cmd_win_event(                  //UI command semantics
       break;
 
     case VIEW_CMD_EVENT:
-      do_view_cmd(); 
+      do_view_cmd();
       break;
     case CHANGE_DISP_CMD_EVENT:
     case DELETE_CMD_EVENT:
@@ -993,38 +987,38 @@ BOOL8 process_cmd_win_event(                  //UI command semantics
       mode = CHANGE_DISP_CMD_EVENT;
       break;
     case UNIFORM_DISP_CMD_EVENT:
-      do_re_display(&word_set_display); 
+      do_re_display(&word_set_display);
       *current_image_changed = TRUE;
       break;
     case WRITE_CMD_EVENT:
-      do_write_file(new_value); 
+      do_write_file(new_value);
       break;
     case SMD_CMD_EVENT:
-      smd_cmd(); 
+      smd_cmd();
       break;
     case TIDY_CMD_EVENT:
       if (!target_block_list.empty ()) {
         viewing_source = TRUE;   //Force viewing target
-        do_tidy_cmd(); 
+        do_tidy_cmd();
       }
       break;
     case NEW_SOURCE_CMD_EVENT:
-      do_new_source(new_value); 
+      do_new_source(new_value);
       break;
     case IMAGE_CMD_EVENT:
       display_image = (new_value[0] == 'T');
-      do_re_display(&word_display); 
+      do_re_display(&word_display);
       break;
     case BLOCKS_CMD_EVENT:
       display_blocks = (new_value[0] == 'T');
-      do_re_display(&word_display); 
+      do_re_display(&word_display);
       break;
     case BASELINES_CMD_EVENT:
       display_baselines = (new_value[0] == 'T');
-      do_re_display(&word_display); 
+      do_re_display(&word_display);
       break;
     case REFRESH_CMD_EVENT:
-      do_re_display(&word_display); 
+      do_re_display(&word_display);
       break;
     case QUIT_CMD_EVENT:
       if (source_changed || target_changed) {
@@ -1137,13 +1131,13 @@ void process_image_event(  //action in image win
                                  &word_bln_display);
           break;
         case SEGMENT_WERD_CMD_EVENT:
-          re_segment_word(current_block_list, selection_box); 
+          re_segment_word(current_block_list, selection_box);
           break;
         case ROW_SPACE_STAT_CMD_EVENT:
-          row_space_stat(current_block_list, selection_box); 
+          row_space_stat(current_block_list, selection_box);
           break;
         case BLOCK_SPACE_STAT_CMD_EVENT:
-          block_space_stat(current_block_list, selection_box); 
+          block_space_stat(current_block_list, selection_box);
           break;
         case SHOW_POINT_CMD_EVENT:
           break;                 //ignore up event
@@ -1204,7 +1198,7 @@ float re_scale_and_move_bln_word(                  //put bln word in       box
 void re_segment_word(                         //break/join words
                      BLOCK_LIST *block_list,  //blocks to check
                      BOX &selection_box) {
-  BLOCK_IT block_it(block_list); 
+  BLOCK_IT block_it(block_list);
   BLOCK *block;
   BLOCK *block_to_process = NULL;
   ROW_IT row_it;
@@ -1287,7 +1281,7 @@ void re_segment_word(                         //break/join words
 void block_space_stat(                         //show space stats
                       BLOCK_LIST *block_list,  //blocks to check
                       BOX &selection_box) {
-  BLOCK_IT block_it(block_list); 
+  BLOCK_IT block_it(block_list);
   BLOCK *block;
   ROW_IT row_it;
   ROW *row;
@@ -1384,7 +1378,7 @@ void block_space_stat(                         //show space stats
 void row_space_stat(                         //show space stats
                     BLOCK_LIST *block_list,  //blocks to check
                     BOX &selection_box) {
-  BLOCK_IT block_it(block_list); 
+  BLOCK_IT block_it(block_list);
   BLOCK *block;
   ROW_IT row_it;
   ROW *row;
@@ -1496,9 +1490,9 @@ void show_point(                         //display posn of bloba word
                 BLOCK_LIST *block_list,  //blocks to check
                 float x,
                 float y) {
-  FCOORD pt(x, y); 
+  FCOORD pt(x, y);
   BOX box;
-  BLOCK_IT block_it(block_list); 
+  BLOCK_IT block_it(block_list);
   BLOCK *block;
   ROW_IT row_it;
   ROW *row;
@@ -1657,8 +1651,8 @@ BOOL8 word_change_text(               //change correct text
     word->set_text (response_str);
 
   if (word_display_mode.bit (DF_TEXT) || word->display_flag (DF_TEXT)) {
-    word_blank_and_set_display(block, row, word); 
-    overlap_picture_ops(TRUE); 
+    word_blank_and_set_display(block, row, word);
+    overlap_picture_ops(TRUE);
   }
 
   *current_image_changed = TRUE;
@@ -1680,7 +1674,7 @@ BOOL8 word_copy(               //copy a word
   WERD *copy_word = new WERD;
 
   *copy_word = *word;
-  add_word(copy_word, row, block, other_block_list); 
+  add_word(copy_word, row, block, other_block_list);
   *other_image_changed = TRUE;
   return TRUE;
 }
@@ -1702,20 +1696,20 @@ BOOL8 word_delete(                     //delete a word
                  ) {
   word_it.extract ();
   word->bounding_box ().plot (image_win, INT_SOLID, FALSE, BLACK, BLACK);
-  delete(word); 
+  delete(word);
 
   if (word_it.empty ()) {        //no words left in row
                                  //so delete row
     row_it.extract ();
     row->bounding_box ().plot (image_win, INT_SOLID, FALSE, BLACK, BLACK);
-    delete(row); 
+    delete(row);
 
     if (row_it.empty ()) {       //no rows left in blk
                                  //so delete block
       block_it.extract ();
       block->bounding_box ().plot (image_win, INT_SOLID, FALSE,
         BLACK, BLACK);
-      delete(block); 
+      delete(block);
     }
   }
   *current_image_changed = TRUE;

@@ -52,13 +52,13 @@ char szAppName[] = "Tessedit";   //app name
  *
  **********************************************************************/
 
-int main(int argc, char **argv) { 
+int main(int argc, char **argv) {
   UINT16 lang;                   //language
   STRING pagefile;               //input file
 
-  if (argc < 4) {
+  if (argc < 3) {
     USAGE.error (argv[0], EXIT,
-      "%s imagename outputbase configfile [[+|-]varfile]...\n", argv[0]);
+      "%s imagename outputbase [configfile [[+|-]varfile]...]\n", argv[0]);
   }
   if (argc == 7
     && ocr_open_shm (argv[1], argv[2], argv[3], argv[4], argv[5], argv[6],
@@ -66,7 +66,10 @@ int main(int argc, char **argv) {
                                  //run api interface
     return api_main (argv[0], lang);
 
-  init_tesseract (argv[0], argv[2], argv[3], argc - 4, argv + 4);
+  if (argc == 3)
+    init_tesseract (argv[0], argv[2], NULL, 0, argv + 2);
+  else
+    init_tesseract (argv[0], argv[2], argv[3], argc - 4, argv + 4);
 
   tprintf ("Tesseract Open Source OCR Engine\n");
 
@@ -75,7 +78,7 @@ int main(int argc, char **argv) {
     TIFF* tif = TIFFOpen(argv[1], "r");
     if (tif) {
       read_tiff_image(tif);
-      TIFFClose(tif); 
+      TIFFClose(tif);
     } else
     READFAILED.error (argv[0], EXIT, argv[1]);
 
@@ -86,13 +89,21 @@ int main(int argc, char **argv) {
       MEMORY_OUT.error (argv[0], EXIT, "Read of image %s",
         argv[1]);
     }
+    if (page_image.get_bpp() > 1) {
+      // Dumb thresholding for those without libtiff.
+      IMAGE tmp;
+      tmp.create(page_image.get_xsize(), page_image.get_ysize(), 1);
+      copy_sub_image(&page_image, 0, 0, 0, 0, &tmp, 0, 0, true);
+      page_image.create(tmp.get_xsize(), tmp.get_ysize(), 1);
+      copy_sub_image(&tmp, 0, 0, 0, 0, &page_image, 0, 0, false);
+    }
 #endif
   }
 
   pagefile = argv[1];
   recognize_page(pagefile);
 
-  end_tesseract(); 
+  end_tesseract();
 
   return 0;                      //Normal exit
 }
@@ -156,20 +167,20 @@ INT32 api_main(                   //run from api
       block_count++;
 
       pagefile = fake_name;
-      pgeditor_read_file(pagefile, current_block_list); 
+      pgeditor_read_file(pagefile, current_block_list);
 
       monitor->ocr_alive = TRUE;
 
       if (edit_variables)
-        start_variables_editor(); 
+        start_variables_editor();
       if (interactive_mode) {
         pgeditor_main();  //pgeditor user I/F
       }
       else {
-        PAGE_RES page_res(current_block_list); 
+        PAGE_RES page_res(current_block_list);
 
         //                              tprintf("Recognizing words\n");
-        recog_all_words(&page_res, monitor); 
+        recog_all_words(&page_res, monitor);
 
       }
                                  //no longer needed
@@ -183,7 +194,7 @@ INT32 api_main(                   //run from api
   }
   while (page_image.get_bpp () != 0);
   tprintf ("Closing down");
-  end_tesseract(); 
+  end_tesseract();
   if (ocr_shutdown () != OKAY) {
     tprintf ("Closedown failed\n");
     return 1;
@@ -338,7 +349,7 @@ int WINAPI WinMain(  //main for windows //command line
   wc.lpszMenuName = NULL;
   wc.lpszClassName = szAppName;
 
-  RegisterClass(&wc); 
+  RegisterClass(&wc);
 
   hwnd = CreateWindow (szAppName, szAppName,
     WS_OVERLAPPEDWINDOW | WS_DISABLED,
@@ -364,8 +375,8 @@ int WINAPI WinMain(  //main for windows //command line
     return exit_code;
   }
   while (GetMessage (&msg, NULL, 0, 0)) {
-    TranslateMessage(&msg); 
-    DispatchMessage(&msg); 
+    TranslateMessage(&msg);
+    DispatchMessage(&msg);
     if (initialized) {
       exit_code = main (argc, argv);
       break;
@@ -375,7 +386,7 @@ int WINAPI WinMain(  //main for windows //command line
   }
   free (argsin[0]);
   free (argsin[1]);
-  free(argv); 
+  free(argv);
   return exit_code;
 }
 
@@ -398,7 +409,7 @@ LONG WINAPI WndProc(            //message handler
     // Create a rendering context.
     //
     hdc = GetDC (hwnd);
-    ReleaseDC(hwnd, hdc); 
+    ReleaseDC(hwnd, hdc);
     initialized = 1;
     return 0;
   }

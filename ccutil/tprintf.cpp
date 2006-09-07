@@ -33,7 +33,7 @@ DLLSYM STRING_VAR (debug_file, "tesseract.log", "File to send tprintf output to"
 #else
 DLLSYM STRING_VAR (debug_file, "", "File to send tprintf output to");
 #endif
-DLLSYM BOOL_VAR (debug_window_on, TRUE,
+DLLSYM BOOL_VAR (debug_window_on, FALSE,
 "Send tprintf to window unless file set");
 
 DLLSYM void
@@ -55,12 +55,12 @@ const char *format, ...          //special message
                                  //Format into msg
   offset += vsprintf (msg + offset, format, args);
   #endif
-  va_end(args); 
+  va_end(args);
 
   if (debugfp == NULL && strlen (debug_file.string ()) > 0)
     debugfp = fopen (debug_file.string (), "w");
   else if (debugfp != NULL && strlen (debug_file.string ()) == 0) {
-    fclose(debugfp); 
+    fclose(debugfp);
     debugfp = NULL;
   }
   if (debugfp != NULL)
@@ -110,7 +110,7 @@ pause_continue (const char *format, ...
 
   va_start(args, format);  //variable list
   vsprintf(msg, format, args);  //Format into msg
-  va_end(args); 
+  va_end(args);
 
   #ifdef __UNIX__
   printf ("%s\n", msg);

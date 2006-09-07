@@ -26,5 +26,5 @@ extern char *optarg;
 int getopt (                     //parse args
 INT32 argc,                      //arg count
 char *argv[],                    //args
-char *arglist                    //string of arg chars
+const char *arglist                    //string of arg chars
 );

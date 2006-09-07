@@ -23,12 +23,119 @@
 #include "freelist.h"
 #include <math.h>
 
-/* define the variance which will be used in place of a variance of 0.0
-  when all samples in a prototype happen to be identical.  This is simply
-  used as an easy way to avoid checking for divide-by-0.  It corresponds
-  to a minimum standard deviation of 0.002, or 0.2% of the full scale
-  of the parameter ( for parameters whose range is 1.0 ). */
-#define MINVARIANCE     0.000004
+#define HOTELLING 1  // If true use Hotelling's test to decide where to split.
+#define FTABLE_X 10  // Size of FTable.
+#define FTABLE_Y 100  // Size of FTable.
+
+// Table of values approximating the cumulative F-distribution for a confidence of 1%.
+double FTable[FTABLE_Y][FTABLE_X] = {
+ {4052.19, 4999.52, 5403.34, 5624.62, 5763.65, 5858.97, 5928.33, 5981.10, 6022.50, 6055.85,},
+  {98.502,  99.000,  99.166,  99.249,  99.300,  99.333,  99.356,  99.374,  99.388,  99.399,},
+  {34.116,  30.816,  29.457,  28.710,  28.237,  27.911,  27.672,  27.489,  27.345,  27.229,},
+  {21.198,  18.000,  16.694,  15.977,  15.522,  15.207,  14.976,  14.799,  14.659,  14.546,},
+  {16.258,  13.274,  12.060,  11.392,  10.967,  10.672,  10.456,  10.289,  10.158,  10.051,},
+  {13.745,  10.925,   9.780,   9.148,   8.746,   8.466,   8.260,   8.102,   7.976,   7.874,},
+  {12.246,   9.547,   8.451,   7.847,   7.460,   7.191,   6.993,   6.840,   6.719,   6.620,},
+  {11.259,   8.649,   7.591,   7.006,   6.632,   6.371,   6.178,   6.029,   5.911,   5.814,},
+  {10.561,   8.022,   6.992,   6.422,   6.057,   5.802,   5.613,   5.467,   5.351,   5.257,},
+  {10.044,   7.559,   6.552,   5.994,   5.636,   5.386,   5.200,   5.057,   4.942,   4.849,},
+  { 9.646,   7.206,   6.217,   5.668,   5.316,   5.069,   4.886,   4.744,   4.632,   4.539,},
+  { 9.330,   6.927,   5.953,   5.412,   5.064,   4.821,   4.640,   4.499,   4.388,   4.296,},
+  { 9.074,   6.701,   5.739,   5.205,   4.862,   4.620,   4.441,   4.302,   4.191,   4.100,},
+  { 8.862,   6.515,   5.564,   5.035,   4.695,   4.456,   4.278,   4.140,   4.030,   3.939,},
+  { 8.683,   6.359,   5.417,   4.893,   4.556,   4.318,   4.142,   4.004,   3.895,   3.805,},
+  { 8.531,   6.226,   5.292,   4.773,   4.437,   4.202,   4.026,   3.890,   3.780,   3.691,},
+  { 8.400,   6.112,   5.185,   4.669,   4.336,   4.102,   3.927,   3.791,   3.682,   3.593,},
+  { 8.285,   6.013,   5.092,   4.579,   4.248,   4.015,   3.841,   3.705,   3.597,   3.508,},
+  { 8.185,   5.926,   5.010,   4.500,   4.171,   3.939,   3.765,   3.631,   3.523,   3.434,},
+  { 8.096,   5.849,   4.938,   4.431,   4.103,   3.871,   3.699,   3.564,   3.457,   3.368,},
+  { 8.017,   5.780,   4.874,   4.369,   4.042,   3.812,   3.640,   3.506,   3.398,   3.310,},
+  { 7.945,   5.719,   4.817,   4.313,   3.988,   3.758,   3.587,   3.453,   3.346,   3.258,},
+  { 7.881,   5.664,   4.765,   4.264,   3.939,   3.710,   3.539,   3.406,   3.299,   3.211,},
+  { 7.823,   5.614,   4.718,   4.218,   3.895,   3.667,   3.496,   3.363,   3.256,   3.168,},
+  { 7.770,   5.568,   4.675,   4.177,   3.855,   3.627,   3.457,   3.324,   3.217,   3.129,},
+  { 7.721,   5.526,   4.637,   4.140,   3.818,   3.591,   3.421,   3.288,   3.182,   3.094,},
+  { 7.677,   5.488,   4.601,   4.106,   3.785,   3.558,   3.388,   3.256,   3.149,   3.062,},
+  { 7.636,   5.453,   4.568,   4.074,   3.754,   3.528,   3.358,   3.226,   3.120,   3.032,},
+  { 7.598,   5.420,   4.538,   4.045,   3.725,   3.499,   3.330,   3.198,   3.092,   3.005,},
+  { 7.562,   5.390,   4.510,   4.018,   3.699,   3.473,   3.305,   3.173,   3.067,   2.979,},
+  { 7.530,   5.362,   4.484,   3.993,   3.675,   3.449,   3.281,   3.149,   3.043,   2.955,},
+  { 7.499,   5.336,   4.459,   3.969,   3.652,   3.427,   3.258,   3.127,   3.021,   2.934,},
+  { 7.471,   5.312,   4.437,   3.948,   3.630,   3.406,   3.238,   3.106,   3.000,   2.913,},
+  { 7.444,   5.289,   4.416,   3.927,   3.611,   3.386,   3.218,   3.087,   2.981,   2.894,},
+  { 7.419,   5.268,   4.396,   3.908,   3.592,   3.368,   3.200,   3.069,   2.963,   2.876,},
+  { 7.396,   5.248,   4.377,   3.890,   3.574,   3.351,   3.183,   3.052,   2.946,   2.859,},
+  { 7.373,   5.229,   4.360,   3.873,   3.558,   3.334,   3.167,   3.036,   2.930,   2.843,},
+  { 7.353,   5.211,   4.343,   3.858,   3.542,   3.319,   3.152,   3.021,   2.915,   2.828,},
+  { 7.333,   5.194,   4.327,   3.843,   3.528,   3.305,   3.137,   3.006,   2.901,   2.814,},
+  { 7.314,   5.179,   4.313,   3.828,   3.514,   3.291,   3.124,   2.993,   2.888,   2.801,},
+  { 7.296,   5.163,   4.299,   3.815,   3.501,   3.278,   3.111,   2.980,   2.875,   2.788,},
+  { 7.280,   5.149,   4.285,   3.802,   3.488,   3.266,   3.099,   2.968,   2.863,   2.776,},
+  { 7.264,   5.136,   4.273,   3.790,   3.476,   3.254,   3.087,   2.957,   2.851,   2.764,},
+  { 7.248,   5.123,   4.261,   3.778,   3.465,   3.243,   3.076,   2.946,   2.840,   2.754,},
+  { 7.234,   5.110,   4.249,   3.767,   3.454,   3.232,   3.066,   2.935,   2.830,   2.743,},
+  { 7.220,   5.099,   4.238,   3.757,   3.444,   3.222,   3.056,   2.925,   2.820,   2.733,},
+  { 7.207,   5.087,   4.228,   3.747,   3.434,   3.213,   3.046,   2.916,   2.811,   2.724,},
+  { 7.194,   5.077,   4.218,   3.737,   3.425,   3.204,   3.037,   2.907,   2.802,   2.715,},
+  { 7.182,   5.066,   4.208,   3.728,   3.416,   3.195,   3.028,   2.898,   2.793,   2.706,},
+  { 7.171,   5.057,   4.199,   3.720,   3.408,   3.186,   3.020,   2.890,   2.785,   2.698,},
+  { 7.159,   5.047,   4.191,   3.711,   3.400,   3.178,   3.012,   2.882,   2.777,   2.690,},
+  { 7.149,   5.038,   4.182,   3.703,   3.392,   3.171,   3.005,   2.874,   2.769,   2.683,},
+  { 7.139,   5.030,   4.174,   3.695,   3.384,   3.163,   2.997,   2.867,   2.762,   2.675,},
+  { 7.129,   5.021,   4.167,   3.688,   3.377,   3.156,   2.990,   2.860,   2.755,   2.668,},
+  { 7.119,   5.013,   4.159,   3.681,   3.370,   3.149,   2.983,   2.853,   2.748,   2.662,},
+  { 7.110,   5.006,   4.152,   3.674,   3.363,   3.143,   2.977,   2.847,   2.742,   2.655,},
+  { 7.102,   4.998,   4.145,   3.667,   3.357,   3.136,   2.971,   2.841,   2.736,   2.649,},
+  { 7.093,   4.991,   4.138,   3.661,   3.351,   3.130,   2.965,   2.835,   2.730,   2.643,},
+  { 7.085,   4.984,   4.132,   3.655,   3.345,   3.124,   2.959,   2.829,   2.724,   2.637,},
+  { 7.077,   4.977,   4.126,   3.649,   3.339,   3.119,   2.953,   2.823,   2.718,   2.632,},
+  { 7.070,   4.971,   4.120,   3.643,   3.333,   3.113,   2.948,   2.818,   2.713,   2.626,},
+  { 7.062,   4.965,   4.114,   3.638,   3.328,   3.108,   2.942,   2.813,   2.708,   2.621,},
+  { 7.055,   4.959,   4.109,   3.632,   3.323,   3.103,   2.937,   2.808,   2.703,   2.616,},
+  { 7.048,   4.953,   4.103,   3.627,   3.318,   3.098,   2.932,   2.803,   2.698,   2.611,},
+  { 7.042,   4.947,   4.098,   3.622,   3.313,   3.093,   2.928,   2.798,   2.693,   2.607,},
+  { 7.035,   4.942,   4.093,   3.618,   3.308,   3.088,   2.923,   2.793,   2.689,   2.602,},
+  { 7.029,   4.937,   4.088,   3.613,   3.304,   3.084,   2.919,   2.789,   2.684,   2.598,},
+  { 7.023,   4.932,   4.083,   3.608,   3.299,   3.080,   2.914,   2.785,   2.680,   2.593,},
+  { 7.017,   4.927,   4.079,   3.604,   3.295,   3.075,   2.910,   2.781,   2.676,   2.589,},
+  { 7.011,   4.922,   4.074,   3.600,   3.291,   3.071,   2.906,   2.777,   2.672,   2.585,},
+  { 7.006,   4.917,   4.070,   3.596,   3.287,   3.067,   2.902,   2.773,   2.668,   2.581,},
+  { 7.001,   4.913,   4.066,   3.591,   3.283,   3.063,   2.898,   2.769,   2.664,   2.578,},
+  { 6.995,   4.908,   4.062,   3.588,   3.279,   3.060,   2.895,   2.765,   2.660,   2.574,},
+  { 6.990,   4.904,   4.058,   3.584,   3.275,   3.056,   2.891,   2.762,   2.657,   2.570,},
+  { 6.985,   4.900,   4.054,   3.580,   3.272,   3.052,   2.887,   2.758,   2.653,   2.567,},
+  { 6.981,   4.896,   4.050,   3.577,   3.268,   3.049,   2.884,   2.755,   2.650,   2.563,},
+  { 6.976,   4.892,   4.047,   3.573,   3.265,   3.046,   2.881,   2.751,   2.647,   2.560,},
+  { 6.971,   4.888,   4.043,   3.570,   3.261,   3.042,   2.877,   2.748,   2.644,   2.557,},
+  { 6.967,   4.884,   4.040,   3.566,   3.258,   3.039,   2.874,   2.745,   2.640,   2.554,},
+  { 6.963,   4.881,   4.036,   3.563,   3.255,   3.036,   2.871,   2.742,   2.637,   2.551,},
+  { 6.958,   4.877,   4.033,   3.560,   3.252,   3.033,   2.868,   2.739,   2.634,   2.548,},
+  { 6.954,   4.874,   4.030,   3.557,   3.249,   3.030,   2.865,   2.736,   2.632,   2.545,},
+  { 6.950,   4.870,   4.027,   3.554,   3.246,   3.027,   2.863,   2.733,   2.629,   2.542,},
+  { 6.947,   4.867,   4.024,   3.551,   3.243,   3.025,   2.860,   2.731,   2.626,   2.539,},
+  { 6.943,   4.864,   4.021,   3.548,   3.240,   3.022,   2.857,   2.728,   2.623,   2.537,},
+  { 6.939,   4.861,   4.018,   3.545,   3.238,   3.019,   2.854,   2.725,   2.621,   2.534,},
+  { 6.935,   4.858,   4.015,   3.543,   3.235,   3.017,   2.852,   2.723,   2.618,   2.532,},
+  { 6.932,   4.855,   4.012,   3.540,   3.233,   3.014,   2.849,   2.720,   2.616,   2.529,},
+  { 6.928,   4.852,   4.010,   3.538,   3.230,   3.012,   2.847,   2.718,   2.613,   2.527,},
+  { 6.925,   4.849,   4.007,   3.535,   3.228,   3.009,   2.845,   2.715,   2.611,   2.524,},
+  { 6.922,   4.846,   4.004,   3.533,   3.225,   3.007,   2.842,   2.713,   2.609,   2.522,},
+  { 6.919,   4.844,   4.002,   3.530,   3.223,   3.004,   2.840,   2.711,   2.606,   2.520,},
+  { 6.915,   4.841,   3.999,   3.528,   3.221,   3.002,   2.838,   2.709,   2.604,   2.518,},
+  { 6.912,   4.838,   3.997,   3.525,   3.218,   3.000,   2.835,   2.706,   2.602,   2.515,},
+  { 6.909,   4.836,   3.995,   3.523,   3.216,   2.998,   2.833,   2.704,   2.600,   2.513,},
+  { 6.906,   4.833,   3.992,   3.521,   3.214,   2.996,   2.831,   2.702,   2.598,   2.511,},
+  { 6.904,   4.831,   3.990,   3.519,   3.212,   2.994,   2.829,   2.700,   2.596,   2.509,},
+  { 6.901,   4.829,   3.988,   3.517,   3.210,   2.992,   2.827,   2.698,   2.594,   2.507,},
+  { 6.898,   4.826,   3.986,   3.515,   3.208,   2.990,   2.825,   2.696,   2.592,   2.505,},
+  { 6.895,   4.824,   3.984,   3.513,   3.206,   2.988,   2.823,   2.694,   2.590,   2.503}
+};
+
+/* define the variance which will be used as a minimum variance for any
+  dimension of any feature. Since most features are calculated from numbers
+  with a precision no better than 1 in 128, the variance should never be
+  less than the square of this number for parameters whose range is 1. */
+#define MINVARIANCE     0.0001
 
 /* define the absolute minimum number of samples which must be present in
   order to accurately test hypotheses about underlying probability
@@ -144,15 +251,15 @@ static UINT16 BucketsTable[LOOKUPTABLESIZE] = {
 /*-------------------------------------------------------------------------
           Private Function Prototypes
 --------------------------------------------------------------------------*/
-void CreateClusterTree(CLUSTERER *Clusterer); 
+void CreateClusterTree(CLUSTERER *Clusterer);
 
-void MakePotentialClusters(CLUSTER *Cluster, VISIT Order, INT32 Level); 
+void MakePotentialClusters(CLUSTER *Cluster, VISIT Order, INT32 Level);
 
 CLUSTER *FindNearestNeighbor(KDTREE *Tree,
                              CLUSTER *Cluster,
                              FLOAT32 *Distance);
 
-CLUSTER *MakeNewCluster(CLUSTERER *Clusterer, TEMPCLUSTER *TempCluster); 
+CLUSTER *MakeNewCluster(CLUSTERER *Clusterer, TEMPCLUSTER *TempCluster);
 
 INT32 MergeClusters (INT16 N,
 register PARAM_DESC ParamDesc[],
@@ -161,7 +268,7 @@ register INT32 n2,
 register FLOAT32 m[],
 register FLOAT32 m1[], register FLOAT32 m2[]);
 
-void ComputePrototypes(CLUSTERER *Clusterer, CLUSTERCONFIG *Config); 
+void ComputePrototypes(CLUSTERER *Clusterer, CLUSTERCONFIG *Config);
 
 PROTOTYPE *MakePrototype(CLUSTERER *Clusterer,
                          CLUSTERCONFIG *Config,
@@ -172,6 +279,10 @@ PROTOTYPE *MakeDegenerateProto(UINT16 N,
                                STATISTICS *Statistics,
                                PROTOSTYLE Style,
                                INT32 MinSamples);
+
+PROTOTYPE *TestEllipticalProto(CLUSTERER *Clusterer,
+                               CLUSTER *Cluster,
+                               STATISTICS *Statistics);
 
 PROTOTYPE *MakeSphericalProto(CLUSTERER *Clusterer,
                               CLUSTER *Cluster,
@@ -189,9 +300,9 @@ PROTOTYPE *MakeMixedProto(CLUSTERER *Clusterer,
                           BUCKETS *NormalBuckets,
                           FLOAT64 Confidence);
 
-void MakeDimRandom(UINT16 i, PROTOTYPE *Proto, PARAM_DESC *ParamDesc); 
+void MakeDimRandom(UINT16 i, PROTOTYPE *Proto, PARAM_DESC *ParamDesc);
 
-void MakeDimUniform(UINT16 i, PROTOTYPE *Proto, STATISTICS *Statistics); 
+void MakeDimUniform(UINT16 i, PROTOTYPE *Proto, STATISTICS *Statistics);
 
 STATISTICS *ComputeStatistics (INT16 N,
 PARAM_DESC ParamDesc[], CLUSTER * Cluster);
@@ -204,9 +315,9 @@ PROTOTYPE *NewEllipticalProto(INT16 N,
                               CLUSTER *Cluster,
                               STATISTICS *Statistics);
 
-PROTOTYPE *NewMixedProto(INT16 N, CLUSTER *Cluster, STATISTICS *Statistics); 
+PROTOTYPE *NewMixedProto(INT16 N, CLUSTER *Cluster, STATISTICS *Statistics);
 
-PROTOTYPE *NewSimpleProto(INT16 N, CLUSTER *Cluster); 
+PROTOTYPE *NewSimpleProto(INT16 N, CLUSTER *Cluster);
 
 BOOL8 Independent (PARAM_DESC ParamDesc[],
 INT16 N, FLOAT32 * CoVariance, FLOAT32 Independence);
@@ -219,15 +330,15 @@ BUCKETS *MakeBuckets(DISTRIBUTION Distribution,
                      UINT32 SampleCount,
                      FLOAT64 Confidence);
 
-UINT16 OptimumNumberOfBuckets(UINT32 SampleCount); 
+UINT16 OptimumNumberOfBuckets(UINT32 SampleCount);
 
-FLOAT64 ComputeChiSquared(UINT16 DegreesOfFreedom, FLOAT64 Alpha); 
+FLOAT64 ComputeChiSquared(UINT16 DegreesOfFreedom, FLOAT64 Alpha);
 
-FLOAT64 NormalDensity(INT32 x); 
+FLOAT64 NormalDensity(INT32 x);
 
-FLOAT64 UniformDensity(INT32 x); 
+FLOAT64 UniformDensity(INT32 x);
 
-FLOAT64 Integral(FLOAT64 f1, FLOAT64 f2, FLOAT64 Dx); 
+FLOAT64 Integral(FLOAT64 f1, FLOAT64 f2, FLOAT64 Dx);
 
 void FillBuckets(BUCKETS *Buckets,
                  CLUSTER *Cluster,
@@ -246,40 +357,42 @@ UINT16 UniformBucket(PARAM_DESC *ParamDesc,
                      FLOAT32 Mean,
                      FLOAT32 StdDev);
 
-BOOL8 DistributionOK(BUCKETS *Buckets); 
+BOOL8 DistributionOK(BUCKETS *Buckets);
 
-void FreeStatistics(STATISTICS *Statistics); 
+void FreeStatistics(STATISTICS *Statistics);
 
-void FreeBuckets(BUCKETS *Buckets); 
+void FreeBuckets(BUCKETS *Buckets);
 
-void FreeCluster(CLUSTER *Cluster); 
+void FreeCluster(CLUSTER *Cluster);
 
-UINT16 DegreesOfFreedom(DISTRIBUTION Distribution, UINT16 HistogramBuckets); 
+UINT16 DegreesOfFreedom(DISTRIBUTION Distribution, UINT16 HistogramBuckets);
 
 int NumBucketsMatch(void *arg1,   //BUCKETS                                       *Histogram,
                     void *arg2);  //UINT16                        *DesiredNumberOfBuckets);
 
-int ListEntryMatch(void *arg1, void *arg2); 
+int ListEntryMatch(void *arg1, void *arg2);
 
-void AdjustBuckets(BUCKETS *Buckets, UINT32 NewSampleCount); 
+void AdjustBuckets(BUCKETS *Buckets, UINT32 NewSampleCount);
 
-void InitBuckets(BUCKETS *Buckets); 
+void InitBuckets(BUCKETS *Buckets);
 
 int AlphaMatch(void *arg1,   //CHISTRUCT                             *ChiStruct,
                void *arg2);  //CHISTRUCT                             *SearchKey);
 
-CHISTRUCT *NewChiStruct(UINT16 DegreesOfFreedom, FLOAT64 Alpha); 
+CHISTRUCT *NewChiStruct(UINT16 DegreesOfFreedom, FLOAT64 Alpha);
 
 FLOAT64 Solve(SOLVEFUNC Function,
               void *FunctionParams,
               FLOAT64 InitialGuess,
               FLOAT64 Accuracy);
 
-FLOAT64 ChiArea(CHISTRUCT *ChiParams, FLOAT64 x); 
+FLOAT64 ChiArea(CHISTRUCT *ChiParams, FLOAT64 x);
 
 BOOL8 MultipleCharSamples(CLUSTERER *Clusterer,
                           CLUSTER *Cluster,
                           FLOAT32 MaxIllegal);
+
+double InvertMatrix(const float* input, int size, float* inv);
 
 //--------------------------Public Code--------------------------------------
 /** MakeClusterer **********************************************************
@@ -401,17 +514,17 @@ Return:		Pointer to a list of prototypes
 Exceptions:	None
 History:	5/29/89, DSJ, Created.
 *******************************************************************************/
-LIST ClusterSamples(CLUSTERER *Clusterer, CLUSTERCONFIG *Config) { 
+LIST ClusterSamples(CLUSTERER *Clusterer, CLUSTERCONFIG *Config) {
   //only create cluster tree if samples have never been clustered before
   if (Clusterer->Root == NULL)
-    CreateClusterTree(Clusterer); 
+    CreateClusterTree(Clusterer);
 
   //deallocate the old prototype list if one exists
   FreeProtoList (&Clusterer->ProtoList);
   Clusterer->ProtoList = NIL;
 
   //compute prototypes starting at the root node in the tree
-  ComputePrototypes(Clusterer, Config); 
+  ComputePrototypes(Clusterer, Config);
   return (Clusterer->ProtoList);
 }                                // ClusterSamples
 
@@ -430,7 +543,7 @@ Return:		None
 Exceptions:	None
 History:	6/6/89, DSJ, Created.
 *******************************************************************************/
-void FreeClusterer(CLUSTERER *Clusterer) { 
+void FreeClusterer(CLUSTERER *Clusterer) {
   if (Clusterer != NULL) {
     memfree (Clusterer->ParamDesc);
     if (Clusterer->KDTree != NULL)
@@ -440,7 +553,7 @@ void FreeClusterer(CLUSTERER *Clusterer) {
     iterate (Clusterer->ProtoList) {
       ((PROTOTYPE *) (first (Clusterer->ProtoList)))->Cluster = NULL;
     }
-    memfree(Clusterer); 
+    memfree(Clusterer);
   }
 }                                // FreeClusterer
 
@@ -455,8 +568,8 @@ Return:		None
 Exceptions:	None
 History:	6/6/89, DSJ, Created.
 *****************************************************************************/
-void FreeProtoList(LIST *ProtoList) { 
-  destroy_nodes(*ProtoList, FreePrototype); 
+void FreeProtoList(LIST *ProtoList) {
+  destroy_nodes(*ProtoList, FreePrototype);
 }                                // FreeProtoList
 
 
@@ -491,7 +604,7 @@ void FreePrototype(void *arg) {  //PROTOTYPE     *Prototype)
     if (Prototype->Weight.Elliptical != NULL)
       memfree (Prototype->Weight.Elliptical);
   }
-  memfree(Prototype); 
+  memfree(Prototype);
 }                                // FreePrototype
 
 
@@ -511,7 +624,7 @@ Return:		Pointer to the next leaf cluster (sample) or NULL.
 Exceptions:	None
 History:	6/16/89, DSJ, Created.
 ****************************************************************************/
-CLUSTER *NextSample(LIST *SearchState) { 
+CLUSTER *NextSample(LIST *SearchState) {
   CLUSTER *Cluster;
 
   if (*SearchState == NIL)
@@ -537,7 +650,7 @@ Return:		Mean of Prototype in Dimension
 Exceptions: none
 History:	7/6/89, DSJ, Created.
 *********************************************************************/
-FLOAT32 Mean(PROTOTYPE *Proto, UINT16 Dimension) { 
+FLOAT32 Mean(PROTOTYPE *Proto, UINT16 Dimension) {
   return (Proto->Mean[Dimension]);
 }                                // Mean
 
@@ -552,7 +665,7 @@ Return:		Standard deviation of Prototype in Dimension
 Exceptions: none
 History:	7/6/89, DSJ, Created.
 **********************************************************************/
-FLOAT32 StandardDeviation(PROTOTYPE *Proto, UINT16 Dimension) { 
+FLOAT32 StandardDeviation(PROTOTYPE *Proto, UINT16 Dimension) {
   switch (Proto->Style) {
     case spherical:
       return ((FLOAT32) sqrt ((double) Proto->Variance.Spherical));
@@ -595,7 +708,7 @@ Return:		None (the Clusterer data structure is changed)
 Exceptions:	None
 History:	5/29/89, DSJ, Created.
 ******************************************************************************/
-void CreateClusterTree(CLUSTERER *Clusterer) { 
+void CreateClusterTree(CLUSTERER *Clusterer) {
   HEAPENTRY HeapEntry;
   TEMPCLUSTER *PotentialCluster;
 
@@ -629,19 +742,19 @@ void CreateClusterTree(CLUSTERER *Clusterer) {
         FindNearestNeighbor (Tree, PotentialCluster->Cluster,
         &(HeapEntry.Key));
       if (PotentialCluster->Neighbor != NULL) {
-        HeapStore(Heap, &HeapEntry); 
+        HeapStore(Heap, &HeapEntry);
       }
     }
 
     // if neither cluster is already clustered, form permanent cluster
     else {
       PotentialCluster->Cluster =
-        MakeNewCluster(Clusterer, PotentialCluster); 
+        MakeNewCluster(Clusterer, PotentialCluster);
       PotentialCluster->Neighbor =
         FindNearestNeighbor (Tree, PotentialCluster->Cluster,
         &(HeapEntry.Key));
       if (PotentialCluster->Neighbor != NULL) {
-        HeapStore(Heap, &HeapEntry); 
+        HeapStore(Heap, &HeapEntry);
       }
     }
   }
@@ -650,10 +763,10 @@ void CreateClusterTree(CLUSTERER *Clusterer) {
   Clusterer->Root = (CLUSTER *) RootOf (Clusterer->KDTree);
 
   // free up the memory used by the K-D tree, heap, and temp clusters
-  FreeKDTree(Tree); 
+  FreeKDTree(Tree);
   Clusterer->KDTree = NULL;
-  FreeHeap(Heap); 
-  memfree(TempCluster); 
+  FreeHeap(Heap);
+  memfree(TempCluster);
 }                                // CreateClusterTree
 
 
@@ -674,7 +787,7 @@ Exceptions: none
 History:	5/29/89, DSJ, Created.
       7/13/89, DSJ, Removed visibility of kd-tree node data struct.
 ******************************************************************************/
-void MakePotentialClusters(CLUSTER *Cluster, VISIT Order, INT32 Level) { 
+void MakePotentialClusters(CLUSTER *Cluster, VISIT Order, INT32 Level) {
   HEAPENTRY HeapEntry;
 
   if ((Order == preorder) || (Order == leaf)) {
@@ -684,7 +797,7 @@ void MakePotentialClusters(CLUSTER *Cluster, VISIT Order, INT32 Level) {
       FindNearestNeighbor (Tree, TempCluster[CurrentTemp].Cluster,
       &(HeapEntry.Key));
     if (TempCluster[CurrentTemp].Neighbor != NULL) {
-      HeapStore(Heap, &HeapEntry); 
+      HeapStore(Heap, &HeapEntry);
       CurrentTemp++;
     }
   }
@@ -749,7 +862,7 @@ Exceptions:	none
 History:	5/29/89, DSJ, Created.
       7/13/89, DSJ, Removed visibility of kd-tree node data struct
 ********************************************************************************/
-CLUSTER *MakeNewCluster(CLUSTERER *Clusterer, TEMPCLUSTER *TempCluster) { 
+CLUSTER *MakeNewCluster(CLUSTERER *Clusterer, TEMPCLUSTER *TempCluster) {
   CLUSTER *Cluster;
 
   // allocate the new cluster and initialize it
@@ -843,7 +956,7 @@ Return:		None
 Exceptions:	None
 History:	5/30/89, DSJ, Created.
 *******************************************************************************/
-void ComputePrototypes(CLUSTERER *Clusterer, CLUSTERCONFIG *Config) { 
+void ComputePrototypes(CLUSTERER *Clusterer, CLUSTERCONFIG *Config) {
   LIST ClusterStack = NIL;
   CLUSTER *Cluster;
   PROTOTYPE *Prototype;
@@ -913,14 +1026,22 @@ PROTOTYPE *MakePrototype(CLUSTERER *Clusterer,
     (INT32) (Config->MinSamples *
     Clusterer->NumChar));
   if (Proto != NULL) {
-    FreeStatistics(Statistics); 
+    FreeStatistics(Statistics);
     return (Proto);
   }
   // check to ensure that all dimensions are independent
   if (!Independent (Clusterer->ParamDesc, Clusterer->SampleSize,
   Statistics->CoVariance, Config->Independence)) {
-    FreeStatistics(Statistics); 
+    FreeStatistics(Statistics);
     return (NULL);
+  }
+
+  if (HOTELLING && Config->ProtoStyle == elliptical) {
+    Proto = TestEllipticalProto(Clusterer, Cluster, Statistics);
+    if (Proto != NULL) {
+      FreeStatistics(Statistics);
+      return Proto;
+    }
   }
 
   // create a histogram data structure used to evaluate distributions
@@ -949,8 +1070,8 @@ PROTOTYPE *MakePrototype(CLUSTERER *Clusterer,
         Config->Confidence);
       break;
   }
-  FreeBuckets(Buckets); 
-  FreeStatistics(Statistics); 
+  FreeBuckets(Buckets);
+  FreeStatistics(Statistics);
   return (Proto);
 }                                // MakePrototype
 
@@ -1006,6 +1127,65 @@ PROTOTYPE *MakeDegenerateProto(  //this was MinSample
   return (Proto);
 }                                // MakeDegenerateProto
 
+/** TestEllipticalProto ****************************************************
+Parameters:	Clusterer	data struct containing samples being clustered
+      Cluster		cluster to be made into an elliptical prototype
+      Statistics	statistical info about cluster
+Globals:	None
+Operation:	This routine tests the specified cluster to see if **
+*     there is a statistically significant difference between
+*     the sub-clusters that would be made if the cluster were to
+*     be split. If not, then a new prototype is formed and
+*     returned to the caller. If there is, then NULL is returned
+*     to the caller.
+Return:		Pointer to new elliptical prototype or NULL.
+****************************************************************************/
+PROTOTYPE *TestEllipticalProto(CLUSTERER *Clusterer,
+                               CLUSTER *Cluster,
+                               STATISTICS *Statistics) {
+  int N = Clusterer->SampleSize;
+  CLUSTER* Left = Cluster->Left;
+  CLUSTER* Right = Cluster->Right;
+  if (Left == NULL || Right == NULL)
+    return NULL;
+  int TotalDims = Left->SampleCount + Right->SampleCount;
+  if (TotalDims < N + 1)
+    return NULL;
+  FLOAT32* Inverse = (FLOAT32 *) Emalloc(N * N * sizeof(FLOAT32));
+  FLOAT32* Delta = (FLOAT32*) Emalloc(N * sizeof(FLOAT32));
+  double err = InvertMatrix(Statistics->CoVariance, N, Inverse);
+  if (err > 1) {
+    cprintf("Clustering error: Matrix inverse failed with error %g\n", err);
+  }
+  for (int dim = 0; dim < N; ++dim) {
+    Delta[dim] = Left->Mean[dim] - Right->Mean[dim];
+  }
+  // Compute Hotelling's T-squared.
+  double Tsq = 0.0;
+  for (int x = 0; x < N; ++x) {
+    double temp = 0.0;
+    for (int y = 0; y < N; ++y) {
+      temp += Inverse[y + N*x] * Delta[y];
+    }
+    Tsq += Delta[x] * temp;
+  }
+  memfree(Inverse);
+  memfree(Delta);
+  Tsq *= Left->SampleCount * Right->SampleCount / TotalDims;
+  double F = Tsq * (TotalDims - N - 1) / ((TotalDims - N) * 2);
+  int Fx = N;
+  if (Fx > FTABLE_X)
+    Fx = FTABLE_X;
+  --Fx;
+  int Fy = TotalDims - N - 1;
+  if (Fy > FTABLE_Y)
+    Fy = FTABLE_Y;
+  --Fy;
+  if (F < FTable[Fy][Fx]) {
+    return NewEllipticalProto (Clusterer->SampleSize, Cluster, Statistics);
+  }
+  return NULL;
+}
 
 /* MakeSphericalProto *******************************************************
 Parameters:	Clusterer	data struct containing samples being clustered
@@ -1140,7 +1320,7 @@ PROTOTYPE *MakeMixedProto(CLUSTERER *Clusterer,
     if (UniformBuckets == NULL)
       UniformBuckets =
         GetBuckets (uniform, Cluster->SampleCount, Confidence);
-    MakeDimUniform(i, Proto, Statistics); 
+    MakeDimUniform(i, Proto, Statistics);
     FillBuckets (UniformBuckets, Cluster, i, &(Clusterer->ParamDesc[i]),
       Proto->Mean[i], Proto->Variance.Elliptical[i]);
     if (DistributionOK (UniformBuckets))
@@ -1149,13 +1329,13 @@ PROTOTYPE *MakeMixedProto(CLUSTERER *Clusterer,
   }
   // if any dimension failed to match a distribution, discard the proto
   if (i < Clusterer->SampleSize) {
-    FreePrototype(Proto); 
+    FreePrototype(Proto);
     Proto = NULL;
   }
   if (UniformBuckets != NULL)
-    FreeBuckets(UniformBuckets); 
+    FreeBuckets(UniformBuckets);
   if (RandomBuckets != NULL)
-    FreeBuckets(RandomBuckets); 
+    FreeBuckets(RandomBuckets);
   return (Proto);
 }                                // MakeMixedProto
 
@@ -1171,7 +1351,7 @@ Return:		None
 Exceptions:	None
 History:	6/20/89, DSJ, Created.
 ******************************************************************************/
-void MakeDimRandom(UINT16 i, PROTOTYPE *Proto, PARAM_DESC *ParamDesc) { 
+void MakeDimRandom(UINT16 i, PROTOTYPE *Proto, PARAM_DESC *ParamDesc) {
   Proto->Distrib[i] = D_random;
   Proto->Mean[i] = ParamDesc->MidRange;
   Proto->Variance.Elliptical[i] = ParamDesc->HalfRange;
@@ -1197,7 +1377,7 @@ Return:		None
 Exceptions:	None
 History:	6/20/89, DSJ, Created.
 ******************************************************************************/
-void MakeDimUniform(UINT16 i, PROTOTYPE *Proto, STATISTICS *Statistics) { 
+void MakeDimUniform(UINT16 i, PROTOTYPE *Proto, STATISTICS *Statistics) {
   Proto->Distrib[i] = uniform;
   Proto->Mean[i] = Proto->Cluster->Mean[i] +
     (Statistics->Min[i] + Statistics->Max[i]) / 2;
@@ -1263,7 +1443,7 @@ ComputeStatistics (INT16 N, PARAM_DESC ParamDesc[], CLUSTER * Cluster) {
       *CoVariance = 0;
   }
   // find each sample in the cluster and merge it into the statistics
-  InitSampleSearch(SearchState, Cluster); 
+  InitSampleSearch(SearchState, Cluster);
   while ((Sample = NextSample (&SearchState)) != NULL) {
     for (i = 0; i < N; i++) {
       Distance[i] = Sample->Mean[i] - Cluster->Mean[i];
@@ -1295,13 +1475,17 @@ ComputeStatistics (INT16 N, PARAM_DESC ParamDesc[], CLUSTER * Cluster) {
   for (i = 0; i < N; i++)
   for (j = 0; j < N; j++, CoVariance++) {
     *CoVariance /= SampleCountAdjustedForBias;
-    if (j == i)
+    if (j == i) {
+      if (*CoVariance < MINVARIANCE)
+        *CoVariance = MINVARIANCE;
       Statistics->AvgVariance *= *CoVariance;
+    }
   }
-  Statistics->AvgVariance = pow (Statistics->AvgVariance, 1.0 / N);
+  Statistics->AvgVariance = (float)pow((double)Statistics->AvgVariance,
+                                       1.0 / N);
 
   // release temporary memory and return
-  memfree(Distance); 
+  memfree(Distance);
   return (Statistics);
 }                                // ComputeStatistics
 
@@ -1333,7 +1517,8 @@ PROTOTYPE *NewSphericalProto(UINT16 N,
 
   Proto->Magnitude.Spherical =
     1.0 / sqrt ((double) (2.0 * PI * Proto->Variance.Spherical));
-  Proto->TotalMagnitude = pow (Proto->Magnitude.Spherical, (double) N);
+  Proto->TotalMagnitude = (float)pow((double)Proto->Magnitude.Spherical,
+                                     (double) N);
   Proto->Weight.Spherical = 1.0 / Proto->Variance.Spherical;
   Proto->LogMagnitude = log ((double) Proto->TotalMagnitude);
 
@@ -1400,7 +1585,7 @@ Return:		Pointer to a new mixed prototype data structure
 Exceptions:	None
 History:	6/19/89, DSJ, Created.
 ********************************************************************************/
-PROTOTYPE *NewMixedProto(INT16 N, CLUSTER *Cluster, STATISTICS *Statistics) { 
+PROTOTYPE *NewMixedProto(INT16 N, CLUSTER *Cluster, STATISTICS *Statistics) {
   PROTOTYPE *Proto;
   int i;
 
@@ -1426,7 +1611,7 @@ Return:		Pointer to new simple prototype
 Exceptions:	None
 History:	6/19/89, DSJ, Created.
 *******************************************************************************/
-PROTOTYPE *NewSimpleProto(INT16 N, CLUSTER *Cluster) { 
+PROTOTYPE *NewSimpleProto(INT16 N, CLUSTER *Cluster) {
   PROTOTYPE *Proto;
   int i;
 
@@ -1532,14 +1717,14 @@ BUCKETS *GetBuckets(DISTRIBUTION Distribution,
     OldBuckets[(int) Distribution] =
       delete_d (OldBuckets[(int) Distribution], Buckets, ListEntryMatch);
     if (SampleCount != Buckets->SampleCount)
-      AdjustBuckets(Buckets, SampleCount); 
+      AdjustBuckets(Buckets, SampleCount);
     if (Confidence != Buckets->Confidence) {
       Buckets->Confidence = Confidence;
       Buckets->ChiSquared = ComputeChiSquared
         (DegreesOfFreedom (Distribution, Buckets->NumberOfBuckets),
         Confidence);
     }
-    InitBuckets(Buckets); 
+    InitBuckets(Buckets);
   }
   else                           // otherwise create a new structure
     Buckets = MakeBuckets (Distribution, SampleCount, Confidence);
@@ -1650,7 +1835,7 @@ BUCKETS *MakeBuckets(DISTRIBUTION Distribution,
 
 
 //---------------------------------------------------------------------------
-UINT16 OptimumNumberOfBuckets(UINT32 SampleCount) { 
+UINT16 OptimumNumberOfBuckets(UINT32 SampleCount) {
 /*
  **	Parameters:
  **		SampleCount	number of samples to be tested
@@ -1758,7 +1943,7 @@ ComputeChiSquared (UINT16 DegreesOfFreedom, FLOAT64 Alpha)
 
 
 //---------------------------------------------------------------------------
-FLOAT64 NormalDensity(INT32 x) { 
+FLOAT64 NormalDensity(INT32 x) {
 /*
  **	Parameters:
  **		x	number to compute the normal probability density for
@@ -1788,7 +1973,7 @@ FLOAT64 NormalDensity(INT32 x) {
 
 
 //---------------------------------------------------------------------------
-FLOAT64 UniformDensity(INT32 x) { 
+FLOAT64 UniformDensity(INT32 x) {
 /*
  **	Parameters:
  **		x	number to compute the uniform probability density for
@@ -1815,7 +2000,7 @@ FLOAT64 UniformDensity(INT32 x) {
 
 
 //---------------------------------------------------------------------------
-FLOAT64 Integral(FLOAT64 f1, FLOAT64 f2, FLOAT64 Dx) { 
+FLOAT64 Integral(FLOAT64 f1, FLOAT64 f2, FLOAT64 Dx) {
 /*
  **	Parameters:
  **		f1	value of function at x1
@@ -1889,7 +2074,7 @@ void FillBuckets(BUCKETS *Buckets,
        than the mean are placed in the last bucket; samples less than the
        mean are placed in the first bucket. */
 
-    InitSampleSearch(SearchState, Cluster); 
+    InitSampleSearch(SearchState, Cluster);
     i = 0;
     while ((Sample = NextSample (&SearchState)) != NULL) {
       if (Sample->Mean[Dim] > Mean)
@@ -1906,7 +2091,7 @@ void FillBuckets(BUCKETS *Buckets,
   }
   else {
     // search for all samples in the cluster and add to histogram buckets
-    InitSampleSearch(SearchState, Cluster); 
+    InitSampleSearch(SearchState, Cluster);
     while ((Sample = NextSample (&SearchState)) != NULL) {
       switch (Buckets->Distribution) {
         case normal:
@@ -2018,7 +2203,7 @@ UINT16 UniformBucket(PARAM_DESC *ParamDesc,
 
 
 //---------------------------------------------------------------------------
-BOOL8 DistributionOK(BUCKETS *Buckets) { 
+BOOL8 DistributionOK(BUCKETS *Buckets) {
 /*
  **	Parameters:
  **		Buckets		histogram data to perform chi-square test on
@@ -2059,7 +2244,7 @@ BOOL8 DistributionOK(BUCKETS *Buckets) {
 
 
 //---------------------------------------------------------------------------
-void FreeStatistics(STATISTICS *Statistics) { 
+void FreeStatistics(STATISTICS *Statistics) {
 /*
  **	Parameters:
  **		Statistics	pointer to data structure to be freed
@@ -2078,12 +2263,12 @@ void FreeStatistics(STATISTICS *Statistics) {
   memfree (Statistics->CoVariance);
   memfree (Statistics->Min);
   memfree (Statistics->Max);
-  memfree(Statistics); 
+  memfree(Statistics);
 }                                // FreeStatistics
 
 
 //---------------------------------------------------------------------------
-void FreeBuckets(BUCKETS *Buckets) { 
+void FreeBuckets(BUCKETS *Buckets) {
 /*
  **	Parameters:
  **		Buckets		pointer to data structure to be freed
@@ -2108,7 +2293,7 @@ void FreeBuckets(BUCKETS *Buckets) {
 
 
 //---------------------------------------------------------------------------
-void FreeCluster(CLUSTER *Cluster) { 
+void FreeCluster(CLUSTER *Cluster) {
 /*
  **	Parameters:
  **		Cluster		pointer to cluster to be freed
@@ -2128,13 +2313,13 @@ void FreeCluster(CLUSTER *Cluster) {
   if (Cluster != NULL) {
     FreeCluster (Cluster->Left);
     FreeCluster (Cluster->Right);
-    memfree(Cluster); 
+    memfree(Cluster);
   }
 }                                // FreeCluster
 
 
 //---------------------------------------------------------------------------
-UINT16 DegreesOfFreedom(DISTRIBUTION Distribution, UINT16 HistogramBuckets) { 
+UINT16 DegreesOfFreedom(DISTRIBUTION Distribution, UINT16 HistogramBuckets) {
 /*
  **	Parameters:
  **		Distribution		distribution being tested for
@@ -2208,7 +2393,7 @@ int ListEntryMatch(void *arg1,    //ListNode
 
 
 //---------------------------------------------------------------------------
-void AdjustBuckets(BUCKETS *Buckets, UINT32 NewSampleCount) { 
+void AdjustBuckets(BUCKETS *Buckets, UINT32 NewSampleCount) {
 /*
  **	Parameters:
  **		Buckets		histogram data structure to adjust
@@ -2238,7 +2423,7 @@ void AdjustBuckets(BUCKETS *Buckets, UINT32 NewSampleCount) {
 
 
 //---------------------------------------------------------------------------
-void InitBuckets(BUCKETS *Buckets) { 
+void InitBuckets(BUCKETS *Buckets) {
 /*
  **	Parameters:
  **		Buckets		histogram data structure to init
@@ -2286,7 +2471,7 @@ int AlphaMatch(void *arg1,    //CHISTRUCT                             *ChiStruct
 
 
 //---------------------------------------------------------------------------
-CHISTRUCT *NewChiStruct(UINT16 DegreesOfFreedom, FLOAT64 Alpha) { 
+CHISTRUCT *NewChiStruct(UINT16 DegreesOfFreedom, FLOAT64 Alpha) {
 /*
  **	Parameters:
  **		DegreesOfFreedom	degrees of freedom for new chi value
@@ -2377,7 +2562,7 @@ void *FunctionParams, FLOAT64 InitialGuess, FLOAT64 Accuracy)
 
 
 //---------------------------------------------------------------------------
-FLOAT64 ChiArea(CHISTRUCT *ChiParams, FLOAT64 x) { 
+FLOAT64 ChiArea(CHISTRUCT *ChiParams, FLOAT64 x) {
 /*
  **	Parameters:
  **		ChiParams	contains degrees of freedom and alpha
@@ -2471,7 +2656,7 @@ CLUSTER * Cluster, FLOAT32 MaxIllegal)
 
   if (Clusterer->NumChar > NumFlags) {
     if (CharFlags != NULL)
-      memfree(CharFlags); 
+      memfree(CharFlags);
     NumFlags = Clusterer->NumChar;
     CharFlags = (BOOL8 *) Emalloc (NumFlags * sizeof (BOOL8));
   }
@@ -2480,7 +2665,7 @@ CLUSTER * Cluster, FLOAT32 MaxIllegal)
     CharFlags[i] = FALSE;
 
   // find each sample in the cluster and check if we have seen it before
-  InitSampleSearch(SearchState, Cluster); 
+  InitSampleSearch(SearchState, Cluster);
   while ((Sample = NextSample (&SearchState)) != NULL) {
     CharID = Sample->CharID;
     if (CharFlags[CharID] == FALSE) {
@@ -2500,3 +2685,102 @@ CLUSTER * Cluster, FLOAT32 MaxIllegal)
   return (FALSE);
 
 }                                // MultipleCharSamples
+
+// Compute the inverse of a matrix using LU decomposition with partial pivoting.
+// The return value is the sum of norms of the off-diagonal terms of the
+// product of a and inv. (A measure of the error.)
+double InvertMatrix(const float* input, int size, float* inv) {
+  double** U;  // The upper triangular array.
+  double* Umem;
+  double** U_inv;  // The inverse of U.
+  double* U_invmem;
+  double** L;  // The lower triangular array.
+  double* Lmem;
+
+  // Allocate memory for the 2D arrays.
+  ALLOC_2D_ARRAY(size, size, Umem, U, double);
+  ALLOC_2D_ARRAY(size, size, U_invmem, U_inv, double);
+  ALLOC_2D_ARRAY(size, size, Lmem, L, double);
+
+  // Initialize the working matrices. U starts as input, L as I and U_inv as O.
+  int row;
+  int col;
+  for (row = 0; row < size; row++) {
+    for (col = 0; col < size; col++) {
+      U[row][col] = input[row*size + col];
+      L[row][col] = row == col ? 1.0 : 0.0;
+      U_inv[row][col] = 0.0;
+    }
+  }
+
+  // Compute forward matrix by inversion by LU decomposition of input.
+  for (col = 0; col < size; ++col) {
+    // Find best pivot
+    int best_row = 0;
+    double best_pivot = -1.0;
+    for (row = col; row < size; ++row) {
+      if (Abs(U[row][col]) > best_pivot) {
+        best_pivot = Abs(U[row][col]);
+        best_row = row;
+      }
+    }
+    // Exchange pivot rows.
+    if (best_row != col) {
+      for (int k = 0; k < size; ++k) {
+        double tmp = U[best_row][k];
+        U[best_row][k] = U[col][k];
+        U[col][k] = tmp;
+        tmp = L[best_row][k];
+        L[best_row][k] = L[col][k];
+        L[col][k] = tmp;
+      }
+    }
+    // Now do the pivot itself.
+    for (row = col + 1; row < size; ++row) {
+      double ratio = -U[row][col] / U[col][col];
+      for (int j = col; j < size; ++j) {
+        U[row][j] += U[col][j] * ratio;
+      }
+      for (int k = 0; k < size; ++k) {
+        L[row][k] += L[col][k] * ratio;
+      }
+    }
+  }
+  // Next invert U.
+  for (col = 0; col < size; ++col) {
+    U_inv[col][col] = 1.0 / U[col][col];
+    for (row = col - 1; row >= 0; --row) {
+      double total = 0.0;
+      for (int k = col; k > row; --k) {
+        total += U[row][k] * U_inv[k][col];
+      }
+      U_inv[row][col] = -total / U[row][row];
+    }
+  }
+  // Now the answer is U_inv.L.
+  for (row = 0; row < size; row++) {
+    for (col = 0; col < size; col++) {
+      double sum = 0.0;
+      for (int k = row; k < size; ++k) {
+        sum += U_inv[row][k] * L[k][col];
+      }
+      inv[row*size + col] = sum;
+    }
+  }
+  // Check matrix product.
+  double error_sum = 0.0;
+  for (row = 0; row < size; row++) {
+    for (col = 0; col < size; col++) {
+      double sum = 0.0;
+      for (int k = 0; k < size; ++k) {
+        sum += input[row*size + k] * inv[k *size + col];
+      }
+      if (row != col) {
+        error_sum += Abs(sum);
+      }
+    }
+  }
+  return error_sum;
+}
+
+

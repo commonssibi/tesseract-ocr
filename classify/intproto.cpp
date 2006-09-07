@@ -24,16 +24,14 @@
 #include "mfoutline.h"
 #include "emalloc.h"
 #include "const.h"
-#include "minmax.h"
+#include "ndminx.h"
 #include "adaptmatch.h"
 
 //extern GetPicoFeatureLength();
 
 #include <math.h>
 #include <stdio.h>
-#ifdef __UNIX__
 #include <assert.h>
-#endif
 
 /* match debug display constants*/
 #define DISPLAY_OFFSET  (0.5  * INT_CHAR_NORM_RANGE)
@@ -877,7 +875,11 @@ INT_TEMPLATES ReadIntTemplates(FILE *File, BOOL8 swap) {
     cprintf ("Bad read of inttemp!\n");
   //      int tmp=__NATIVE__;
                                  //xiaofan
-  if (__NATIVE__ == INTEL && swap) {
+  // swap status is determined automatically
+  if (swap && Templates->NumClassPruners > 0 &&
+      Templates->NumClassPruners < 1000)
+    swap = FALSE;
+  if (swap) {
     reverse32 (&Templates->NumClassPruners);
     reverse32 (&Templates->NumClasses);
     for (i = 0; i < MAX_CLASS_ID + 1; i++)
@@ -891,7 +893,7 @@ INT_TEMPLATES ReadIntTemplates(FILE *File, BOOL8 swap) {
       fread ((char *) Pruner, 1, sizeof (CLASS_PRUNER_STRUCT),
       File)) != sizeof (CLASS_PRUNER_STRUCT))
       cprintf ("Bad read of inttemp!\n");
-    if (__NATIVE__ == INTEL && swap) {
+    if (swap) {
       for (j = 0; j < NUM_CP_BUCKETS; j++) {
         for (x = 0; x < NUM_CP_BUCKETS; x++) {
           for (y = 0; y < NUM_CP_BUCKETS; y++) {
@@ -912,7 +914,7 @@ INT_TEMPLATES ReadIntTemplates(FILE *File, BOOL8 swap) {
     if ((nread = fread ((char *) Class, 1, sizeof (INT_CLASS_STRUCT), File))
       != sizeof (INT_CLASS_STRUCT))
       cprintf ("Bad read of inttemp!\n");
-    if (__NATIVE__ == INTEL && swap) {
+    if (swap) {
       reverse16 (&Class->NumProtos);
       for (j = 0; j < MAX_NUM_CONFIGS; j++)
         reverse16 (&Class->ConfigLengths[j]);
@@ -935,7 +937,7 @@ INT_TEMPLATES ReadIntTemplates(FILE *File, BOOL8 swap) {
         fread ((char *) ProtoSet, 1, sizeof (PROTO_SET_STRUCT),
         File)) != sizeof (PROTO_SET_STRUCT))
         cprintf ("Bad read of inttemp!\n");
-      if (__NATIVE__ == INTEL && swap) {
+      if (swap) {
         for (x = 0; x < NUM_PP_PARAMS; x++)
           for (y = 0; y < NUM_PP_BUCKETS; y++)
             for (z = 0; z < WERDS_PER_PP_VECTOR; z++)

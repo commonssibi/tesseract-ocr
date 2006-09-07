@@ -7,7 +7,7 @@
 # ----------------------------------------
 
 AC_PREREQ(2.50)
-AC_INIT(Tesseract, 1.0, theraysmith@users.sourceforge.net)
+AC_INIT(Tesseract, 1.01, theraysmith@users.sourceforge.net)
 AC_PACKAGE_TARNAME(tesseract-ocr)
 AC_REVISION($Id$)
 AC_CONFIG_AUX_DIR(config)
