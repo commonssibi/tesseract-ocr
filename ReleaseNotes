@@ -1,0 +1,36 @@
+Tesseract release notes, Sep 7 2006 - V1.01.
+
+Fixes for this release:
+Added mfcpch.cpp and getopt.cpp for VC++.
+Fixed problem with greyscale images and no libtiff.
+Stopped debug window from being used for the usage output.
+Fixed load of inttemp for big-endian architectures.
+Fixed some Mac compilation issues.
+
+This version should read uncompressed 8 bit grey and 24 bit color tiffs
+without having to have libtiff. It does a dumb threshold though, so don't
+expect good results from poor contrast or images of natural scenes etc.
+
+If you just run tesseract with no command line args you should now get a
+sensible usage message on linux, with or without X-windows.
+
+If you can get it to compile on a PPC Mac, it may now run correctly,
+although not all the build issues are fixed yet.
+
+Building Tesseract:
+Windows:
+Unpack the tar.gz archive
+Open tesseract.dsw in DevStudio (preferably version 6, higher versions will be more difficult)
+Set Win32 - Release as the active configuration.
+Build.
+Copy tesseract.exe from bin.rel up one directory level.
+Run tesseract phototest.tif phototest
+This will create phototest.txt.
+
+Linux:
+Unpack the tar.gz archive
+./configure
+make
+Copy tesseract from ccmain up one directory level (or create a symbolic link)
+Run tesseract phototest.tif phototest
+This will create phototest.txt.
