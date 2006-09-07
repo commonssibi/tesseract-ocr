@@ -150,7 +150,9 @@ typedef unsigned short BOOLEAN;
 //typedef HANDLE FD*  PHANDLE;
 
 // definitions of portable data types (numbers and characters)
+#if (_MSC_VER < 1400)  // For VC 8.0.
 typedef SIGNED char INT8;
+#endif
 typedef unsigned char UINT8;
 typedef short INT16;
 typedef unsigned short UINT16;
@@ -163,7 +165,9 @@ typedef double FLOAT64;
 typedef unsigned char BOOL8;
 
 // definitions of pointers to portable data types
+#if (_MSC_VER < 1400)  // For VC 8.0.
 typedef SIGNED char *PINT8;
+#endif
 typedef unsigned char *PUINT8;
 typedef short *PINT16;
 typedef unsigned short *PUINT16;
