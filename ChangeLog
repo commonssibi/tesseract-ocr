@@ -5,3 +5,7 @@ Sep 7 2006 - V1.01.
           Stopped debug window from being used for the usage output.
           Fixed load of inttemp for big-endian architectures.
           Fixed some Mac compilation issues.
+Oct 4 2006 - V1.02
+          Removed dependency on Aspirin.
+          Fixed a few missing Apache license headers.
+          Removed $log.

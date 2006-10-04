@@ -90,7 +90,7 @@ am__quote = @am__quote@
 install_sh = @install_sh@
 
 # TODO(luc) Add 'doc' to this list when ready
-SUBDIRS = aspirin ccstruct ccutil classify cutil dict display image textord viewer wordrec ccmain
+SUBDIRS = ccstruct ccutil classify cutil dict display image textord viewer wordrec ccmain
 
 EXTRA_DIST = tessdata phototest.tif tesseract.dsp tesseract.dsw
 subdir = .

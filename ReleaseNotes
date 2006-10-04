@@ -1,3 +1,6 @@
+Tesseract release notes, Oct 4 2006 - V1.01.
+Removed dependency on aspirin. *All* code is now licensed under Apache2.0.
+
 Tesseract release notes, Sep 7 2006 - V1.01.
 
 Fixes for this release:

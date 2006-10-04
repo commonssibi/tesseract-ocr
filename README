@@ -2,7 +2,7 @@ Introduction
 ============
 This package contains the Tesseract Open Source OCR Engine.
 Orignally developed at Hewlett Packard Laboratories Bristol and
-at Hewlett Packard Co, Greeley Colorado, the majority of the code
+at Hewlett Packard Co, Greeley Colorado, all the code
 in this distribution is now licensed under the Apache License:
 
 ** Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,36 +18,7 @@ in this distribution is now licensed under the Apache License:
 
 Other Dependencies and Licenses:
 ================================
-The Aspirin/MIGRAINES system in the aspirin directory is separately
-licensed thus:
-#
-
-  ****************   NO WARRANTY  *****************
- 
-Since the Aspirin/MIGRAINES system is licensed free of charge,
-Russell Leighton and the MITRE Corporation provide absolutley 
-no warranty. Should the Aspirin/MIGRAINES system prove defective, 
-you must assume the cost of all necessary servicing, repair or correction.
-In no way will Russell Leighton or the MITRE Corporation be liable to you for
-damages, including any lost profits, lost monies, or other
-special, incidental or consequential damages arising out of
-the use or inability to use the Aspirin/MIGRAINES system.
- 
-  *****************   COPYRIGHT  *******************
- 
-This software is the copyright of Russell Leighton and the MITRE Corporation. 
-It may be freely used and modified for research and development
-purposes. We require a brief acknowledgement in any research
-paper or other publication where this software has made a significant
-contribution. If you wish to use it for commercial gain you must contact 
-The MITRE Corporation for conditions of use. Russell Leighton and 
-the MITRE Corporation provide absolutely NO WARRANTY for this software.
- 
-   August, 1992 
-   Russell Leighton
-   The MITRE Corporation
-   7525 Colshire Dr.
-   McLean, Va. 22102-3481
+The Aspirin/MIGRAINES system is no longer required.
 
 Tesseract can also make use of the libtiff library. (www.libtiff.org)
 Without libtiff, Tesseract can only read uncompressed and G3 compressed
@@ -83,7 +54,6 @@ ccstruct   Classes to hold information about a page as it is being processed.
 viewer     The client side of a client server viewing system.
            Unfortunately, at this time, the server side is not available.
 image      Image class and processing functions.
-aspirin    Aspirin/MIGRAINES code and the Tesseract interace in nnmatch.cpp.
 dict       Language model code.
 cutil      Code for file I/O, lists, heaps etc, from the old C code.
 ccutil     Somewhat newer code for lists, memory allocation etc from the
