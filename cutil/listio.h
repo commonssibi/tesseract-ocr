@@ -22,17 +22,9 @@
 ** limitations under the License.
 #
 ################################################################################
-
-  $Log$
-  Revision 1.1  2006/06/16 22:17:07  lvincent
-  Initial checkin of Tesseract 1.0
-
-  Revision 1.1.1.1  2004/02/20 19:38:58  slumos
-  Import original HP distribution
-
-* Revision 1.5  89/06/27  11:56:00  11:56:00  marks (Mark Seaman)
-* Fixed MAC_OR_DOS bug
-*
+ * Revision 1.5  89/06/27  11:56:00  11:56:00  marks (Mark Seaman)
+ * Fixed MAC_OR_DOS bug
+ *
 
   This file contains the interface definitions to a set of general purpose
   list I/O routines.
@@ -47,5 +39,5 @@
 /*----------------------------------------------------------------------------
         Public Funtion Prototypes
 --------------------------------------------------------------------------*/
-LIST read_list(const char *filename); 
+LIST read_list(const char *filename);
 #endif

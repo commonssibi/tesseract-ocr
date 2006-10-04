@@ -48,11 +48,11 @@
 CLISTIZEH (STRING) CLISTIZE (STRING)
 #define EXTERN
 EXTERN
-INT_VAR (tessedit_reject_mode, 5, "Rejection algorithm");
+INT_VAR (tessedit_reject_mode, 0, "Rejection algorithm");
 EXTERN
 INT_VAR (tessedit_ok_mode, 5, "Acceptance decision algorithm");
 EXTERN
-BOOL_VAR (tessedit_use_nn, TRUE, "");
+BOOL_VAR (tessedit_use_nn, FALSE, "");
 EXTERN
 BOOL_VAR (tessedit_rejection_debug, FALSE, "Adaption debug");
 EXTERN
@@ -317,7 +317,7 @@ void set_done(  //set done flag
 
   else {
     tprintf ("BAD tessedit_ok_mode\n");
-    err_exit(); 
+    err_exit();
   }
 }
 
@@ -338,17 +338,17 @@ void make_reject_map(            //make rej map for wd //detailed results
                     ) {
   INT16 i;
 
-  flip_0O(word); 
+  flip_0O(word);
   check_debug_pt (word, -1);     //For trap only
   set_done(word, pass);  //Set acceptance
   word->reject_map.initialise (word->best_choice->string ().length ());
-  reject_blanks(word); 
+  reject_blanks(word);
   /*
   0: Rays original heuristic - the baseline
   */
   if (tessedit_reject_mode == 0) {
     if (!word->done)
-      reject_poor_matches(word, blob_choices); 
+      reject_poor_matches(word, blob_choices);
   }
   /*
   5: Reject I/1/l from words where there is no strong contextual confirmation;
@@ -359,7 +359,7 @@ void make_reject_map(            //make rej map for wd //detailed results
     if (bln_x_height / word->denorm.scale () <= min_sane_x_ht_pixels)
       word->reject_map.rej_word_small_xht ();
     else {
-      one_ell_conflict(word, TRUE); 
+      one_ell_conflict(word, TRUE);
       /*
         Originally the code here just used the done flag. Now I have duplicated
         and unpacked the conditions for setting the done flag so that each
@@ -405,11 +405,11 @@ void make_reject_map(            //make rej map for wd //detailed results
   }
   else {
     tprintf ("BAD tessedit_reject_mode\n");
-    err_exit(); 
+    err_exit();
   }
 
   if (tessedit_image_border > -1)
-    reject_edge_blobs(word); 
+    reject_edge_blobs(word);
 
   check_debug_pt (word, 10);
   if (tessedit_rejection_debug) {
@@ -424,13 +424,13 @@ void make_reject_map(            //make rej map for wd //detailed results
 
   if (tessedit_use_nn && (pass == 2) &&
     word->reject_map.recoverable_rejects ())
-    nn_recover_rejects(word, row); 
-  flip_hyphens(word); 
+    nn_recover_rejects(word, row);
+  flip_hyphens(word);
   check_debug_pt (word, 20);
 }
 
 
-void reject_blanks(WERD_RES *word) { 
+void reject_blanks(WERD_RES *word) {
   INT16 i;
 
   for (i = 0; word->best_choice->string ()[i] != '\0'; i++) {
@@ -441,7 +441,7 @@ void reject_blanks(WERD_RES *word) {
 }
 
 
-void reject_I_1_L(WERD_RES *word) { 
+void reject_I_1_L(WERD_RES *word) {
   INT16 i;
 
   for (i = 0; word->best_choice->string ()[i] != '\0'; i++) {
@@ -546,7 +546,7 @@ float compute_reject_threshold(  //compute threshold //detailed results
   //      tprintf("First=%g, last=%g, gap=%g, threshold=%g\n",
   //              ratings[0],ratings[index],bestgap,threshold);
 
-  free_mem(ratings); 
+  free_mem(ratings);
   return threshold;
 }
 
@@ -579,7 +579,7 @@ int sort_floats(                   //qsort function
  * in the word which are too close to the edge as they could be clipped.
  *************************************************************************/
 
-void reject_edge_blobs(WERD_RES *word) { 
+void reject_edge_blobs(WERD_RES *word) {
   BOX word_box = word->word->bounding_box ();
   BOX blob_box;
   PBLOB_IT blob_it = word->outword->blob_list ();
@@ -619,7 +619,7 @@ void reject_edge_blobs(WERD_RES *word) {
  * - A bundle of contextual heuristics!
  **********************************************************************/
 
-BOOL8 one_ell_conflict(WERD_RES *word_res, BOOL8 update_map) { 
+BOOL8 one_ell_conflict(WERD_RES *word_res, BOOL8 update_map) {
   const char *word;
   INT16 word_len;                //its length
   INT16 first_alphanum_idx;
@@ -652,7 +652,7 @@ BOOL8 one_ell_conflict(WERD_RES *word_res, BOOL8 update_map) {
       !STRING (conflict_set_I_l_1).contains (word[i]);
   if (!non_conflict_set_char) {
     if (update_map)
-      reject_I_1_L(word_res); 
+      reject_I_1_L(word_res);
     return TRUE;
   }
 
@@ -681,7 +681,7 @@ BOOL8 one_ell_conflict(WERD_RES *word_res, BOOL8 update_map) {
         word_res->best_choice->string ()[first_alphanum_idx] = 'I';
         if (update_map)
           word_res->reject_map[first_alphanum_idx].
-            setrej_1Il_conflict(); 
+            setrej_1Il_conflict();
         return TRUE;
       }
       else {
@@ -696,7 +696,7 @@ BOOL8 one_ell_conflict(WERD_RES *word_res, BOOL8 update_map) {
         word_res->best_choice->string ()[first_alphanum_idx] = 'l';
         if (update_map)
           word_res->reject_map[first_alphanum_idx].
-            setrej_1Il_conflict(); 
+            setrej_1Il_conflict();
         return TRUE;
       }
       else {
@@ -774,13 +774,13 @@ BOOL8 one_ell_conflict(WERD_RES *word_res, BOOL8 update_map) {
   }
   else {
     if (update_map)
-      reject_I_1_L(word_res); 
+      reject_I_1_L(word_res);
     return TRUE;
   }
 }
 
 
-INT16 first_alphanum_pos(const char *word) { 
+INT16 first_alphanum_pos(const char *word) {
   INT16 i;
 
   for (i = 0; word[i] != '\0'; i++) {
@@ -791,7 +791,7 @@ INT16 first_alphanum_pos(const char *word) {
 }
 
 
-INT16 alpha_count(const char *word) { 
+INT16 alpha_count(const char *word) {
   INT16 i;
   INT16 count = 0;
 
@@ -803,7 +803,7 @@ INT16 alpha_count(const char *word) {
 }
 
 
-BOOL8 word_contains_non_1_digit(const char *word) { 
+BOOL8 word_contains_non_1_digit(const char *word) {
   INT16 i;
 
   for (i = 0; word[i] != '\0'; i++) {
@@ -885,10 +885,10 @@ BOOL8 ambig_word(                     //original word
  * (NOTE that a character is assumed to be a member of only ONE conflict set.)
  *************************************************************************/
 
-const char *char_ambiguities(char c) { 
+const char *char_ambiguities(char c) {
   static STRING_CLIST conflict_sets;
   static BOOL8 read_conflict_sets = FALSE;
-  STRING_C_IT cs_it(&conflict_sets); 
+  STRING_C_IT cs_it(&conflict_sets);
   const char *cs;
   STRING cs_file_name;
   FILE *cs_file;
@@ -923,16 +923,16 @@ const char *char_ambiguities(char c) {
 }
 
 
-void test_ambigs(const char *word) { 
+void test_ambigs(const char *word) {
   char orig_word[80];
   char temp_word[80];
 
   if (strlen (word) > 80)
     tprintf ("Ridiculously long word \"%s\"\n", word);
   else {
-    strcpy(orig_word, word); 
+    strcpy(orig_word, word);
     while (strlen (orig_word) > 0) {
-      strcpy(temp_word, orig_word); 
+      strcpy(temp_word, orig_word);
 
       #ifndef SECURE_NAMES
       if (ambig_word (orig_word, temp_word, 0))
@@ -954,7 +954,7 @@ void test_ambigs(const char *word) {
  * choice.
  *************************************************************************/
 
-void nn_recover_rejects(WERD_RES *word, ROW *row) { 
+void nn_recover_rejects(WERD_RES *word, ROW *row) {
                                  //copy for debug
   REJMAP old_map = word->reject_map;
   /*
@@ -964,16 +964,16 @@ void nn_recover_rejects(WERD_RES *word, ROW *row) {
     anyway).
   */
 
-  set_global_subsubloc_code(SUBSUBLOC_NN); 
-  nn_match_word(word, row); 
+  set_global_subsubloc_code(SUBSUBLOC_NN);
+  nn_match_word(word, row);
 
   if (no_unrej_1Il)
-    dont_allow_1Il(word); 
+    dont_allow_1Il(word);
   if (no_unrej_dubious_chars)
-    dont_allow_dubious_chars(word); 
+    dont_allow_dubious_chars(word);
 
   if (rej_mostly_reject_mode == 1)
-    reject_mostly_rejects(word); 
+    reject_mostly_rejects(word);
   /*
     IF there are no unrejected alphanumerics AND
       The word is not an acceptable single non alphanum char word  AND
@@ -999,7 +999,7 @@ void nn_recover_rejects(WERD_RES *word, ROW *row) {
     tprintf ("\n");
   }
   #endif
-  set_global_subsubloc_code(SUBSUBLOC_OTHER); 
+  set_global_subsubloc_code(SUBSUBLOC_OTHER);
 }
 
 
@@ -1042,7 +1042,7 @@ void nn_match_word(  //Match a word
   checked_dict_word = word_in_dict && (safe_dict_word (word_string) > 0);
   sensible_word = acceptable_word_string (word_string) != AC_UNACCEPTABLE;
 
-  word_char_quality(word, row, &char_quality, &accepted_char_quality); 
+  word_char_quality(word, row, &char_quality, &accepted_char_quality);
   good_quality_word = word->best_choice->string ().length () == char_quality;
 
   #ifndef SECURE_NAMES
@@ -1061,7 +1061,7 @@ void nn_match_word(  //Match a word
       word->best_choice->string ().string (),
       word->outword->blob_list ()->length ());
     #endif
-    err_exit(); 
+    err_exit();
   }
 
   copy_outword = *(word->outword);
@@ -1084,7 +1084,7 @@ void nn_match_word(  //Match a word
   /*
     Get the image of the word and the pix positions of each char
   */
-  char_clip_word(&copy_outword, page_image, pixrow_list, imlines, pix_box); 
+  char_clip_word(&copy_outword, page_image, pixrow_list, imlines, pix_box);
   if (show_char_clipping) {
     win = display_clip_image (&copy_outword, page_image,
       pixrow_list, pix_box);
@@ -1105,7 +1105,7 @@ void nn_match_word(  //Match a word
     if (copy_outword.flag (W_INVERSE))
       invert_image(&clip_image);  //invert white on black for scaling &NN
     scaled_image.create (net_image_size, net_image_size, 1);
-    scale_image(clip_image, scaled_image); 
+    scale_image(clip_image, scaled_image);
     baseline_pos *= net_image_size / clip_image_size;
     //scale with im
     centre = !pixrow_it.at_first () && !pixrow_it.at_last ();
@@ -1127,7 +1127,7 @@ void nn_match_word(  //Match a word
     }
 
     if (show_char_clipping)
-      display_images(clip_image, scaled_image); 
+      display_images(clip_image, scaled_image);
     clip_image.destroy ();
     scaled_image.destroy ();
   }
@@ -1136,7 +1136,7 @@ void nn_match_word(  //Match a word
   delete pixrow_list;
 
   if (show_char_clipping) {
-    destroy_window(win); 
+    destroy_window(win);
   }
 }
 
@@ -1219,7 +1219,7 @@ INT16 nn_match_char(                          //of character
     }
   }
 
-  callnet(input_vector, &top, &top_score, &next, &next_score); 
+  callnet(input_vector, &top, &top_score, &next, &next_score);
   conf_level = evaluate_net_match (top, top_score, next, next_score,
     tess_ch, dict_word, checked_dict_word,
     sensible_word, centre, good_quality_word);
@@ -1229,7 +1229,7 @@ INT16 nn_match_char(                          //of character
       top, top_score, next, next_score, tess_ch, conf_level);
   }
   #endif
-  free_mem(input_vector); 
+  free_mem(input_vector);
   return conf_level;
 }
 
@@ -1354,7 +1354,7 @@ INT16 evaluate_net_match(char top,
  * Let Rejects "eat" into adjacent "dubious" chars. I.e those prone to be wrong
  * if adjacent to a reject.
  *************************************************************************/
-void dont_allow_dubious_chars(WERD_RES *word) { 
+void dont_allow_dubious_chars(WERD_RES *word) {
   int i = 0;
   int rej_pos;
   int word_len = word->reject_map.length ();
@@ -1401,7 +1401,7 @@ void dont_allow_dubious_chars(WERD_RES *word) {
  * dont_allow_1Il()
  * Dont unreject LONE accepted 1Il conflict set chars
  *************************************************************************/
-void dont_allow_1Il(WERD_RES *word) { 
+void dont_allow_1Il(WERD_RES *word) {
   int i = 0;
   int word_len = word->reject_map.length ();
   const char *s = word->best_choice->string ().string ();
@@ -1452,7 +1452,7 @@ void reject_mostly_rejects(  //rej all if most rejectd
 }
 
 
-BOOL8 repeated_nonalphanum_wd(WERD_RES *word, ROW *row) { 
+BOOL8 repeated_nonalphanum_wd(WERD_RES *word, ROW *row) {
   INT16 char_quality;
   INT16 accepted_char_quality;
 
@@ -1466,7 +1466,7 @@ BOOL8 repeated_nonalphanum_wd(WERD_RES *word, ROW *row) {
   if (!repeated_ch_string (word->best_choice->string ().string ()))
     return FALSE;
 
-  word_char_quality(word, row, &char_quality, &accepted_char_quality); 
+  word_char_quality(word, row, &char_quality, &accepted_char_quality);
 
   if ((word->best_choice->string ().length () == char_quality) &&
     (char_quality == accepted_char_quality))
@@ -1476,7 +1476,7 @@ BOOL8 repeated_nonalphanum_wd(WERD_RES *word, ROW *row) {
 }
 
 
-BOOL8 repeated_ch_string(const char *rep_ch_str) { 
+BOOL8 repeated_ch_string(const char *rep_ch_str) {
   char c;
 
   if ((rep_ch_str == NULL) || (*rep_ch_str == '\0')) {
@@ -1494,7 +1494,7 @@ BOOL8 repeated_ch_string(const char *rep_ch_str) {
 }
 
 
-INT16 safe_dict_word(const char *s) { 
+INT16 safe_dict_word(const char *s) {
   int dict_word_type;
 
   dict_word_type = dict_word (s);
@@ -1505,7 +1505,7 @@ INT16 safe_dict_word(const char *s) {
 }
 
 
-void flip_hyphens(WERD_RES *word) { 
+void flip_hyphens(WERD_RES *word) {
   char *str = (char *) word->best_choice->string ().string ();
   int i = 0;
   PBLOB_IT outword_it;
@@ -1561,7 +1561,7 @@ void flip_hyphens(WERD_RES *word) {
 }
 
 
-void flip_0O(WERD_RES *word) { 
+void flip_0O(WERD_RES *word) {
   char *str = (char *) word->best_choice->string ().string ();
   int i;
   PBLOB_IT outword_it;
@@ -1645,11 +1645,11 @@ void flip_0O(WERD_RES *word) {
 }
 
 
-BOOL8 non_O_upper(char c) { 
+BOOL8 non_O_upper(char c) {
   return isupper (c) && (c != 'O');
 }
 
 
-BOOL8 non_0_digit(char c) { 
+BOOL8 non_0_digit(char c) {
   return isdigit (c) && (c != '0');
 }

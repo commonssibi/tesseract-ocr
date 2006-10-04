@@ -28,14 +28,6 @@
  * the file "list.c".
  *
  ********************************************************************************
- *    $Log$
- *    Revision 1.1  2006/06/16 22:17:07  lvincent
- *    Initial checkin of Tesseract 1.0
- *
- *    Revision 1.1.1.1  2004/02/20 19:38:58  slumos
- *    Import original HP distribution
- *
- ***********************************************************************
  *
  *                            INDEX
  *                           =======
@@ -243,39 +235,39 @@ first (rest (rest (l)))
 /*----------------------------------------------------------------------
           Public Funtion Prototypes
 ----------------------------------------------------------------------*/
-int count(LIST var_list); 
+int count(LIST var_list);
 
-LIST delete_d(LIST list, void *key, int_compare is_equal); 
+LIST delete_d(LIST list, void *key, int_compare is_equal);
 
-LIST destroy(LIST list); 
+LIST destroy(LIST list);
 
-void destroy_nodes(LIST list, void_dest destructor); 
+void destroy_nodes(LIST list, void_dest destructor);
 
-void insert(LIST list, void *node); 
+void insert(LIST list, void *node);
 
-int is_same_node(void *item1, void *item2); 
+int is_same_node(void *item1, void *item2);
 
-int is_same(void *item1, void *item2); 
+int is_same(void *item1, void *item2);
 
-LIST join(LIST list1, LIST list2); 
+LIST join(LIST list1, LIST list2);
 
-LIST last(LIST var_list); 
+LIST last(LIST var_list);
 
-void *nth_cell(LIST var_list, int item_num); 
+void *nth_cell(LIST var_list, int item_num);
 
-LIST pop(LIST list); 
+LIST pop(LIST list);
 
-LIST push(LIST list, void *element); 
+LIST push(LIST list, void *element);
 
-LIST push_last(LIST list, void *item); 
+LIST push_last(LIST list, void *item);
 
-LIST reverse(LIST list); 
+LIST reverse(LIST list);
 
-LIST reverse_d(LIST list); 
+LIST reverse_d(LIST list);
 
-LIST s_adjoin(LIST var_list, void *variable, int_compare compare); 
+LIST s_adjoin(LIST var_list, void *variable, int_compare compare);
 
-LIST search(LIST list, void *key, int_compare is_equal); 
+LIST search(LIST list, void *key, int_compare is_equal);
 
 /*
 #if defined(__STDC__) || defined(__cplusplus)

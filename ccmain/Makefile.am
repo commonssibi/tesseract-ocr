@@ -5,7 +5,7 @@ AM_CPPFLAGS = \
     -I$(top_srcdir)/ccops -I$(top_srcdir)/dict \
     -I$(top_srcdir)/classify -I$(top_srcdir)/display \
     -I$(top_srcdir)/wordrec -I$(top_srcdir)/cutil \
-    -I$(top_srcdir)/textord -I$(top_srcdir)/aspirin
+    -I$(top_srcdir)/textord
 
 EXTRA_DIST = \
     adaptions.h applybox.h blobcmp.h callnet.h charcut.h \
@@ -27,7 +27,6 @@ bin_PROGRAMS = tesseract
 tesseract_SOURCES = tesseractmain.cpp
 tesseract_LDADD = \
     libtesseract_main.a \
-    ../aspirin/libtesseract_aspirin.a \
     ../display/libtesseract_display.a \
     ../textord/libtesseract_textord.a \
     ../wordrec/libtesseract_wordrec.a \

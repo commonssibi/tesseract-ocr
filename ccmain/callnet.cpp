@@ -19,7 +19,7 @@
 
 #include "mfcpch.h"
 #include "errcode.h"
-#include "nmatch.h"
+//#include "nmatch.h"
 #include "globals.h"
 
 #define OUTPUT_NODES 94
@@ -31,18 +31,20 @@ const ERRCODE NETINIT = "NN init error";
 //extern char*                          demodir;                                        /* where program lives */
 
 void init_net() {  /* Initialise net */
+#ifdef ASPIRIN_INCLUDED
   char wts_filename[256];
 
   if (nmatch_init_network () != 0) {
     NETINIT.error ("Init_net", EXIT, "Errcode %s", nmatch_error_string ());
   }
-  strcpy(wts_filename, demodir); 
+  strcpy(wts_filename, demodir);
   strcat (wts_filename, "tessdata/netwts");
 
   if (nmatch_load_network (wts_filename) != 0) {
     NETINIT.error ("Init_net", EXIT, "Weights failed, Errcode %s",
       nmatch_error_string ());
   }
+#endif
 }
 
 
@@ -52,6 +54,7 @@ void callnet(  /* Apply image to net */
              float *top_score,
              char *next,
              float *next_score) {
+#ifdef ASPIRIN_INCLUDED
   float *output_vector;
   int i;
   int max_out_i = 0;
@@ -59,8 +62,8 @@ void callnet(  /* Apply image to net */
   float max_out = -9;
   float next_max_out = -9;
 
-  nmatch_set_input(input_vector); 
-  nmatch_propagate_forward(); 
+  nmatch_set_input(input_vector);
+  nmatch_propagate_forward();
   output_vector = nmatch_get_output ();
 
   /* Now find top two choices */
@@ -83,6 +86,7 @@ void callnet(  /* Apply image to net */
   *next = next_max_out_i + '!';
   *top_score = max_out;
   *next_score = next_max_out;
+#endif
 }
 
 

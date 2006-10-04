@@ -7,7 +7,7 @@
 # ----------------------------------------
 
 AC_PREREQ(2.50)
-AC_INIT(Tesseract, 1.01, theraysmith@users.sourceforge.net)
+AC_INIT(Tesseract, 1.02, theraysmith@users.sourceforge.net)
 AC_PACKAGE_TARNAME(tesseract-ocr)
 AC_REVISION($Id$)
 AC_CONFIG_AUX_DIR(config)
@@ -35,7 +35,7 @@ AC_ARG_WITH(extra-includes,
             AC_HELP_STRING([--with-extra-includes=DIR],
                        [Define an additional directory for include files]),
         [ if test -d "$withval" ; then
-            CFLAGS="$CFLAGS -I$withval" 
+            CFLAGS="$CFLAGS -I$withval"
           else
             AC_MSG_ERROR([Cannot stat directory $withval])
           fi ] )
@@ -134,7 +134,7 @@ AC_PROG_RANLIB
 # AC_PATH_PROG(MAKEINDEX, makeindex)
 # AC_PATH_PROG(PDFLATEX, pdflatex)
 # AC_PATH_PROG(GZIP, gzip)
-# 
+#
 # if test -z "$DOXYGEN_OK" -o -z "$DOT"; then
 #   AC_MSG_WARN([------------------------------------
 # *** Disabling automatic documentation generation for this
@@ -145,20 +145,20 @@ AC_PROG_RANLIB
 # *** LaTeX and PdfLaTeX respectively. Re-run this configuration
 # *** script after you have updated your environment.
 # --------------------------------------------------------])
-# 
+#
 # # We have appropriate version of doxygen and dot, so we
 # # can generate documentation. It remains to be seen whether
 # # we can generate PDF and PostScript documentation..
 # else
 #   GENERATE_DOCUMENTATION="true"
-# 
+#
 # # Determine if PostScript documentation is generated:
 #   if test -z "$LATEX" -o -z "$DVIPS" -o -z "$MAKEINDEX"; then
 #     AC_MSG_WARN([Disabling generation of PostScript documentation])
 #   else
 #     GENERATE_PS_DOCUMENTATION="true"
 #   fi
-# 
+#
 #   # Determine if PDF documentation is generated:
 #   if test -z "$PDFLATEX" -o -z "$MAKEINDEX"; then
 #     AC_MSG_WARN([Disabling generation of PDF documentation])
@@ -166,7 +166,7 @@ AC_PROG_RANLIB
 #     GENERATE_PDF_DOCUMENTATION="true"
 #   fi
 # fi
-# 
+#
 # # These substitutions could be inside the 'else'
 # # conditionals above, but it is not necessary and would
 # # only cause some confusion...
@@ -177,7 +177,7 @@ AC_PROG_RANLIB
 # AC_SUBST(MAKEINDEX)
 # AC_SUBST(PDFLATEX)
 # AC_SUBST(GZIP)
-# 
+#
 # # Adjust makefiles based on the kind of documentation that
 # # is being generated,
 # AM_CONDITIONAL(GENERATE_DOCUMENTATION, test -n "$GENERATE_DOCUMENTATION")
@@ -221,7 +221,7 @@ AC_CXX_RPO
 
 AC_HEADER_STDC
 AC_HEADER_TIME
-AC_HEADER_SYS_WAIT     
+AC_HEADER_SYS_WAIT
 AC_CHECK_HEADERS(sys/ipc.h sys/shm.h)
 AC_CHECK_HEADERS(limits.h malloc.h)
 # Enable use of system-defined bool type if available:
@@ -283,7 +283,6 @@ AC_DEFINE_INSTALL_PATHS
 
 # Output files
 AC_CONFIG_FILES(Makefile)
-AC_CONFIG_FILES(aspirin/Makefile)
 AC_CONFIG_FILES(ccmain/Makefile)
 AC_CONFIG_FILES(ccstruct/Makefile)
 AC_CONFIG_FILES(ccutil/Makefile)

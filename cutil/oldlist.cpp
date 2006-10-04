@@ -23,13 +23,6 @@
 #
 ################################################################################
 
-  $Log$
-  Revision 1.1  2006/06/16 22:17:07  lvincent
-  Initial checkin of Tesseract 1.0
-
-  Revision 1.1.1.1  2004/02/20 19:38:57  slumos
-  Import original HP distribution
-
 * Revision 1.13  90/03/06  15:37:54  15:37:54  marks (Mark Seaman)
 * Look for correct file of <malloc.h> or <stdlib.h>
 *
@@ -112,7 +105,7 @@
  *
  *  Recursively count the elements in  a list.  Return the count.
  **********************************************************************/
-int count(LIST var_list) { 
+int count(LIST var_list) {
   int temp = 0;
 
   iterate (var_list) temp += 1;
@@ -129,7 +122,7 @@ int count(LIST var_list) {
  *  key, and return a non-zero value when they match.  If the value
  *  NULL is supplied for is_equal, the is_key routine will be used.
  **********************************************************************/
-LIST delete_d(LIST list, void *key, int_compare is_equal) { 
+LIST delete_d(LIST list, void *key, int_compare is_equal) {
   LIST result = NIL;
   LIST last_one = NIL;
 
@@ -142,13 +135,13 @@ LIST delete_d(LIST list, void *key, int_compare is_equal) {
         last_one = list;
         list = rest (list);
         result = last_one;
-        set_rest(last_one, NIL); 
+        set_rest(last_one, NIL);
       }
       else {
-        set_rest(last_one, list); 
+        set_rest(last_one, list);
         last_one = list;
         list = rest (list);
-        set_rest(last_one, NIL); 
+        set_rest(last_one, NIL);
       }
     }
     else {
@@ -164,12 +157,12 @@ LIST delete_d(LIST list, void *key, int_compare is_equal) {
  *
  *  Return the space taken by a list to the heap.
  **********************************************************************/
-LIST destroy(LIST list) { 
+LIST destroy(LIST list) {
   LIST next;
 
   while (list != NIL) {
     next = rest (list);
-    free_cell(list); 
+    free_cell(list);
     list = next;
   }
   return (NIL);
@@ -181,7 +174,7 @@ LIST destroy(LIST list) {
  *
  *  Return the space taken by the LISTs of a list to the heap.
  **********************************************************************/
-void destroy_nodes(LIST list, void_dest destructor) { 
+void destroy_nodes(LIST list, void_dest destructor) {
   if (destructor == NULL)
     destructor = memfree;
 
@@ -198,13 +191,13 @@ void destroy_nodes(LIST list, void_dest destructor) {
  *  Create a list element and rearange the pointers so that the first
  *  element in the list is the second aurgment.
  **********************************************************************/
-void insert(LIST list, void *node) { 
+void insert(LIST list, void *node) {
   LIST element;
 
   if (list != NIL) {
     element = push (NIL, node);
     set_rest (element, rest (list));
-    set_rest(list, element); 
+    set_rest(list, element);
     node = first (list);
     list->node = first (rest (list));
     list->next->node = (LIST) node;
@@ -218,7 +211,7 @@ void insert(LIST list, void *node) {
  *  Compare the list node with the key value return TRUE (non-zero)
  *  if they are equivalent strings.  (Return FALSE if not)
  **********************************************************************/
-int is_same_node(void *item1, void *item2) { 
+int is_same_node(void *item1, void *item2) {
   return (item1 == item2);
 }
 
@@ -229,7 +222,7 @@ int is_same_node(void *item1, void *item2) {
  *  Compare the list node with the key value return TRUE (non-zero)
  *  if they are equivalent strings.  (Return FALSE if not)
  **********************************************************************/
-int is_same(void *item1, void *item2) { 
+int is_same(void *item1, void *item2) {
   return (!strcmp ((char *) item1, (char *) item2));
 }
 
@@ -241,7 +234,7 @@ int is_same(void *item1, void *item2) {
  *  except that concat creates a new list.  This function returns the
  *  first list updated.
  **********************************************************************/
-LIST join(LIST list1, LIST list2) { 
+LIST join(LIST list1, LIST list2) {
   if (list1 == NIL)
     return (list2);
   set_rest (last (list1), list2);
@@ -254,7 +247,7 @@ LIST join(LIST list1, LIST list2) {
  *
  *  Return the last list item (this is list type).
  **********************************************************************/
-LIST last(LIST var_list) { 
+LIST last(LIST var_list) {
   while (rest (var_list) != NIL)
     var_list = rest (var_list);
   return (var_list);
@@ -266,9 +259,9 @@ LIST last(LIST var_list) {
  *
  *  Return nth list cell in the list.
  **********************************************************************/
-void *nth_cell(LIST var_list, int item_num) { 
+void *nth_cell(LIST var_list, int item_num) {
   int x = 0;
-  iterate(var_list) { 
+  iterate(var_list) {
     if (x++ == item_num)
       return (var_list);
   }
@@ -282,13 +275,13 @@ void *nth_cell(LIST var_list, int item_num) {
  *  Return the list with the first element removed.  Destroy the space
  *  that it occupied in the list.
  **********************************************************************/
-LIST pop(LIST list) { 
+LIST pop(LIST list) {
   LIST temp;
 
   temp = rest (list);
 
   if (list != NIL) {
-    free_cell(list); 
+    free_cell(list);
   }
   return (temp);
 }
@@ -300,12 +293,12 @@ LIST pop(LIST list) {
  *  Create a list element.  Push the second parameter (the node) onto
  *  the first parameter (the list). Return the new list to the caller.
  **********************************************************************/
-LIST push(LIST list, void *element) { 
+LIST push(LIST list, void *element) {
   LIST t;
 
   t = new_cell ();
   t->node = (LIST) element;
-  set_rest(t, list); 
+  set_rest(t, list);
   return (t);
 }
 
@@ -315,7 +308,7 @@ LIST push(LIST list, void *element) {
  *
  *  Create a list element. Add the element onto the end of the list.
  **********************************************************************/
-LIST push_last(LIST list, void *item) { 
+LIST push_last(LIST list, void *item) {
   LIST t;
 
   if (list != NIL) {
@@ -334,7 +327,7 @@ LIST push_last(LIST list, void *item) {
  *  Create a new list with the elements reversed. The old list is not
  *  destroyed.
  **********************************************************************/
-LIST reverse(LIST list) { 
+LIST reverse(LIST list) {
   LIST newlist = NIL;
 
   iterate (list) copy_first (list, newlist);
@@ -348,9 +341,9 @@ LIST reverse(LIST list) {
  *  Create a new list with the elements reversed. The old list is
  *  destroyed.
  **********************************************************************/
-LIST reverse_d(LIST list) { 
+LIST reverse_d(LIST list) {
   LIST result = reverse (list);
-  destroy(list); 
+  destroy(list);
   return (result);
 }
 
@@ -361,7 +354,7 @@ LIST reverse_d(LIST list) {
  *  Adjoin an element to an assorted list.  The original list is
  *  modified.  Returns the modified list.
  **********************************************************************/
-LIST s_adjoin(LIST var_list, void *variable, int_compare compare) { 
+LIST s_adjoin(LIST var_list, void *variable, int_compare compare) {
   LIST l;
   int result;
 
@@ -369,12 +362,12 @@ LIST s_adjoin(LIST var_list, void *variable, int_compare compare) {
     compare = (int_compare) strcmp;
 
   l = var_list;
-  iterate(l) { 
+  iterate(l) {
     result = (*compare) (variable, first (l));
     if (result == 0)
       return (var_list);
     else if (result < 0) {
-      insert(l, variable); 
+      insert(l, variable);
       return (var_list);
     }
   }
@@ -390,7 +383,7 @@ LIST s_adjoin(LIST var_list, void *variable, int_compare compare) {
  *  the third paramter to this routine.   If the value NULL is supplied
  *  for is_equal, the is_key routine will be used.
  **********************************************************************/
-LIST search(LIST list, void *key, int_compare is_equal) { 
+LIST search(LIST list, void *key, int_compare is_equal) {
   if (is_equal == NULL)
     is_equal = is_same;
 

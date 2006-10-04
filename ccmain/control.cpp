@@ -119,7 +119,7 @@ EXTERN BOOL_VAR (tessedit_tess_adapt_to_rejmap, FALSE,
 "Use reject map to control Tesseract adaption");
 EXTERN INT_VAR (tessedit_tess_adaption_mode, 3,
 "Adaptation decision algorithm for tess");
-EXTERN INT_VAR (tessedit_em_adaption_mode, 62,
+EXTERN INT_VAR (tessedit_em_adaption_mode, 0,
 "Adaptation decision algorithm for ems matrix matcher");
 EXTERN BOOL_VAR (tessedit_cluster_adapt_after_pass1, FALSE,
 "Adapt using clusterer after pass 1");
@@ -164,7 +164,7 @@ FILE *choice_file = NULL;        //Choice file ptr
 
 CLISTIZEH (PBLOB) CLISTIZE (PBLOB)
 /* DEBUGGING */
-INT16 blob_count(WERD *w) { 
+INT16 blob_count(WERD *w) {
   return w->blob_list ()->length ();
 }
 
@@ -185,7 +185,7 @@ void recog_pseudo_word(                         //recognize blobs
   word = make_pseudo_word (block_list, selection_box,
     pseudo_block, pseudo_row);
   if (word != NULL) {
-    recog_interactive(pseudo_block, pseudo_row, word); 
+    recog_interactive(pseudo_block, pseudo_row, word);
     delete word;
   }
 }
@@ -202,14 +202,14 @@ BOOL8 recog_interactive(            //recognize blobs
                         ROW *row,   //row of word
                         WERD *word  //word to recognize
                        ) {
-  WERD_RES word_res(word); 
+  WERD_RES word_res(word);
   INT16 char_qual;
   INT16 good_char_qual;
 
-  classify_word_pass2(&word_res, row); 
+  classify_word_pass2(&word_res, row);
   #ifndef SECURE_NAMES
   if (tessedit_debug_quality_metrics) {
-    word_char_quality(&word_res, row, &char_qual, &good_char_qual); 
+    word_char_quality(&word_res, row, &char_qual, &good_char_qual);
     tprintf
       ("\n%d chars;  word_blob_quality: %d;  outline_errs: %d; char_quality: %d; good_char_quality: %d\n",
       word_res.reject_map.length (), word_blob_quality (&word_res, row),
@@ -232,7 +232,7 @@ void recog_all_words(                              //process words
                      volatile ETEXT_DESC *monitor  //progress monitor
                     ) {
                                  //reset page iterator
-  PAGE_RES_IT page_res_it(page_res); 
+  PAGE_RES_IT page_res_it(page_res);
   INT16 chars_in_word;
   INT16 rejects_in_word;
   CHAR_SAMPLES_LIST em_clusters;
@@ -285,7 +285,7 @@ void recog_all_words(                              //process words
 
   word_index = 0;
   while (page_res_it.word () != NULL) {
-    set_global_loc_code(LOC_PASS1); 
+    set_global_loc_code(LOC_PASS1);
     word_index++;
     if (monitor != NULL) {
       monitor->ocr_alive = TRUE;
@@ -307,7 +307,7 @@ void recog_all_words(                              //process words
           if ((text[i] != ' ')
             && page_res_it.word ()->reject_map[i].rejected ())
             page_res_it.word ()->reject_map[i].
-              setrej_minimal_rej_accept(); 
+              setrej_minimal_rej_accept();
         }
       }
     }
@@ -346,7 +346,7 @@ void recog_all_words(                              //process words
   page_res_it.restart_page ();
   word_index = 0;
   while (!tessedit_test_adaption && page_res_it.word () != NULL) {
-    set_global_loc_code(LOC_PASS2); 
+    set_global_loc_code(LOC_PASS2);
     word_index++;
     if (monitor != NULL) {
       monitor->ocr_alive = TRUE;
@@ -354,7 +354,7 @@ void recog_all_words(                              //process words
     }
     classify_word_pass2 (page_res_it.word (), page_res_it.row ()->row);
 
-    if (tessedit_em_adaption_mode >= 0)
+    if (tessedit_em_adaption_mode > 0)
       collect_ems_for_adaption (page_res_it.word (),
         &em_clusters, &ems_waiting);
 
@@ -366,21 +366,21 @@ void recog_all_words(                              //process words
   }
 
   /* Another pass */
-  set_global_loc_code(LOC_FUZZY_SPACE); 
+  set_global_loc_code(LOC_FUZZY_SPACE);
 
   if (!tessedit_test_adaption && tessedit_fix_fuzzy_spaces
     && !tessedit_word_for_word)
-    fix_fuzzy_spaces(monitor, word_count, page_res); 
+    fix_fuzzy_spaces(monitor, word_count, page_res);
 
   if (!tessedit_test_adaption && tessedit_em_adaption_mode != 0)
                                  // Initially ems only
-    print_em_stats(&em_clusters, &ems_waiting); 
+    print_em_stats(&em_clusters, &ems_waiting);
 
   /* Pass 3 - used for checking confusion sets */
   page_res_it.restart_page ();
   word_index = 0;
   while (!tessedit_test_adaption && page_res_it.word () != NULL) {
-    set_global_loc_code(LOC_MM_ADAPT); 
+    set_global_loc_code(LOC_MM_ADAPT);
     word_index++;
     if (monitor != NULL) {
       monitor->ocr_alive = TRUE;
@@ -469,13 +469,13 @@ void recog_all_words(                              //process words
   /* Do whole document or whole block rejection pass*/
 
   if (!tessedit_test_adaption) {
-    set_global_loc_code(LOC_DOC_BLK_REJ); 
-    quality_based_rejection(page_res_it, good_quality_doc); 
+    set_global_loc_code(LOC_DOC_BLK_REJ);
+    quality_based_rejection(page_res_it, good_quality_doc);
   }
-  font_recognition_pass(page_res_it); 
+  font_recognition_pass(page_res_it);
 
   /* Write results pass */
-  set_global_loc_code(LOC_WRITE_RESULTS); 
+  set_global_loc_code(LOC_WRITE_RESULTS);
   output_pass (page_res_it, monitor != NULL);
 }
 
@@ -565,7 +565,7 @@ void classify_word_pass1(                 //recog one word
      */
 
     if (word->word->flag (W_REP_CHAR)) {
-      fix_rep_char(word); 
+      fix_rep_char(word);
     }
     else {
       fix_quotes ((char *) word->best_choice->string ().string (),
@@ -589,7 +589,7 @@ void classify_word_pass1(                 //recog one word
       adapt_ok = word_adaptable (word, tessedit_tess_adaption_mode);
 
       if (cluster_adapt)
-        adapt_to_good_samples(word, char_clusters, chars_waiting); 
+        adapt_to_good_samples(word, char_clusters, chars_waiting);
 
       if (adapt_ok || tessedit_tess_adapt_to_rejmap) {
         if (!tessedit_tess_adapt_to_rejmap)
@@ -613,7 +613,7 @@ void classify_word_pass1(                 //recog one word
 
       if (tessedit_enable_doc_dict)
         tess_add_doc_word (word->best_choice);
-      set_word_fonts(word, &blob_choices); 
+      set_word_fonts(word, &blob_choices);
     }
   }
   if (tessedit_print_text) {
@@ -648,7 +648,7 @@ void classify_word_pass2(  //word to do
   INT16 new_word_quality;
   INT16 dummy;
 
-  set_global_subloc_code(SUBLOC_NORM); 
+  set_global_subloc_code(SUBLOC_NORM);
   check_debug_pt (word, 30);
   if (!word->done ||
     tessedit_training_tess ||
@@ -666,19 +666,19 @@ void classify_word_pass2(  //word to do
   }
 
   if (!word->tess_failed && !word->word->flag (W_REP_CHAR)) {
-    set_global_subloc_code(SUBLOC_FIX_XHT); 
+    set_global_subloc_code(SUBLOC_FIX_XHT);
     if ((tessedit_xht_fiddles_on_done_wds || !word->done) &&
       (tessedit_xht_fiddles_on_no_rej_wds ||
     (word->reject_map.reject_count () > 0))) {
       if ((x_ht_check_word_occ >= 2) && word_occ_first)
-        check_block_occ(word); 
+        check_block_occ(word);
 
       if (tessedit_redo_xheight)
-        re_estimate_x_ht(word, &new_x_ht); 
+        re_estimate_x_ht(word, &new_x_ht);
 
       if (((x_ht_check_word_occ >= 2) && !word_occ_first) ||
         ((x_ht_check_word_occ >= 1) && (new_x_ht > 0)))
-        check_block_occ(word); 
+        check_block_occ(word);
     }
     if (new_x_ht > 0) {
       old_chs_in_wd = word->reject_map.length ();
@@ -689,12 +689,12 @@ void classify_word_pass2(  //word to do
       match_word_pass2 (&new_x_ht_word, row, new_x_ht_word.x_height);
       if (!new_x_ht_word.tess_failed) {
         if ((x_ht_check_word_occ >= 1) && word_occ_first)
-          check_block_occ(&new_x_ht_word); 
+          check_block_occ(&new_x_ht_word);
 
-        re_estimate_x_ht(&new_x_ht_word, &new_x_ht); 
+        re_estimate_x_ht(&new_x_ht_word, &new_x_ht);
 
         if ((x_ht_check_word_occ >= 1) && !word_occ_first)
-          check_block_occ(&new_x_ht_word); 
+          check_block_occ(&new_x_ht_word);
 
         old_xht_reject_count = word->reject_map.reject_count ();
         old_xht_accept_count = old_chs_in_wd - old_xht_reject_count;
@@ -709,8 +709,8 @@ void classify_word_pass2(  //word to do
           !new_x_ht_word.guessed_caps_ht);
 
         if (accept_new_x_ht && x_ht_quality_check) {
-          word_char_quality(word, row, &old_word_quality, &dummy); 
-          word_char_quality(&new_x_ht_word, row, &new_word_quality, &dummy); 
+          word_char_quality(word, row, &old_word_quality, &dummy);
+          word_char_quality(&new_x_ht_word, row, &new_word_quality, &dummy);
           if (old_word_quality > new_word_quality)
             accept_new_x_ht = FALSE;
         }
@@ -777,19 +777,19 @@ void classify_word_pass2(  //word to do
       new_x_ht_word.raw_choice = NULL;
 
       if (rej_mostly_reject_mode == 2) {
-        reject_mostly_rejects(word); 
+        reject_mostly_rejects(word);
         tprintf ("Rejecting mostly rejects on %s ",
           word->best_choice->string ().string ());
       }
     }
 
-    set_global_subloc_code(SUBLOC_NORM); 
+    set_global_subloc_code(SUBLOC_NORM);
     if (tessedit_draw_outwords) {
       if (fx_win == NO_WINDOW)
-        create_fx_win(); 
-      clear_fx_win(); 
+        create_fx_win();
+      clear_fx_win();
       word->outword->plot (fx_win);
-      make_picture_current(fx_win); 
+      make_picture_current(fx_win);
     }
 
     if (done_this_pass && !word->done && tessedit_save_stats)
@@ -799,7 +799,7 @@ void classify_word_pass2(  //word to do
     //accounting
   }
 
-  set_global_subloc_code(SUBLOC_NORM); 
+  set_global_subloc_code(SUBLOC_NORM);
   if (tessedit_print_text) {
     write_cooked_text (word->outword, word->best_choice->string (),
       word->done, done_this_pass, stdout);
@@ -822,7 +822,7 @@ void match_word_pass2(                 //recog one word
                                  //detailed results
   BLOB_CHOICE_LIST_CLIST blob_choices;
 
-  set_global_subsubloc_code(SUBSUBLOC_OTHER); 
+  set_global_subsubloc_code(SUBSUBLOC_OTHER);
   if (matcher_fp != NULL) {
     word_answer = (char *) word->word->text ();
     if (word_answer != NULL && word_answer[0] == '\0')
@@ -830,7 +830,7 @@ void match_word_pass2(                 //recog one word
   }
   matcher_pass = 0;
   bln_word = make_bln_copy (word->word, row, x_height, &word->denorm);
-  set_global_subsubloc_code(SUBSUBLOC_TESS); 
+  set_global_subsubloc_code(SUBSUBLOC_TESS);
   if (tessedit_training_tess)
     word->best_choice = correct_segment_pass2 (bln_word,
       &word->denorm,
@@ -858,7 +858,7 @@ void match_word_pass2(                 //recog one word
       word->raw_choice, &blob_choices,
       word->outword);
   }
-  set_global_subsubloc_code(SUBSUBLOC_OTHER); 
+  set_global_subsubloc_code(SUBSUBLOC_OTHER);
   /*
      Test for TESS screw up on word. Recog_word has already ensured that the
      choice list, outword blob lists and best_choice string are the same
@@ -889,7 +889,7 @@ void match_word_pass2(                 //recog one word
 
     word->tess_failed = FALSE;
     if (word->word->flag (W_REP_CHAR)) {
-      fix_rep_char(word); 
+      fix_rep_char(word);
     }
     else {
       fix_quotes ((char *) word->best_choice->string ().string (),
@@ -977,7 +977,7 @@ void fix_rep_char(                //Repeated char word
   }
   //      tprintf( "REPEATED CHAR %s len=%d total=%d choice=%c\n",
   //                        word_str, word_len, total, maxch );
-  free_mem(rep_ch); 
+  free_mem(rep_ch);
 
   word->reject_map.initialise (word_len);
   for (i = 0; i < word_len; i++) {
@@ -1136,7 +1136,7 @@ void choice_dump_tester(                           //dump chars in word
     strcpy (correct_char, "$$");
   }
   else {
-    strncpy(source_chars, text, count); 
+    strncpy(source_chars, text, count);
     source_chars[count] = '\0';
     if (correct) {
       correct_char[0] = text[0];
@@ -1169,7 +1169,7 @@ void choice_dump_tester(                           //dump chars in word
  * generated as output.
  *************************************************************************/
 
-WERD *make_bln_copy(WERD *src_word, ROW *row, float x_height, DENORM *denorm) { 
+WERD *make_bln_copy(WERD *src_word, ROW *row, float x_height, DENORM *denorm) {
   WERD *result;
 
   //      if (wordit_linearc && !src_word->flag(W_POLYGON))
@@ -1192,7 +1192,7 @@ WERD *make_bln_copy(WERD *src_word, ROW *row, float x_height, DENORM *denorm) {
 }
 
 
-ACCEPTABLE_WERD_TYPE acceptable_word_string(const char *s) { 
+ACCEPTABLE_WERD_TYPE acceptable_word_string(const char *s) {
   int i = 0;
   int leading_punct_count;
   int upper_count = 0;
@@ -1282,7 +1282,7 @@ ACCEPTABLE_WERD_TYPE acceptable_word_string(const char *s) {
 
 /* DEBUGGING ROUTINE */
 
-BOOL8 check_debug_pt(WERD_RES *word, int location) { 
+BOOL8 check_debug_pt(WERD_RES *word, int location) {
   BOOL8 show_map_detail = FALSE;
   INT16 i;
 
@@ -1519,7 +1519,7 @@ void font_recognition_pass(  //good chars in word
     find_modal_font (&fonts, &row->font1, &row->font1_count);
     find_modal_font (&fonts, &row->font2, &row->font2_count);
   }
-  find_modal_font(&doc_fonts, &doc_font, &doc_font_count); 
+  find_modal_font(&doc_fonts, &doc_font, &doc_font_count);
   /*
     row=NULL;
     page_res_it.restart_page();

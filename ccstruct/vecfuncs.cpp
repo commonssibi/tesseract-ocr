@@ -22,18 +22,10 @@
  ** limitations under the License.
  *
  ********************************************************************************
-    $Log$
-    Revision 1.1  2006/06/16 22:17:04  lvincent
-    Initial checkin of Tesseract 1.0
-
-    Revision 1.1.1.1  2004/02/20 19:39:06  slumos
-    Import original HP distribution
-
-* Revision 5.1  89/07/27  11:47:50  11:47:50  ray ()
-* Added ratings acces methods.
-* This version ready for independent development.
-*
-*/
+ * Revision 5.1  89/07/27  11:47:50  11:47:50  ray ()
+ * Added ratings acces methods.
+ * This version ready for independent development.
+ */
 /*----------------------------------------------------------------------
               I n c l u d e s
 ----------------------------------------------------------------------*/
@@ -48,7 +40,7 @@
  *
  *  Show if the line is going in the positive or negative X direction.
  **********************************************************************/
-int direction(EDGEPT *point) { 
+int direction(EDGEPT *point) {
   int dir;                       /** direction to return **/
   EDGEPT *prev;                  /** prev point **/
   EDGEPT *next;                  /** next point **/

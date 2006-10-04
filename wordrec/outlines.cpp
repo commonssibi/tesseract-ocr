@@ -22,15 +22,8 @@
  ** limitations under the License.
  *
  ********************************************************************************
-$Log$
-Revision 1.1  2006/06/16 22:17:09  lvincent
-Initial checkin of Tesseract 1.0
-
-Revision 1.1.1.1  2004/02/20 19:39:01  slumos
-Import original HP distribution
-
-* Revision 1.2  89/09/15  09:24:41  09:24:41  marks (Mark Seaman)
-* First released version of Combinatorial splitter code
+ * Revision 1.2  89/09/15  09:24:41  09:24:41  marks (Mark Seaman)
+ * First released version of Combinatorial splitter code
 **/
 /*----------------------------------------------------------------------
               I n c l u d e s
@@ -72,7 +65,7 @@ int crosses_outline(EDGEPT *p0,         /* Start of line */
  * point of intersection lies on both of the line segments. If it does
  * then these two segments cross.
  **********************************************************************/
-int is_crossed(TPOINT a0, TPOINT a1, TPOINT b0, TPOINT b1) { 
+int is_crossed(TPOINT a0, TPOINT a1, TPOINT b0, TPOINT b1) {
   int b0a1xb0b1, b0b1xb0a0;
   int a1b1xa1a0, a1a0xa1b0;
 
@@ -106,7 +99,7 @@ int is_crossed(TPOINT a0, TPOINT a1, TPOINT b0, TPOINT b1) {
  *
  * Return true if the points are identical.
  **********************************************************************/
-int is_same_edgept(EDGEPT *p1, EDGEPT *p2) { 
+int is_same_edgept(EDGEPT *p1, EDGEPT *p2) {
   return (p1 == p2);
 }
 
@@ -117,7 +110,7 @@ int is_same_edgept(EDGEPT *p1, EDGEPT *p2) {
  * Find the point on a line segment that is closest to a point not on
  * the line segment.  Return that point.
  **********************************************************************/
-EDGEPT *near_point(EDGEPT *point, EDGEPT *line_pt_0, EDGEPT *line_pt_1) { 
+EDGEPT *near_point(EDGEPT *point, EDGEPT *line_pt_0, EDGEPT *line_pt_1) {
   TPOINT p;
 
   float slope;
@@ -160,7 +153,7 @@ EDGEPT *near_point(EDGEPT *point, EDGEPT *line_pt_0, EDGEPT *line_pt_1) {
  * counter-clockwise and vice versa.  Do this by swapping each of the
  * next and prev fields of each edge point.
  **********************************************************************/
-void reverse_outline(EDGEPT *outline) { 
+void reverse_outline(EDGEPT *outline) {
   EDGEPT *edgept = outline;
   EDGEPT *temp;
 
