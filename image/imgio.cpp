@@ -27,6 +27,7 @@
 #include          <sys/types.h>
 #include          <sys/stat.h>
 #include          <string.h>
+#include          "scanutils.h"
 #include          "stderr.h"
 #include          "fileerr.h"
 #include          "imgerrs.h"
