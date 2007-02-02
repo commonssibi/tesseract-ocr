@@ -22,6 +22,7 @@
 #include "control.h"
 #include "tessvars.h"
 #include "tessedit.h"
+#include "baseapi.h"
 #include "pageres.h"
 #include "imgs.h"
 #include "varabled.h"
@@ -29,6 +30,10 @@
 #include "tesseractmain.h"
 #include "stderr.h"
 #include "notdll.h"
+#include "mainblk.h"
+#include "globals.h"
+#include "tfacep.h"
+#include "callnet.h"
 
 #define VARDIR        "configs/" /*variables files */
                                  //config under api
@@ -52,26 +57,73 @@ char szAppName[] = "Tessedit";   //app name
  *
  **********************************************************************/
 
+#ifndef GRAPHICS_DISABLED
 int main(int argc, char **argv) {
-  UINT16 lang;                   //language
-  STRING pagefile;               //input file
+  STRING outfile;               //output file
 
   if (argc < 3) {
     USAGE.error (argv[0], EXIT,
       "%s imagename outputbase [configfile [[+|-]varfile]...]\n", argv[0]);
   }
-  if (argc == 7
-    && ocr_open_shm (argv[1], argv[2], argv[3], argv[4], argv[5], argv[6],
-    &lang) == OKAY)
-                                 //run api interface
-    return api_main (argv[0], lang);
 
   if (argc == 3)
-    init_tesseract (argv[0], argv[2], NULL, 0, argv + 2);
+    TessBaseAPI::Init(argv[0], argv[1], NULL, false, 0, argv + 2);
   else
-    init_tesseract (argv[0], argv[2], argv[3], argc - 4, argv + 4);
+    TessBaseAPI::Init(argv[0], argv[1], argv[3], false, argc - 4, argv + 4);
 
   tprintf ("Tesseract Open Source OCR Engine\n");
+
+  IMAGE image;
+#ifdef _TIFFIO_
+  TIFF* tif = TIFFOpen(argv[1], "r");
+  if (tif) {
+    read_tiff_image(tif, &image);
+    TIFFClose(tif);
+  } else {
+    READFAILED.error (argv[0], EXIT, argv[1]);
+  }
+#else
+  if (image.read_header(argv[1]) < 0)
+    READFAILED.error (argv[0], EXIT, argv[1]);
+  if (image.read(image.get_ysize ()) < 0) {
+    MEMORY_OUT.error(argv[0], EXIT, "Read of image %s",
+      argv[1]);
+  }
+#endif
+  int bytes_per_line = check_legal_image_size(image.get_xsize(),
+                                              image.get_ysize(),
+                                              image.get_bpp());
+  char* text = TessBaseAPI::TesseractRect(image.get_buffer(), image.get_bpp()/8,
+                                          bytes_per_line, 0, 0,
+                                          image.get_xsize(), image.get_ysize());
+  outfile = argv[2];
+  outfile += ".txt";
+  FILE* fp = fopen(outfile.string(), "w");
+  if (fp != NULL) {
+    fwrite(text, 1, strlen(text), fp);
+    fclose(fp);
+  }
+  delete [] text;
+  TessBaseAPI::End();
+
+  return 0;                      //Normal exit
+}
+#else
+
+int main(int argc, char **argv) {
+  UINT16 lang;                   //language
+  STRING pagefile;               //input file
+
+  if (argc < 4) {
+    USAGE.error (argv[0], EXIT,
+      "%s imagename outputbase configfile [[+|-]varfile]...\n", argv[0]);
+  }
+
+  time_t t_start = time(NULL);
+
+  init_tessembedded (argv[0], argv[2], argv[3], argc - 4, argv + 4);
+
+  tprintf ("Tesseract Open Source OCR Engine (graphics disabled)\n");
 
   if (tessedit_read_image) {
 #ifdef _TIFFIO_
@@ -89,231 +141,29 @@ int main(int argc, char **argv) {
       MEMORY_OUT.error (argv[0], EXIT, "Read of image %s",
         argv[1]);
     }
-    if (page_image.get_bpp() > 1) {
-      // Dumb thresholding for those without libtiff.
-      IMAGE tmp;
-      tmp.create(page_image.get_xsize(), page_image.get_ysize(), 1);
-      copy_sub_image(&page_image, 0, 0, 0, 0, &tmp, 0, 0, true);
-      page_image.create(tmp.get_xsize(), tmp.get_ysize(), 1);
-      copy_sub_image(&tmp, 0, 0, 0, 0, &page_image, 0, 0, false);
-    }
 #endif
   }
 
   pagefile = argv[1];
-  recognize_page(pagefile);
 
-  end_tesseract();
+  BLOCK_LIST current_block_list;
+  tessembedded_read_file(pagefile, &current_block_list);
+  tprintf ("Done reading files.\n");
 
+  PAGE_RES page_res(&current_block_list);
+
+  recog_all_words(&page_res, NULL);
+
+  current_block_list.clear();
+  ResetAdaptiveClassifier();
+
+  time_t t_end = time(NULL);
+  double secs = difftime(t_end, t_start);
+  tprintf ("Done. Number of seconds: %d\n", (int)secs);
   return 0;                      //Normal exit
 }
 
-
-/**********************************************************************
- * api_main()
- *
- * Run the ocr engine via the ocr api.
- **********************************************************************/
-//extern "C" {
-//};
-
-INT32 api_main(                   //run from api
-               const char *arg0,  //program name
-               UINT16 lang        //language
-              ) {
-  INT32 block_count;
-  STRING var_path;               //output variables
-  STRING debugfile;
-  STRING pagefile;               //input file
-  char imfile[MAX_PATH];         //output file
-  INT16 result;                  //from open
-  static const char *app_name = "HP OCR RESEARCH PROTOTYPE";
-  static const char *app_version = "Version 7.0";
-  static const char *fake_name = "input.tif";
-  ETEXT_DESC *monitor;           //progress monitor
-  const char *fake_argv[] = { "api_config" };
-
-  init_tesseract (arg0, "tessapi", NULL, 1, fake_argv);
-  if (interactive_mode) {
-    debug_window_on.set_value (TRUE);
-  }
-
-  //ASSERT(FALSE);                                                                                                        //uncomment to use debugger
-  result = setup_info (lang, app_name, app_version);
-  if (result != OKAY) {
-    tprintf ("Info setup failed\n");
-    return 1;
-  }
-  block_count = 0;
-  do {
-                                 //read image from shm
-    result = read_image (&page_image);
-    if (result == HPERR) {
-      tprintf ("Image read failed\n");
-      return 1;
-    }
-    if (page_image.get_bpp () != 0) {
-      //initialize the progress monitor
-      monitor = ocr_setup_monitor ();
-      if (monitor == NULL)
-        return HPERR;            //release failed
-      global_monitor = monitor;
-      monitor->ocr_alive = TRUE;
-
-      if (tessedit_write_images) {
-        sprintf (imfile, "image" INT32FORMAT ".tif", block_count);
-        page_image.write (imfile);
-      }
-      block_count++;
-
-      pagefile = fake_name;
-      pgeditor_read_file(pagefile, current_block_list);
-
-      monitor->ocr_alive = TRUE;
-
-      if (edit_variables)
-        start_variables_editor();
-      if (interactive_mode) {
-        pgeditor_main();  //pgeditor user I/F
-      }
-      else {
-        PAGE_RES page_res(current_block_list);
-
-        //                              tprintf("Recognizing words\n");
-        recog_all_words(&page_res, monitor);
-
-      }
-                                 //no longer needed
-      current_block_list->clear ();
-      //                      if (text_lines<0)
-      //                      {
-      //                              logf("Operation cancelled!");
-      //                              break;                                                                                                  //cancelled
-      //                      }
-    }
-  }
-  while (page_image.get_bpp () != 0);
-  tprintf ("Closing down");
-  end_tesseract();
-  if (ocr_shutdown () != OKAY) {
-    tprintf ("Closedown failed\n");
-    return 1;
-  }
-
-  return 0;                      //Normal exit
-}
-
-
-/**********************************************************************
- * setup_info
- *
- * Setup the info on the engine and fonts.
- **********************************************************************/
-
-INT16 setup_info(                     //setup dummy engine info
-                 UINT16 lang,         //user language
-                 const char *name,    //of engine
-                 const char *version  //of engine
-                ) {
-  INT16 result;                  //from open
-
-  //setup OCR engine here and get version info
-
-  //If engine can really recognize fonts, do this
-  //If it just recognizes families, make the names NULL
-  //If it can't even recognize families, call it once:
-  //result=ocr_append_fontinfo(lang,FFAM_NONE,
-  //      CHSET_ANSI,PITCH_DEF,NULL);
-                                 //index 0
-  result = ocr_append_fontinfo (lang, FFAM_MODERN, CHSET_ANSI, PITCH_FIXED, "Courier New");
-  if (result != OKAY)
-    return result;
-                                 //index 1
-  result = ocr_append_fontinfo (lang, FFAM_ROMAN, CHSET_ANSI, PITCH_VAR, "Times New Roman");
-  if (result != OKAY)
-    return result;
-                                 //index 2
-  result = ocr_append_fontinfo (lang, FFAM_SWISS, CHSET_ANSI, PITCH_VAR, "Arial");
-  if (result != OKAY)
-    return result;
-                                 //index 3
-  result = ocr_append_fontinfo (lang, FFAM_SWISS, CHSET_ANSI, PITCH_FIXED, "Letter Gothic");
-  if (result != OKAY)
-    return result;
-                                 //index 4
-  result = ocr_append_fontinfo (lang, FFAM_ROMAN, CHSET_ANSI, PITCH_VAR, "Century Schoolbook");
-  if (result != OKAY)
-    return result;
-                                 //index 5
-  result = ocr_append_fontinfo (lang, FFAM_SWISS, CHSET_ANSI, PITCH_VAR, "Gill Sans");
-  if (result != OKAY)
-    return result;
-
-  result = ocr_setup_startinfo_ansi (1, lang, name, version);
-  //if your name is in unicode, do this...
-  //result=ocr_setup_startinfo(1,lang,name,version);
-  if (result != OKAY)
-    return result;
-
-  return OKAY;
-}
-
-
-/**********************************************************************
- * read_image
- *
- * Read the image from the shm and setup the ocr engine on the page.
- **********************************************************************/
-
-INT16 read_image(               //read dummy image info
-                 IMAGE *im_out  //output image
-                ) {
-  INT16 xsize;                   //image size
-  INT16 ysize;                   //image size
-  INT16 lines_read;              //lines of image
-  ESTRIP_DESC *strip;            //strip info
-  INT32 roundbytes;              //bytes on a rounded line
-
-                                 //strip info
-  strip = ocr_get_first_image_strip ();
-  if (strip == NULL) {
-    im_out->destroy ();          //no image
-    tprintf ("Read termination command");
-    return OKAY;                 //but OK
-  }
-  xsize = strip->x_size;
-  ysize = strip->y_size;         //save size
-  roundbytes = xsize / 8;
-  im_out->create (xsize, ysize, 1);
-
-  //setup OCR engine with page info here
-  lines_read = 0;
-  do {
-    //copy image strip to buffer of whole image
-    memcpy (im_out->get_buffer () + lines_read * roundbytes,
-    //desination
-      strip->data,               //source strip
-                                 //size of strip
-      strip->strip_size * roundbytes);
-                                 //count up lines
-    lines_read += strip->strip_size;
-    if (lines_read < ysize) {
-                                 //next strip from shm
-      strip = ocr_get_next_image_strip ();
-      if (strip == NULL) {
-        tprintf ("Read of next strip failed\n");
-        return HPERR;            //read failed
-      }
-    }
-  }
-  while (lines_read < ysize);    //read all image
-  invert_image(im_out);  //white is 1
-  tprintf ("Read image of size (%d,%d)", im_out->get_xsize (),
-    im_out->get_ysize ());
-
-  return OKAY;
-}
-
+#endif
 
 int initialized = 0;
 
@@ -372,6 +222,9 @@ int WINAPI WinMain(  //main for windows //command line
 
   if (initialized) {
     exit_code = main (argc, argv);
+    free (argsin[0]);
+    free (argsin[1]);
+    free(argv);
     return exit_code;
   }
   while (GetMessage (&msg, NULL, 0, 0)) {

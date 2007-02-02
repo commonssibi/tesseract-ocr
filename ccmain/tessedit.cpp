@@ -37,14 +37,12 @@
 #include          "mainblk.h"
 #include          "nwmain.h"
 #include          "pgedit.h"
-#include          "varabled.h"
 #include          "ocrshell.h"
 #include          "tprintf.h"
 //#include                                      "ipeerr.h"
 //#include                                                      "restart.h"
 #include          "tessedit.h"
 //#include                                                      "fontfind.h"
-#include              "applybox.h"
 #include "permute.h"
 #include "permdawg.h"
 #include "permnum.h"
@@ -67,10 +65,6 @@
 EXTERN BOOL_EVAR (tessedit_write_vars, FALSE, "Write all vars to file");
 EXTERN BOOL_VAR (tessedit_tweaking_tess_vars, FALSE,
 "Fiddle tess config values");
-BOOL_VAR(tessedit_resegment_from_boxes, FALSE,
-         "Take segmentation and labeling from box file");
-BOOL_VAR(tessedit_train_from_boxes, FALSE,
-         "Generate training data from boxed chars");
 
 EXTERN INT_VAR (tweak_ReliableConfigThreshold, 2, "Tess VAR");
 
@@ -109,102 +103,65 @@ int init_tesseract(const char *arg0,
   static char c_path[MAX_PATH];  //path for c code
 
   // Set the basename, compute the data directory and read C++ configs.
-  main_setup(arg0, textbase, configc, configv); 
+  main_setup(arg0, textbase, configc, configv);
   debug_window_on.set_value (FALSE);
 
   if (tessedit_write_vars) {
     var_file = fopen ("edited.cfg", "w");
     if (var_file != NULL) {
-      print_variables(var_file); 
-      fclose(var_file); 
+      print_variables(var_file);
+      fclose(var_file);
     }
   }
   strcpy (c_path, datadir.string ());
   c_path[strlen (c_path) - strlen (m_data_sub_dir.string ())] = '\0';
   demodir = c_path;
-  start_recog(configfile, textbase); 
+  start_recog(configfile, textbase);
 
   ReliableConfigThreshold = tweak_ReliableConfigThreshold;
 
-  set_tess_tweak_vars(); 
+  set_tess_tweak_vars();
 
   if (tessedit_use_nn)           //phils nn stuff
-    init_net(); 
+    init_net();
   return 0;                      //Normal exit
 }
 
-void recognize_page(STRING& image_name) {
-  pgeditor_read_file(image_name, current_block_list );
-
-  /*
-  If requested, throw away the current words and re segment the blobs into
-  single character words containing any blobs on the row with overlab a
-  labelled box from the box file. (This is for generating training data from
-  font sheets).
-  */
-  if (tessedit_resegment_from_boxes)
-    apply_boxes( current_block_list );
-
-  /* DO ANY INITIALISATION YOU WANT HERE */
-
-  if (edit_variables)
-    start_variables_editor();
-  if (interactive_mode) {
-    pgeditor_main();                  //pgeditor user I/F
-  } else if (tessedit_train_from_boxes) {
-    apply_box_training( current_block_list );
-  } else {
-    PAGE_RES      page_res(current_block_list);
-
-    recog_all_words(&page_res, NULL);
-  }
-  current_block_list->clear();
-  ResetAdaptiveClassifier();
-}
-
-void end_tesseract() { 
-  end_recog(); 
+void end_tesseract() {
+  end_recog();
 }
 
 #ifdef _TIFFIO_
-void read_tiff_image(TIFF* tif) {
+void read_tiff_image(TIFF* tif, IMAGE* image) {
   tdata_t buf;
   uint32 image_width, image_height;
   uint16 photometric;
   short bpp;
-  TIFFGetField(tif, TIFFTAG_IMAGEWIDTH, &image_width); 
-  TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &image_height); 
-  TIFFGetField(tif, TIFFTAG_BITSPERSAMPLE, &bpp); 
+  TIFFGetField(tif, TIFFTAG_IMAGEWIDTH, &image_width);
+  TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &image_height);
+  TIFFGetField(tif, TIFFTAG_BITSPERSAMPLE, &bpp);
   TIFFGetField(tif, TIFFTAG_PHOTOMETRIC, &photometric);
   // Tesseract's internal representation is 0-is-black,
   // so if the photometric is 1 (min is black) then high-valued pixels
   // are 1 (white), otherwise they are 0 (black).
   UINT8 high_value = photometric == 1;
-  page_image.create(image_width, image_height, 1);
+  image->create(image_width, image_height, bpp);
   IMAGELINE line;
   line.init(image_width);
 
   buf = _TIFFmalloc(TIFFScanlineSize(tif));
-  UINT8* byte_buf = (UINT8*)buf;
+  int bytes_per_line = (image_width*bpp + 7)/8;
+  UINT8* dest_buf = image->get_buffer() + bytes_per_line*image_height;
+  // This will go badly wrong with one of the more exotic tiff formats,
+  // but the majority will work OK.
   for (int y = 0; y < image_height; ++y) {
-    TIFFReadScanline(tif, buf, y); 
-    if (bpp == 8) {
-      for (int x = 0; x < image_width; ++x) {
-        // Use a simple threshold of 128 on greyscale images.
-        line.pixels[x] = byte_buf[x] >= 128 ? high_value : 1 - high_value;
-      }
-    }
-    else if (bpp == 1) {
-      for (int x = 0; x < image_width; ++x) {
-        // Unpack packed bits into line.pixels. If the bit is set,
-        // use the high value, otherwise the opposite.
-        line.pixels[x] = (byte_buf[x/8] & (1 << (7 - x%8))) ?
-                         high_value : 1 - high_value;
-      }
-    }
-    page_image.put_line(0, image_height - 1 - y, image_width, &line, 0);
+    TIFFReadScanline(tif, buf, y);
+    dest_buf -= bytes_per_line;
+    memcpy(dest_buf, buf, bytes_per_line);
   }
-  _TIFFfree(buf); 
+  if (high_value == 0)
+    invert_image(image);
+  _TIFFfree(buf);
 }
 #endif
 
@@ -293,7 +250,7 @@ void extend_moded_commands(                   //current mode
 
       /* This is how to apply a "word processor" function to each selected word */
 
-      recog_pseudo_word(current_block_list, selection_box); 
+      recog_pseudo_word(current_block_list, selection_box);
       break;
     default:
       sprintf (msg, "Unexpected extended mode " INT32FORMAT, mode);
@@ -338,7 +295,7 @@ void extend_unmoded_commands(                 //current mode
  * of the space of tess configs - othertimes the default values are set
  *
  *************************************************************************/
-void set_tess_tweak_vars() { 
+void set_tess_tweak_vars() {
   if (tessedit_tweaking_tess_vars) {
     garbage = tweak_garbage;
     ok_word = tweak_ok_word;

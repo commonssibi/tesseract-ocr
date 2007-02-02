@@ -8,15 +8,17 @@ AM_CPPFLAGS = \
     -I$(top_srcdir)/textord
 
 EXTRA_DIST = \
-    adaptions.h applybox.h blobcmp.h callnet.h charcut.h \
+    adaptions.h applybox.h baseapi.h blobcmp.h \
+    callnet.h charcut.h \
     control.h docqual.h expandblob.h fixspace.h fixxht.h \
     imgscale.h matmatch.h output.h paircmp.h reject.h scaleimg.h \
     tessbox.h tessedit.h tesseractmain.h tessvars.h tfacep.h \
-    tfacepp.h tstruct.h werdit.h
+    tessembedded.h tfacepp.h tstruct.h werdit.h
 
 noinst_LIBRARIES = libtesseract_main.a
 libtesseract_main_a_SOURCES = \
-    tessedit.cpp adaptions.cpp applybox.cpp blobcmp.cpp \
+    tessedit.cpp adaptions.cpp applybox.cpp \
+    baseapi.cpp blobcmp.cpp \
     callnet.cpp charcut.cpp charsample.cpp control.cpp \
     docqual.cpp expandblob.cpp fixspace.cpp fixxht.cpp \
     imgscale.cpp matmatch.cpp output.cpp paircmp.cpp \
