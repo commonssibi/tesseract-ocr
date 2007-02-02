@@ -95,6 +95,7 @@ PIXROW::PIXROW(INT16 pos, INT16 count, PBLOB *blob) {
  * Draw the PIXROW
  *************************************************************************/
 
+#ifndef GRAPHICS_DISABLED
 void PIXROW::plot(WINDOW fd  //where to paint
                  ) const {
   INT16 i;
@@ -107,7 +108,7 @@ void PIXROW::plot(WINDOW fd  //where to paint
     }
   }
 }
-
+#endif
 
 /*************************************************************************
  * PIXROW::bounding_box()
@@ -572,6 +573,7 @@ IMAGELINE *generate_imlines(                   //get some imagelines
  * All the boring user interface bits to let you see what's going on
  *************************************************************************/
 
+#ifndef GRAPHICS_DISABLED
 WINDOW display_clip_image(WERD *word,                //word to be processed
                           IMAGE &bin_image,          //whole image
                           PIXROW_LIST *pixrow_list,  //pixrows built
@@ -705,3 +707,4 @@ void plot_pixrows(  //plot for all blobs
     colour++;
   }
 }
+#endif

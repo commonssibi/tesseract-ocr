@@ -565,6 +565,7 @@ float CHAR_PROTO::match(CHAR_PROTO *test_proto) {
     }
   }
 
+#ifndef GRAPHICS_DISABLED
   if (tessedit_display_mm) {
     tprintf ("Match score %f\n", score);
     display_images (this->make_image (),
@@ -580,6 +581,7 @@ float CHAR_PROTO::match(CHAR_PROTO *test_proto) {
     display_image (match_proto->make_image (), "Best match",
       700, 400, TRUE);
   }
+#endif
 
   delete match_proto;
 

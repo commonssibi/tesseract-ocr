@@ -117,7 +117,7 @@ EXTERN INT_VAR (quality_min_initial_alphas_reqd, 2,
 
 EXTERN BOOL_VAR (tessedit_tess_adapt_to_rejmap, FALSE,
 "Use reject map to control Tesseract adaption");
-EXTERN INT_VAR (tessedit_tess_adaption_mode, 3,
+EXTERN INT_VAR (tessedit_tess_adaption_mode, 0x27,
 "Adaptation decision algorithm for tess");
 EXTERN INT_VAR (tessedit_em_adaption_mode, 0,
 "Adaptation decision algorithm for ems matrix matcher");
@@ -284,12 +284,17 @@ void recog_all_words(                              //process words
     word_count = 1;
 
   word_index = 0;
+  int dict_words = 0;
   while (page_res_it.word () != NULL) {
     set_global_loc_code(LOC_PASS1);
     word_index++;
     if (monitor != NULL) {
       monitor->ocr_alive = TRUE;
       monitor->progress = 30 + 50 * word_index / word_count;
+      if ((monitor->end_time != 0 && clock() > monitor->end_time) ||
+          (monitor->cancel != NULL && (*monitor->cancel)(monitor->cancel_this,
+                                                         dict_words)))
+        return;
     }
     classify_word_pass1 (page_res_it.word (),
       page_res_it.row ()->row, FALSE, NULL, NULL);
@@ -319,6 +324,9 @@ void recog_all_words(                              //process words
       collect_characters_for_adaption (page_res_it.word (),
         &char_clusters, &chars_waiting);
     }
+    // Count dict words.
+    if (page_res_it.word()->best_choice->permuter() == USER_DAWG_PERM)
+      ++dict_words;
     page_res_it.forward ();
   }
 
@@ -351,6 +359,10 @@ void recog_all_words(                              //process words
     if (monitor != NULL) {
       monitor->ocr_alive = TRUE;
       monitor->progress = 80 + 10 * word_index / word_count;
+      if ((monitor->end_time != 0 && clock() > monitor->end_time) ||
+          (monitor->cancel != NULL && (*monitor->cancel)(monitor->cancel_this,
+                                                         dict_words)))
+        return;
     }
     classify_word_pass2 (page_res_it.word (), page_res_it.row ()->row);
 
@@ -476,7 +488,9 @@ void recog_all_words(                              //process words
 
   /* Write results pass */
   set_global_loc_code(LOC_WRITE_RESULTS);
-  output_pass (page_res_it, monitor != NULL);
+  // This is now redundant, but retained commented so show how to obtain
+  // bounding boxes and style information.
+  // output_pass (page_res_it, false);
 }
 
 
@@ -784,13 +798,6 @@ void classify_word_pass2(  //word to do
     }
 
     set_global_subloc_code(SUBLOC_NORM);
-    if (tessedit_draw_outwords) {
-      if (fx_win == NO_WINDOW)
-        create_fx_win();
-      clear_fx_win();
-      word->outword->plot (fx_win);
-      make_picture_current(fx_win);
-    }
 
     if (done_this_pass && !word->done && tessedit_save_stats)
       SaveBadWord (word->best_choice->string ().string (),
@@ -798,6 +805,15 @@ void classify_word_pass2(  //word to do
     record_certainty (word->best_choice->certainty (), 2);
     //accounting
   }
+#ifndef GRAPHICS_DISABLED
+  if (tessedit_draw_outwords) {
+    if (fx_win == NO_WINDOW)
+      create_fx_win();
+    clear_fx_win();
+    word->outword->plot (fx_win);
+    make_picture_current(fx_win);
+  }
+#endif
 
   set_global_subloc_code(SUBLOC_NORM);
   if (tessedit_print_text) {
