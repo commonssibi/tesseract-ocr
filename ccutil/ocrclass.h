@@ -27,6 +27,7 @@
 #ifndef           OCRCLASS_H
 #define           OCRCLASS_H
 
+#include          <time.h>
 #ifdef __MSW32__
 #include          <windows.h>
 #endif
@@ -279,9 +280,10 @@ typedef struct                   /*single character */
  * Every progress callback, the OCR engine must set ocr_alive to 1.
  * The HP side will set ocr_alive to 0. Repeated failure to reset
  * to 1 indicates that the OCR engine is dead.
- * If cancel gets set to 1, the OCR engine must stop, clean itself up,
- * call ocr_shutdown() and exit.
+ * If the cancel function is not null then it is called with the number of
+ * user words found. If it returns true then operation is cancelled.
  **********************************************************************/
+typedef bool (*CANCEL_FUNC)(void* cancel_this, int words);
 
 typedef struct                   /*output header */
 {
@@ -290,7 +292,9 @@ typedef struct                   /*output header */
   INT8 more_to_come;             /*true if not last */
   INT8 ocr_alive;                /*ocr sets to 1, HP 0 */
   INT8 err_code;                 /*for errcode use */
-  INT8 cancel;                   /*0=continue, 1=cancel */
+  CANCEL_FUNC cancel;            /*returns true to cancel */
+  void* cancel_this;             /*this or other data for cancel*/
+  clock_t end_time;              /*time to stop if not 0*/
   EANYCODE_CHAR text[1];         /*character data */
 } ETEXT_DESC;                    /*output header */
 
