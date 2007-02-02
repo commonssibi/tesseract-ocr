@@ -46,12 +46,13 @@ ICOORD top_right, INT16 length   //length of loop
 
   stepcount = length;            //no of steps
                                  //get memory
-  steps = (UINT8 *) alloc_mem (length);
+  steps = (UINT8 *) alloc_mem (step_mem());
+  memset(steps, 0, step_mem());
   edgept = startpt;
 
   for (stepindex = 0; stepindex < length; stepindex++) {
                                  //set compact step
-    set_step (stepindex, edgept->stepdir, edgept->dir);
+    set_step (stepindex, edgept->stepdir);
     edgept = edgept->next;
   }
 }
@@ -62,11 +63,10 @@ ICOORD top_right, INT16 length   //length of loop
  *
  * Constructor to build a C_OUTLINE from a C_OUTLINE_FRAG.
  **********************************************************************/
-
 C_OUTLINE::C_OUTLINE (
 //constructor
                                  //steps to copy
-ICOORD startpt, UINT8 * new_steps,
+ICOORD startpt, DIR128 * new_steps,
 INT16 length                     //length of loop
 ):start (startpt) {
   INT8 dirdiff;                  //direction difference
@@ -81,17 +81,18 @@ INT16 length                     //length of loop
   pos = startpt;
   stepcount = length;            //no of steps
                                  //get memory
-  steps = (UINT8 *) alloc_mem (length);
+  steps = (UINT8 *) alloc_mem (step_mem());
+  memset(steps, 0, step_mem());
 
-  lastdir = (new_steps[length - 1] & STEP_MASK) >> 1;
+  lastdir = new_steps[length - 1];
   prevdir = lastdir;
   for (stepindex = 0, srcindex = 0; srcindex < length;
   stepindex++, srcindex++) {
     new_box = BOX (pos, pos);
     box += new_box;
                                  //copy steps
-    steps[stepindex] = new_steps[srcindex];
-    dir = step_dir (stepindex);
+    dir = new_steps[srcindex];
+    set_step(stepindex, dir);
     dirdiff = dir - prevdir;
     pos += step (stepindex);
     if ((dirdiff == 64 || dirdiff == -64) && stepindex > 0) {
@@ -107,14 +108,14 @@ INT16 length                     //length of loop
     if (dirdiff == 64 || dirdiff == -64) {
       start += step (0);
       stepindex -= 2;            //cancel there-and-back
-      memmove (steps, steps + 1, stepindex);
+      for (int i = 0; i < stepindex; ++i)
+        set_step(i, step_dir(i + 1));
     }
   }
   while (stepindex > 1 && (dirdiff == 64 || dirdiff == -64));
   stepcount = stepindex;
   ASSERT_HOST (stepcount >= 4);
 }
-
 
 /**********************************************************************
  * C_OUTLINE::C_OUTLINE
@@ -137,68 +138,15 @@ C_OUTLINE::C_OUTLINE(                     //constructor
   DIR128 dir;                    //coded direction
   UINT8 new_step;
 
-  pos = srcline->start;
   stepcount = srcline->stepcount * 2;
                                  //get memory
-  steps = (UINT8 *) alloc_mem (stepcount);
+  steps = (UINT8 *) alloc_mem (step_mem());
+  memset(steps, 0, step_mem());
 
-  prevpos = pos;
-  prevpos.rotate (rotation);
-  start = prevpos;
-  box = BOX (start, start);
-  destindex = 0;
-  for (stepindex = 0; stepindex < srcline->stepcount; stepindex++) {
-    pos += srcline->step (stepindex);
-    destpos = pos;
-    destpos.rotate (rotation);
-    if (destpos.x () != prevpos.x () || destpos.y () != prevpos.y ()) {
-      dir = DIR128 (FCOORD (destpos - prevpos));
-      dir += 64;                 //turn to step style
-      new_step = dir.get_dir () * 2;
-      //              tprintf("Required step=(%d,%d)=%d, ",
-      //                      destpos.x()-prevpos.x(),destpos.y()-prevpos.y(),new_step);
-      if (new_step & 63) {
-        steps[destindex++] = (new_step & 192) + 64 + 31;
-        if (destindex < 2
-          || (dirdiff =
-          step_dir (destindex - 1) - step_dir (destindex - 2)) !=
-          -64 && dirdiff != 64)
-          steps[destindex++] = (new_step & 192) + 31;
-        else {
-          steps[destindex - 1] = (new_step & 192) + 31;
-          steps[destindex++] = (new_step & 192) + 64 + 31;
-        }
-        //                      tprintf("made (%d,%d) and (%d,%d)\n",
-        //                              step(destindex-2).x(),step(destindex-2).y(),
-        //                              step(destindex-1).x(),step(destindex-1).y());
-      }
-      else {
-        steps[destindex++] = new_step + 31;
-        if (destindex >= 2
-          &&
-          ((dirdiff =
-          step_dir (destindex - 1) - step_dir (destindex - 2)) ==
-          -64 || dirdiff == 64))
-          destindex -= 2;        //forget u turn
-        //                      tprintf("made (%d,%d)\n",
-        //                              step(destindex-1).x(),step(destindex-1).y());
-      }
-      prevpos = destpos;
-      new_box = BOX (destpos, destpos);
-      box += new_box;
-    }
-  }
-  ASSERT_HOST (destpos.x () == start.x () && destpos.y () == start.y ());
-  dirdiff = step_dir (destindex - 1) - step_dir (0);
-  while ((dirdiff == 64 || dirdiff == -64) && destindex > 1) {
-    start += step (0);
-    destindex -= 2;
-    memmove (steps, steps + 1, destindex);
-    dirdiff = step_dir (destindex - 1) - step_dir (0);
-  }
-  if (destindex < 4) {
+  for (int iteration = 0; iteration < 2; ++iteration) {
+    DIR128 round1 = iteration == 0 ? 32 : 0;
+    DIR128 round2 = iteration != 0 ? 32 : 0;
     pos = srcline->start;
-
     prevpos = pos;
     prevpos.rotate (rotation);
     start = prevpos;
@@ -210,37 +158,28 @@ C_OUTLINE::C_OUTLINE(                     //constructor
       destpos.rotate (rotation);
       if (destpos.x () != prevpos.x () || destpos.y () != prevpos.y ()) {
         dir = DIR128 (FCOORD (destpos - prevpos));
-        dir += 64;               //turn to step style
-        new_step = dir.get_dir () * 2;
-        //              tprintf("Required step=(%d,%d)=%d, ",
-        //                      destpos.x()-prevpos.x(),destpos.y()-prevpos.y(),new_step);
-        if (new_step & 63) {
-          steps[destindex++] = (new_step & 192) + 31;
+        dir += 64;                 //turn to step style
+        new_step = dir.get_dir ();
+        if (new_step & 31) {
+          set_step(destindex++, dir + round1);
           if (destindex < 2
             || (dirdiff =
-            step_dir (destindex - 1) - step_dir (destindex -
-            2)) != -64
-            && dirdiff != 64)
-            steps[destindex++] = (new_step & 192) + 64 + 31;
+            step_dir (destindex - 1) - step_dir (destindex - 2)) !=
+            -64 && dirdiff != 64)
+            set_step(destindex++, dir + round2);
           else {
-            steps[destindex - 1] = (new_step & 192) + 64 + 31;
-            steps[destindex++] = (new_step & 192) + 31;
+            set_step(destindex - 1, dir + round2);
+            set_step(destindex++, dir + round1);
           }
-          //                      tprintf("made (%d,%d) and (%d,%d)\n",
-          //                              step(destindex-2).x(),step(destindex-2).y(),
-          //                              step(destindex-1).x(),step(destindex-1).y());
         }
         else {
-          steps[destindex++] = new_step + 31;
+          set_step(destindex++, dir);
           if (destindex >= 2
             &&
             ((dirdiff =
-            step_dir (destindex - 1) - step_dir (destindex -
-            2)) == -64
-            || dirdiff == 64))
-            destindex -= 2;      //forget u turn
-          //                      tprintf("made (%d,%d)\n",
-          //                              step(destindex-1).x(),step(destindex-1).y());
+            step_dir (destindex - 1) - step_dir (destindex - 2)) ==
+            -64 || dirdiff == 64))
+            destindex -= 2;        // Forget u turn
         }
         prevpos = destpos;
         new_box = BOX (destpos, destpos);
@@ -249,12 +188,15 @@ C_OUTLINE::C_OUTLINE(                     //constructor
     }
     ASSERT_HOST (destpos.x () == start.x () && destpos.y () == start.y ());
     dirdiff = step_dir (destindex - 1) - step_dir (0);
-    while ((dirdiff == 64 || dirdiff == -64) && destindex > 4) {
+    while ((dirdiff == 64 || dirdiff == -64) && destindex > 1) {
       start += step (0);
       destindex -= 2;
-      memmove (steps, steps + 1, destindex);
+      for (int i = 0; i < destindex; ++i)
+        set_step(i, step_dir(i + 1));
       dirdiff = step_dir (destindex - 1) - step_dir (0);
     }
+    if (destindex >= 4)
+      break;
   }
   stepcount = destindex;
   destpos = start;
@@ -262,18 +204,6 @@ C_OUTLINE::C_OUTLINE(                     //constructor
     destpos += step (stepindex);
   }
   ASSERT_HOST (destpos.x () == start.x () && destpos.y () == start.y ());
-}
-
-
-/**********************************************************************
- * C_OUTLINE::step
- *
- * Return the step vector.
- **********************************************************************/
-
-ICOORD C_OUTLINE::step(                          //get step vector
-                       INT16 stepindex) const {  //index of step
-  return step_coords[steps[stepindex] >> (DIRBITS - 1)];
 }
 
 
@@ -579,7 +509,6 @@ INT16 C_OUTLINE::turn_direction() const {  //winding number
 void C_OUTLINE::reverse() {  //reverse drection
   DIR128 halfturn = MODULUS / 2; //amount to shift
   DIR128 stepdir;                //direction of step
-  DIR128 graddir;                //gradient vector
   INT16 stepindex;               //index to cstep
   INT16 farindex;                //index to other side
   INT16 halfsteps;               //half of stepcount
@@ -588,10 +517,8 @@ void C_OUTLINE::reverse() {  //reverse drection
   for (stepindex = 0; stepindex < halfsteps; stepindex++) {
     farindex = stepcount - stepindex - 1;
     stepdir = step_dir (stepindex);
-    graddir = gradient (stepindex);
-    set_step (stepindex, step_dir (farindex) + halfturn,
-      gradient (farindex) + halfturn);
-    set_step (farindex, stepdir + halfturn, graddir + halfturn);
+    set_step (stepindex, step_dir (farindex) + halfturn);
+    set_step (farindex, stepdir + halfturn);
   }
 }
 
@@ -621,6 +548,7 @@ void C_OUTLINE::move(                  // reposition OUTLINE
  * Draw the outline in the given colour.
  **********************************************************************/
 
+#ifndef GRAPHICS_DISABLED
 void C_OUTLINE::plot(                //draw it
                      WINDOW window,  //window to draw in
                      COLOUR colour   //colour to draw in
@@ -631,7 +559,7 @@ void C_OUTLINE::plot(                //draw it
   DIR128 oldstepdir;             //previous stepdir
 
   pos = start;                   //current position
-  line_color_index(window, colour); 
+  line_color_index(window, colour);
   move2d (window, pos.x (), pos.y ());
   stepindex = 0;
   stepdir = step_dir (0);        //get direction
@@ -649,42 +577,7 @@ void C_OUTLINE::plot(                //draw it
     draw2d (window, pos.x (), pos.y ());
   }
 }
-
-
-/**********************************************************************
- * C_OUTLINE::plot_dirs
- *
- * Draw the outline in the given colour.
- **********************************************************************/
-
-void C_OUTLINE::plot_dirs(                //draw it
-                          WINDOW window,  //window to draw in
-                          COLOUR colour   //colour to draw in
-                         ) const {
-  INT16 stepindex;               //index to cstep
-  ICOORD pos;                    //current position
-  ICOORD stepvec;                //step to next
-  DIR128 stepdir;                //direction of step
-
-  pos = start;                   //current position
-  line_color_index(window, colour); 
-  stepindex = 0;
-  while (stepindex < stepcount) {
-                                 //gradient vector
-    stepdir = gradient (stepindex);
-    stepvec = step (stepindex);  //step to next
-    move2d (window,
-      (float) (pos.x () + stepvec.x () / 2.0),
-      (float) (pos.y () + stepvec.y () / 2.0));
-    draw2d (window,
-      (float) (pos.x () + stepvec.x () / 2.0 +
-      stepdir.vector ().x () * 2.0 / DIRSCALE),
-      (float) (pos.y () + stepvec.y () / 2.0 +
-      stepdir.vector ().y () * 2.0 / DIRSCALE));
-    pos += stepvec;              //step to next
-    stepindex++;                 //count steps
-  }
-}
+#endif
 
 
 /**********************************************************************
@@ -700,10 +593,10 @@ const C_OUTLINE & source         //from this
   box = source.box;
   start = source.start;
   if (steps != NULL)
-    free_mem(steps); 
+    free_mem(steps);
   stepcount = source.stepcount;
-  steps = (UINT8 *) alloc_mem (stepcount);
-  memmove (steps, source.steps, stepcount);
+  steps = (UINT8 *) alloc_mem (step_mem());
+  memmove (steps, source.steps, step_mem());
   if (!children.empty ())
     children.clear ();
   children.deep_copy (&source.children);

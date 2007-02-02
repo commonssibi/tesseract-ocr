@@ -753,3 +753,26 @@ TO_BLOCK::TO_BLOCK(                  //make a block
                   ) {
   block = src_block;
 }
+
+static void clear_blobnboxes(BLOBNBOX_LIST* boxes) {
+  BLOBNBOX_IT it = boxes;
+  // A BLOBNBOX generally doesn't own its blobs, so if they do, you
+  // have to delete them explicitly.
+  for (it.mark_cycle_pt(); !it.cycled_list(); it.forward()) {
+    BLOBNBOX* box = it.data();
+    if (box->blob() != NULL)
+      delete box->blob();
+    if (box->cblob() != NULL)
+      delete box->cblob();
+  }
+}
+
+TO_BLOCK::~TO_BLOCK() {
+  // Any residual BLOBNBOXes at this stage own their blobs, so delete them.
+  clear_blobnboxes(&blobs);
+  clear_blobnboxes(&underlines);
+  clear_blobnboxes(&noise_blobs);
+  clear_blobnboxes(&small_blobs);
+  clear_blobnboxes(&large_blobs);
+}
+

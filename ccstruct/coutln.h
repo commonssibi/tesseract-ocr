@@ -30,9 +30,7 @@
 #define INTERSECTING    MAX_INT16//no winding number
 
                                  //mask to get step
-#define STEP_MASK       (3<<(DIRBITS-1))
-                                 //mask to get gradient
-#define GRAD_MASK       ((1<<(DIRBITS-1))-1)
+#define STEP_MASK       3
 
 enum C_OUTLINE_FLAGS
 {
@@ -44,7 +42,6 @@ class DLLSYM C_OUTLINE;          //forward declaration
 ELISTIZEH_S (C_OUTLINE)
 class DLLSYM C_OUTLINE:public ELIST_LINK
 {
-  friend class C_OUTLINE_FRAG;
   public:
     C_OUTLINE() {  //empty constructor
       steps = NULL;
@@ -55,13 +52,13 @@ class DLLSYM C_OUTLINE:public ELIST_LINK
               ICOORD top_right,
               INT16 length);
     C_OUTLINE(ICOORD startpt,    //start of loop
-              UINT8 *new_steps,  //steps in loop
+              DIR128 *new_steps,  //steps in loop
               INT16 length);     //length of loop
                                  //outline to copy
     C_OUTLINE(C_OUTLINE *srcline, FCOORD rotation);  //and rotate
     ~C_OUTLINE () {              //destructor
       if (steps != NULL)
-        free_mem(steps); 
+        free_mem(steps);
       steps = NULL;
     }
 
@@ -80,57 +77,45 @@ class DLLSYM C_OUTLINE:public ELIST_LINK
     }
 
                                  //access function
-    const BOX &bounding_box() const { 
+    const BOX &bounding_box() const {
       return box;
     }
     void set_step(                    //set a step
                   INT16 stepindex,    //index of step
-                  INT8 stepdir,       //chain code
-                  DIR128 gradient) {  //gradient dir
-                                 //difference
-      gradient = gradient - (stepdir << (DIRBITS - 2));
-      if (gradient.get_dir () >= MODULUS / 2) {
-        ILLEGAL_GRADIENT.error ("C_OUTLINE::set_step", ABORT,
-          "%d", gradient.get_dir ());
-      }
-      steps[stepindex] = (stepdir << (DIRBITS - 1)) | gradient.get_dir ();
-      //squeeze into byte
+                  INT8 stepdir) {     //chain code
+      int shift = stepindex%4 * 2;
+      UINT8 mask = 3 << shift;
+      steps[stepindex/4] = ((stepdir << shift) & mask) |
+                           (steps[stepindex/4] & ~mask);
+      //squeeze 4 into byte
     }
     void set_step(                    //set a step
                   INT16 stepindex,    //index of step
-                  DIR128 stepdir,     //direction
-                  DIR128 gradient) {  //gradient dir
+                  DIR128 stepdir) {   //direction
                                  //clean it
-      stepdir = stepdir.get_dir () & (STEP_MASK >> 1);
+      INT8 chaindir = stepdir.get_dir() >> (DIRBITS - 2);
                                  //difference
-      gradient = gradient - stepdir;
-      if (gradient.get_dir () >= MODULUS / 2) {
-        ILLEGAL_GRADIENT.error ("C_OUTLINE::set_step", ABORT,
-          "%d", gradient.get_dir ());
-      }
-      steps[stepindex] = (stepdir.get_dir () << 1) | gradient.get_dir ();
-      //squeeze into byte
+      set_step(stepindex, chaindir);
+      //squeeze 4 into byte
     }
 
                                  //get start position
-    const ICOORD &start_pos() const { 
+    const ICOORD &start_pos() const {
       return start;
     }
     INT32 pathlength() const {  //get path length
       return stepcount;
     }
-    DIR128 step_dir(                          //get step direction
-                    INT16 stepindex) const {  //index of step
-                                 //as a direction
-      return DIR128 ((INT16) ((steps[stepindex] & STEP_MASK) >> 1));
+    // Return step at a given index as a DIR128.
+    DIR128 step_dir(INT16 index) const {
+      return DIR128((INT16)(((steps[index/4] >> (index%4 * 2)) & STEP_MASK) <<
+                      (DIRBITS - 2)));
     }
-    ICOORD step(                         //get step vector
-                INT16 stepindex) const;  //index of step
-    DIR128 gradient(                          //get gradient vector
-                    INT16 stepindex) const {  //index of step
-      return DIR128 ((INT16) (((steps[stepindex] & STEP_MASK) >> 1)
-        + (steps[stepindex] & GRAD_MASK)));
+    // Return the step vector for the given outline position.
+    ICOORD step(INT16 index) const { //index of step
+      return step_coords[(steps[index/4] >> (index%4 * 2)) & STEP_MASK];
     }
+
     INT32 area();  //return area
     INT32 outer_area();  //return area
     INT32 count_transitions(                   //count maxima
@@ -146,7 +131,7 @@ class DLLSYM C_OUTLINE:public ELIST_LINK
     INT16 winding_number(                       //get winding number
                          ICOORD testpt) const;  //around this point
                                  //get direction
-    INT16 turn_direction() const; 
+    INT16 turn_direction() const;
     void reverse();  //reverse direction
 
     void move(                    // reposition outline
@@ -155,9 +140,6 @@ class DLLSYM C_OUTLINE:public ELIST_LINK
     void plot(                       //draw one
               WINDOW window,         //window to draw in
               COLOUR colour) const;  //colour to draw it
-    void plot_dirs(                       //draw one
-                   WINDOW window,         //window to draw in
-                   COLOUR colour) const;  //colour to draw it
 
     void prep_serialise() {  //set ptrs to counts
       children.prep_serialise ();
@@ -166,13 +148,13 @@ class DLLSYM C_OUTLINE:public ELIST_LINK
     void dump(  //write external bits
               FILE *f) {
                                  //stepcount = # bytes
-      serialise_bytes (f, (void *) steps, stepcount);
+      serialise_bytes (f, (void *) steps, step_mem());
       children.dump (f);
     }
 
     void de_dump(  //read external bits
                  FILE *f) {
-      steps = (UINT8 *) de_serialise_bytes (f, stepcount);
+      steps = (UINT8 *) de_serialise_bytes (f, step_mem());
       children.de_dump (f);
     }
 
@@ -181,6 +163,8 @@ class DLLSYM C_OUTLINE:public ELIST_LINK
       const C_OUTLINE & source); //from this
 
   private:
+    int step_mem() const { return (stepcount+3) / 4; }
+
     BOX box;                     //boudning box
     ICOORD start;                //start coord
     UINT8 *steps;                //step array

@@ -73,11 +73,11 @@ class BLOBNBOX:public ELIST_LINK
     }
 
                                  //get bounding box
-    const BOX &bounding_box() const { 
+    const BOX &bounding_box() const {
       return box;
     }
                                  //get bounding box
-    const BOX &reduced_box() const { 
+    const BOX &reduced_box() const {
       return red_box;
     }
     void set_reduced_box(  //set other box
@@ -115,6 +115,7 @@ class BLOBNBOX:public ELIST_LINK
       return cblob_ptr;
     }
 
+#ifndef GRAPHICS_DISABLED
     void plot(                        //draw one
               WINDOW window,          //window to draw in
               COLOUR blob_colour,     //for outer bits
@@ -124,6 +125,7 @@ class BLOBNBOX:public ELIST_LINK
       if (cblob_ptr != NULL)
         cblob_ptr->plot (window, blob_colour, child_colour);
     }
+#endif
 
     NEWDELETE2 (BLOBNBOX) private:
     int area:30;                 //enclosed area
@@ -138,7 +140,7 @@ class BLOBNBOX:public ELIST_LINK
 class TO_ROW:public ELIST2_LINK
 {
   public:
-    TO_ROW() { 
+    TO_ROW() {
     }                            //empty
     TO_ROW(                 //constructor
            BLOBNBOX *blob,  //from first blob
@@ -149,28 +151,28 @@ class TO_ROW:public ELIST2_LINK
     float max_y() const {  //access function
       return y_max;
     }
-    float min_y() const { 
+    float min_y() const {
       return y_min;
     }
-    float mean_y() const { 
+    float mean_y() const {
       return (y_min + y_max) / 2.0f;
     }
-    float initial_min_y() const { 
+    float initial_min_y() const {
       return initial_y_min;
     }
     float line_m() const {  //access to line fit
       return m;
     }
-    float line_c() const { 
+    float line_c() const {
       return c;
     }
-    float line_error() const { 
+    float line_error() const {
       return error;
     }
-    float parallel_c() const { 
+    float parallel_c() const {
       return para_c;
     }
-    float parallel_error() const { 
+    float parallel_error() const {
       return para_error;
     }
     float believability() const {  //baseline goodness
@@ -216,7 +218,7 @@ class TO_ROW:public ELIST2_LINK
       y_min = new_min;
       y_max = new_max;
     }
-    void compute_vertical_projection(); 
+    void compute_vertical_projection();
     //get projection
 
                                  //true when dead
@@ -262,10 +264,11 @@ ELIST2IZEH (TO_ROW)
 class TO_BLOCK:public ELIST_LINK
 {
   public:
-    TO_BLOCK() { 
+    TO_BLOCK() {
     }                            //empty
     TO_BLOCK(                    //constructor
              BLOCK *src_block);  //real block
+    ~TO_BLOCK();
 
     TO_ROW_LIST *get_rows() {  //access function
       return &row_list;

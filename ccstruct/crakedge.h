@@ -30,9 +30,6 @@ class CRACKEDGE
     INT8 stepx;                  //edge step
     INT8 stepy;
     INT8 stepdir;                //chaincode
-    DIR128 dir;                  //direction
-    INT16 gradx;                 //gradient vector
-    INT16 grady;
     CRACKEDGE *prev;             /*previous point */
     CRACKEDGE *next;             /*next point */
 
