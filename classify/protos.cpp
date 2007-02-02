@@ -32,6 +32,7 @@
 #include "freelist.h"
 #include "callcpp.h"
 #include "adaptmatch.h"
+#include "scanutils.h"
 
 #include <stdio.h>
 #include <math.h>
@@ -57,7 +58,7 @@ char *TrainingFile;
  * Add a new config to this class.  Malloc new space and copy the
  * old configs if necessary.  Return the config id for the new config.
  **********************************************************************/
-int AddConfigToClass(CLASS_TYPE Class) { 
+int AddConfigToClass(CLASS_TYPE Class) {
   int NewNumConfigs;
   int NewConfig;
   int MaxNumProtos;
@@ -92,7 +93,7 @@ int AddConfigToClass(CLASS_TYPE Class) {
  * Add a new proto to this class.  Malloc new space and copy the
  * old protos if necessary.  Return the proto id for the new proto.
  **********************************************************************/
-int AddProtoToClass(CLASS_TYPE Class) { 
+int AddProtoToClass(CLASS_TYPE Class) {
   int i;
   int Bit;
   int NewNumProtos;
@@ -115,7 +116,7 @@ int AddProtoToClass(CLASS_TYPE Class) {
       ConfigIn (Class, i) = ExpandBitVector (Config, NewNumProtos);
 
       for (Bit = NumProtosIn (Class); Bit < NewNumProtos; Bit++)
-        reset_bit(Config, Bit); 
+        reset_bit(Config, Bit);
     }
   }
   NewProto = NumProtosIn (Class);
@@ -129,7 +130,7 @@ int AddProtoToClass(CLASS_TYPE Class) {
  *
  * Return the length of all the protos in this class.
  **********************************************************************/
-FLOAT32 ClassConfigLength(CLASS_TYPE Class, BIT_VECTOR Config) { 
+FLOAT32 ClassConfigLength(CLASS_TYPE Class, BIT_VECTOR Config) {
   INT16 Pid;
   FLOAT32 TotalLength = 0;
 
@@ -148,7 +149,7 @@ FLOAT32 ClassConfigLength(CLASS_TYPE Class, BIT_VECTOR Config) {
  *
  * Return the length of all the protos in this class.
  **********************************************************************/
-FLOAT32 ClassProtoLength(CLASS_TYPE Class) { 
+FLOAT32 ClassProtoLength(CLASS_TYPE Class) {
   INT16 Pid;
   FLOAT32 TotalLength = 0;
 
@@ -164,7 +165,7 @@ FLOAT32 ClassProtoLength(CLASS_TYPE Class) {
  *
  * Copy the first proto into the second.
  **********************************************************************/
-void CopyProto(PROTO Src, PROTO Dest) { 
+void CopyProto(PROTO Src, PROTO Dest) {
   ProtoX (Dest) = ProtoX (Src);
   ProtoY (Dest) = ProtoY (Src);
   ProtoLength (Dest) = ProtoLength (Src);
@@ -180,7 +181,7 @@ void CopyProto(PROTO Src, PROTO Dest) {
  *
  * Fill in Protos A, B, C fields based on the X, Y, Angle fields.
  **********************************************************************/
-void FillABC(PROTO Proto) { 
+void FillABC(PROTO Proto) {
   FLOAT32 Slope, Intercept, Normalizer;
 
   Slope = tan (Proto->Angle * 2.0 * PI);
@@ -197,10 +198,10 @@ void FillABC(PROTO Proto) {
  *
  * Deallocate the memory consumed by the specified class.
  **********************************************************************/
-void FreeClass(CLASS_TYPE Class) { 
+void FreeClass(CLASS_TYPE Class) {
   if (Class) {
-    FreeClassFields(Class); 
-    memfree(Class); 
+    FreeClassFields(Class);
+    memfree(Class);
   }
 }
 
@@ -210,7 +211,7 @@ void FreeClass(CLASS_TYPE Class) {
  *
  * Deallocate the memory consumed by subfields of the specified class.
  **********************************************************************/
-void FreeClassFields(CLASS_TYPE Class) { 
+void FreeClassFields(CLASS_TYPE Class) {
   int i;
 
   if (Class) {
@@ -231,7 +232,7 @@ void FreeClassFields(CLASS_TYPE Class) {
  * Initialize anything that needs to be initialized to work with the
  * functions in this file.
  **********************************************************************/
-void InitPrototypes() { 
+void InitPrototypes() {
   string_variable (TrainingFile, "TrainingFile", "MicroFeatures");
 }
 
@@ -242,7 +243,7 @@ void InitPrototypes() {
  * Allocate a new class with enough memory to hold the specified number
  * of prototypes and configurations.
  **********************************************************************/
-CLASS_TYPE NewClass(int NumProtos, int NumConfigs) { 
+CLASS_TYPE NewClass(int NumProtos, int NumConfigs) {
   CLASS_TYPE Class;
 
   Class = (CLASS_TYPE) Emalloc (sizeof (CLASS_STRUCT));
@@ -267,7 +268,7 @@ CLASS_TYPE NewClass(int NumProtos, int NumConfigs) {
  *
  * Print the list of prototypes in this class type.
  **********************************************************************/
-void PrintProtos(CLASS_TYPE Class) { 
+void PrintProtos(CLASS_TYPE Class) {
   INT16 Pid;
 
   for (Pid = 0; Pid < NumProtosIn (Class); Pid++) {
@@ -275,7 +276,7 @@ void PrintProtos(CLASS_TYPE Class) {
     PrintProto (ProtoIn (Class, Pid));
     cprintf ("\t");
     PrintProtoLine (ProtoIn (Class, Pid));
-    new_line(); 
+    new_line();
   }
 }
 
@@ -286,23 +287,23 @@ void PrintProtos(CLASS_TYPE Class) {
  * Read in the training data from a file.  All of the classes are read
  * in.  The results are stored in the global variable, 'TrainingData'.
  **********************************************************************/
-void ReadClassFile() { 
+void ReadClassFile() {
   FILE *File;
   char TextLine[CHARS_PER_LINE];
 
   cprintf ("Reading training data from '%s' ...", TrainingFile);
-  fflush(stdout); 
+  fflush(stdout);
 
   File = open_file (TrainingFile, "r");
   while (fgets (TextLine, CHARS_PER_LINE, File) != NULL) {
 
     ReadClassFromFile (File, TextLine[0]);
-    fgets(TextLine, CHARS_PER_LINE, File); 
-    fgets(TextLine, CHARS_PER_LINE, File); 
+    fgets(TextLine, CHARS_PER_LINE, File);
+    fgets(TextLine, CHARS_PER_LINE, File);
   }
-  fclose(File); 
+  fclose(File);
 
-  new_line(); 
+  new_line();
 }
 
 
@@ -312,14 +313,14 @@ void ReadClassFile() {
  * Read in a class description (protos and configs) from a file.  Update
  * the class structure record.
  **********************************************************************/
-void ReadClassFromFile(FILE *File, char ClassChar) { 
+void ReadClassFromFile(FILE *File, char ClassChar) {
   CLASS_TYPE Class;
 
   Class = &TrainingData[ClassChar];
 
-  ReadProtos(File, Class); 
+  ReadProtos(File, Class);
 
-  ReadConfigs(File, Class); 
+  ReadConfigs(File, Class);
 }
 
 
@@ -329,7 +330,7 @@ void ReadClassFromFile(FILE *File, char ClassChar) {
  * Read the prototype configurations for this class from a file.  Read
  * the requested number of lines.
  **********************************************************************/
-void ReadConfigs(register FILE *File, CLASS_TYPE Class) { 
+void ReadConfigs(register FILE *File, CLASS_TYPE Class) {
   INT16 Cid;
   register INT16 Wid;
   register BIT_VECTOR ThisConfig;
@@ -347,7 +348,7 @@ void ReadConfigs(register FILE *File, CLASS_TYPE Class) {
 
     ThisConfig = NewBitVector (NumProtosIn (Class));
     for (Wid = 0; Wid < NumWords; Wid++)
-      fscanf (File, "%lx", &ThisConfig[Wid]);
+      fscanf (File, "%x", &ThisConfig[Wid]);
     ConfigIn (Class, Cid) = ThisConfig;
   }
 }
@@ -359,7 +360,7 @@ void ReadConfigs(register FILE *File, CLASS_TYPE Class) {
  * Read in all the prototype information from a file.  Read the number
  * of lines requested.
  **********************************************************************/
-void ReadProtos(register FILE *File, CLASS_TYPE Class) { 
+void ReadProtos(register FILE *File, CLASS_TYPE Class) {
   register INT16 Pid;
   register PROTO Proto;
   int NumProtos;
@@ -391,7 +392,7 @@ void ReadProtos(register FILE *File, CLASS_TYPE Class) {
  * specified old proto will also contain the new proto.  The caller
  * is responsible for actually filling in the appropriate proto params.
  **********************************************************************/
-int SplitProto(CLASS_TYPE Class, int OldPid) { 
+int SplitProto(CLASS_TYPE Class, int OldPid) {
   int i;
   int NewPid;
   BIT_VECTOR Config;
@@ -401,7 +402,7 @@ int SplitProto(CLASS_TYPE Class, int OldPid) {
   for (i = 0; i < NumConfigsIn (Class); i++) {
     Config = ConfigIn (Class, i);
     if (test_bit (Config, OldPid))
-      SET_BIT(Config, NewPid); 
+      SET_BIT(Config, NewPid);
   }
   return (NewPid);
 }
@@ -413,7 +414,7 @@ int SplitProto(CLASS_TYPE Class, int OldPid) {
  * Write the configs in the given class to the specified file in the
  * old config format.
  **********************************************************************/
-void WriteOldConfigFile(FILE *File, CLASS_TYPE Class) { 
+void WriteOldConfigFile(FILE *File, CLASS_TYPE Class) {
   int Cid, Pid;
   BIT_VECTOR Config;
 
@@ -441,7 +442,7 @@ void WriteOldConfigFile(FILE *File, CLASS_TYPE Class) {
  * Write the protos in the given class to the specified file in the
  * old proto format.
  **********************************************************************/
-void WriteOldProtoFile(FILE *File, CLASS_TYPE Class) { 
+void WriteOldProtoFile(FILE *File, CLASS_TYPE Class) {
   int Pid;
   PROTO Proto;
 

@@ -21,7 +21,7 @@
 /**----------------------------------------------------------------------------
           Include Files and Type Defines
 ----------------------------------------------------------------------------**/
-#include "util.h"
+#include "cutil.h"
 #include <signal.h>
 
 /* functions to be placed in the signal menu look like: */

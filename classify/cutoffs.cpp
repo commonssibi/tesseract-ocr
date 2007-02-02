@@ -20,6 +20,7 @@
 ----------------------------------------------------------------------------**/
 #include "cutoffs.h"
 #include "efio.h"
+#include "scanutils.h"
 #include <stdio.h>
 
 #define MAX_CUTOFF      1000

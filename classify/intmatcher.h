@@ -178,6 +178,7 @@ UINT8
 ProtoEvidence[MAX_NUM_PROTOS][MAX_PROTO_INDEX],
 int Debug);
 
+#ifndef GRAPHICS_DISABLED
 void IMDebugFeatureProtoError (INT_CLASS ClassTemplate,
 BIT_VECTOR ProtoMask,
 BIT_VECTOR ConfigMask,
@@ -199,6 +200,7 @@ void IMDisplayFeatureDebugInfo(INT_CLASS ClassTemplate,
                                INT16 NumFeatures,
                                INT_FEATURE_ARRAY Features,
                                int Debug);
+#endif
 
 void IMUpdateSumOfProtoEvidences (INT_CLASS ClassTemplate,
 BIT_VECTOR ConfigMask,
@@ -220,10 +222,12 @@ int SumOfFeatureEvidence[MAX_NUM_CONFIGS],
 UINT16 BlobLength,
 UINT8 NormalizationFactor, INT_RESULT Result);
 
+#ifndef GRAPHICS_DISABLED
 void IMDebugBestMatch(int BestMatch,
                       INT_RESULT Result,
                       UINT16 BlobLength,
                       UINT8 NormalizationFactor);
+#endif
 
 void HeapSort (int n, register INT16 ra[], register UINT8 rb[]);
 

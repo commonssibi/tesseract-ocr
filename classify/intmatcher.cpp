@@ -327,7 +327,7 @@ make_int_var (ClassPrunerMultiplier, 15, MakeClassPrunerMultiplier,
 16, 21, SetClassPrunerMultiplier,
 "Class Pruner Multiplier 0-255:       ");
 
-make_int_var (IntegerMatcherMultiplier, 7, MakeIntegerMatcherMultiplier,
+make_int_var (IntegerMatcherMultiplier, 14, MakeIntegerMatcherMultiplier,
 16, 22, SetIntegerMatcherMultiplier,
 "Integer Matcher Multiplier  0-255:   ");
 
@@ -530,7 +530,7 @@ int ClassPruner(INT_TEMPLATES IntTemplates,
 
   /* Sort Classes using Heapsort Algorithm */
   if (NumClasses > 1)
-    HeapSort(NumClasses, SortKey, SortIndex); 
+    HeapSort(NumClasses, SortKey, SortIndex);
 
   if (display_ratings > 1) {
     cprintf ("CP:%d classes, %d features:\n", NumClasses, NumFeatures);
@@ -947,8 +947,10 @@ void PruningMatcher(INT_CLASS ClassTemplate,
                     NormalizationFactor,
                     Result);
 
+#ifndef GRAPHICS_DISABLED
   if (PrintMatchSummaryOn (Debug))
-    IMDebugBestMatch(BestMatch, Result, BlobLength, NormalizationFactor); 
+    IMDebugBestMatch(BestMatch, Result, BlobLength, NormalizationFactor);
+#endif
 
   if (MatchDebuggingOn (Debug))
     cprintf ("Match Complete --------------------------------------------\n");
@@ -1032,7 +1034,7 @@ void IntegerMatcher(INT_CLASS ClassTemplate,
   if (MatchDebuggingOn (Debug))
     cprintf ("Integer Matcher -------------------------------------------\n");
 
-  IMClearTables(ClassTemplate, SumOfFeatureEvidence, ProtoEvidence); 
+  IMClearTables(ClassTemplate, SumOfFeatureEvidence, ProtoEvidence);
 
   for (Feature = 0, used_features = 0; Feature < NumFeatures; Feature++) {
     if (Features[Feature].CP_misses >= min_misses) {
@@ -1044,6 +1046,7 @@ void IntegerMatcher(INT_CLASS ClassTemplate,
     }
   }
 
+#ifndef GRAPHICS_DISABLED
   if (PrintProtoMatchesOn (Debug) || PrintMatchSummaryOn (Debug))
     IMDebugFeatureProtoError(ClassTemplate,
                              ProtoMask,
@@ -1067,6 +1070,7 @@ void IntegerMatcher(INT_CLASS ClassTemplate,
                               NumFeatures,
                               Features,
                               Debug);
+#endif
 
   IMUpdateSumOfProtoEvidences(ClassTemplate,
                               ConfigMask,
@@ -1086,11 +1090,13 @@ void IntegerMatcher(INT_CLASS ClassTemplate,
                     NormalizationFactor,
                     Result);
 
+#ifndef GRAPHICS_DISABLED
   if (PrintMatchSummaryOn (Debug))
-    IMDebugBestMatch(BestMatch, Result, BlobLength, NormalizationFactor); 
+    IMDebugBestMatch(BestMatch, Result, BlobLength, NormalizationFactor);
 
   if (MatchDebuggingOn (Debug))
     cprintf ("Match Complete --------------------------------------------\n");
+#endif
 
 }
 
@@ -1144,13 +1150,14 @@ int FindGoodProtos(INT_CLASS ClassTemplate,
     cprintf
       ("Find Good Protos -------------------------------------------\n");
 
-  IMClearTables(ClassTemplate, SumOfFeatureEvidence, ProtoEvidence); 
+  IMClearTables(ClassTemplate, SumOfFeatureEvidence, ProtoEvidence);
 
   for (Feature = 0; Feature < NumFeatures; Feature++)
     IMUpdateTablesForFeature (ClassTemplate, ProtoMask, ConfigMask, Feature,
       &(Features[Feature]), FeatureEvidence,
       SumOfFeatureEvidence, ProtoEvidence, Debug);
 
+#ifndef GRAPHICS_DISABLED
   if (PrintProtoMatchesOn (Debug) || PrintMatchSummaryOn (Debug))
     IMDebugFeatureProtoError(ClassTemplate,
                              ProtoMask,
@@ -1159,6 +1166,7 @@ int FindGoodProtos(INT_CLASS ClassTemplate,
                              ProtoEvidence,
                              NumFeatures,
                              Debug);
+#endif
 
   /* Average Proto Evidences & Find Good Protos */
   NumProtos = NumIntProtosIn (ClassTemplate);
@@ -1237,7 +1245,7 @@ int FindBadFeatures(INT_CLASS ClassTemplate,
     cprintf
       ("Find Bad Features -------------------------------------------\n");
 
-  IMClearTables(ClassTemplate, SumOfFeatureEvidence, ProtoEvidence); 
+  IMClearTables(ClassTemplate, SumOfFeatureEvidence, ProtoEvidence);
 
   NumBadFeatures = 0;
   NumConfigs = NumIntConfigsIn (ClassTemplate);
@@ -1261,6 +1269,7 @@ int FindBadFeatures(INT_CLASS ClassTemplate,
     }
   }
 
+#ifndef GRAPHICS_DISABLED
   if (PrintProtoMatchesOn (Debug) || PrintMatchSummaryOn (Debug))
     IMDebugFeatureProtoError(ClassTemplate,
                              ProtoMask,
@@ -1269,6 +1278,7 @@ int FindBadFeatures(INT_CLASS ClassTemplate,
                              ProtoEvidence,
                              NumFeatures,
                              Debug);
+#endif
 
   if (MatchDebuggingOn (Debug))
     cprintf ("Match Complete --------------------------------------------\n");
@@ -1279,7 +1289,7 @@ int FindBadFeatures(INT_CLASS ClassTemplate,
 
 
 /*---------------------------------------------------------------------------*/
-void InitIntegerMatcher() { 
+void InitIntegerMatcher() {
   int i;
   UINT32 IntSimilarity;
   double Similarity;
@@ -1287,7 +1297,7 @@ void InitIntegerMatcher() {
   double ScaleFactor;
 
   /* Set default mode of operation of IntegerMatcher */
-  SetCharNormMatch(); 
+  SetCharNormMatch();
 
   /* Initialize table for evidence to similarity lookup */
   for (i = 0; i < SE_TABLE_SIZE; i++) {
@@ -1323,21 +1333,21 @@ void InitIntegerMatcher() {
 
 
 /*---------------------------------------------------------------------------*/
-void InitIntegerMatcherVars() { 
-  MakeClassPrunerThreshold(); 
-  MakeClassPrunerMultiplier(); 
-  MakeIntegerMatcherMultiplier(); 
-  MakeIntThetaFudge(); 
-  MakeCPCutoffStrength(); 
-  MakeEvidenceTableBits(); 
-  MakeIntEvidenceTruncBits(); 
-  MakeSEExponentialMultiplier(); 
-  MakeSimilarityCenter(); 
+void InitIntegerMatcherVars() {
+  MakeClassPrunerThreshold();
+  MakeClassPrunerMultiplier();
+  MakeIntegerMatcherMultiplier();
+  MakeIntThetaFudge();
+  MakeCPCutoffStrength();
+  MakeEvidenceTableBits();
+  MakeIntEvidenceTruncBits();
+  MakeSEExponentialMultiplier();
+  MakeSimilarityCenter();
 }
 
 
 /*-------------------------------------------------------------------------*/
-void PrintIntMatcherStats(FILE *f) { 
+void PrintIntMatcherStats(FILE *f) {
   fprintf (f, "protoword_lookups=%d, zero_protowords=%d, proto_shifts=%d\n",
     protoword_lookups, zero_protowords, proto_shifts);
   fprintf (f, "set_proto_bits=%d, config_shifts=%d, set_config_bits=%d\n",
@@ -1346,7 +1356,7 @@ void PrintIntMatcherStats(FILE *f) {
 
 
 /*-------------------------------------------------------------------------*/
-void SetProtoThresh(FLOAT32 Threshold) { 
+void SetProtoThresh(FLOAT32 Threshold) {
   AdaptProtoThresh = (int) (255 * Threshold);
   if (AdaptProtoThresh < 0)
     AdaptProtoThresh = 0;
@@ -1356,7 +1366,7 @@ void SetProtoThresh(FLOAT32 Threshold) {
 
 
 /*---------------------------------------------------------------------------*/
-void SetFeatureThresh(FLOAT32 Threshold) { 
+void SetFeatureThresh(FLOAT32 Threshold) {
   AdaptFeatureThresh = (int) (255 * Threshold);
   if (AdaptFeatureThresh < 0)
     AdaptFeatureThresh = 0;
@@ -1366,13 +1376,13 @@ void SetFeatureThresh(FLOAT32 Threshold) {
 
 
 /*--------------------------------------------------------------------------*/
-void SetBaseLineMatch() { 
+void SetBaseLineMatch() {
   LocalMatcherMultiplier = 0;
 }
 
 
 /*--------------------------------------------------------------------------*/
-void SetCharNormMatch() { 
+void SetCharNormMatch() {
   LocalMatcherMultiplier = IntegerMatcherMultiplier;
 }
 
@@ -1804,6 +1814,7 @@ int Debug) {
 
 
 /*---------------------------------------------------------------------------*/
+#ifndef GRAPHICS_DISABLED
 void
 IMDebugFeatureProtoError (INT_CLASS ClassTemplate,
 BIT_VECTOR ProtoMask,
@@ -2023,7 +2034,7 @@ void IMDisplayFeatureDebugInfo(INT_CLASS ClassTemplate,
   int NumConfigs;
   register int Temp;
 
-  IMClearTables(ClassTemplate, SumOfFeatureEvidence, ProtoEvidence); 
+  IMClearTables(ClassTemplate, SumOfFeatureEvidence, ProtoEvidence);
 
   NumConfigs = NumIntConfigsIn (ClassTemplate);
   for (Feature = 0; Feature < NumFeatures; Feature++) {
@@ -2050,7 +2061,7 @@ void IMDisplayFeatureDebugInfo(INT_CLASS ClassTemplate,
     }
   }
 }
-
+#endif
 
 /*---------------------------------------------------------------------------*/
 void
@@ -2226,6 +2237,7 @@ UINT8 NormalizationFactor, INT_RESULT Result) {
 
 
 /*---------------------------------------------------------------------------*/
+#ifndef GRAPHICS_DISABLED
 void IMDebugBestMatch(int BestMatch,
                       INT_RESULT Result,
                       UINT16 BlobLength,
@@ -2250,7 +2262,7 @@ void IMDebugBestMatch(int BestMatch,
     100.0 * NormalizationFactor / 256.0, LocalMatcherMultiplier,
     100.0 * LocalMatcherMultiplier / (BlobLength + LocalMatcherMultiplier));
 }
-
+#endif
 
 /*---------------------------------------------------------------------------*/
 void
