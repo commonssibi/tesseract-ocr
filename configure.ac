@@ -7,7 +7,7 @@
 # ----------------------------------------
 
 AC_PREREQ(2.50)
-AC_INIT(Tesseract, 1.02, theraysmith@users.sourceforge.net)
+AC_INIT(Tesseract, 1.03, theraysmith@users.sourceforge.net)
 AC_PACKAGE_TARNAME(tesseract-ocr)
 AC_REVISION($Id$)
 AC_CONFIG_AUX_DIR(config)
@@ -294,6 +294,7 @@ AC_CONFIG_FILES(image/Makefile)
 AC_CONFIG_FILES(textord/Makefile)
 AC_CONFIG_FILES(viewer/Makefile)
 AC_CONFIG_FILES(wordrec/Makefile)
+AC_CONFIG_FILES(training/Makefile)
 # AC_CONFIG_FILES(doc/Doxyfile)
 # AC_CONFIG_FILES(doc/header.html)
 # AC_CONFIG_FILES(doc/footer.html)
