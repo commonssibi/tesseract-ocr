@@ -6,11 +6,11 @@ EXTRA_DIST = \
     mainblk.h memblk.h memryerr.h memry.h mfcpch.h ndminx.h notdll.h \
     nwmain.h ocrclass.h ocrshell.h platform.h secname.h serialis.h \
     stderr.h strngs.h tessclas.h tprintf.h varable.h \
-    mfcpch.cpp getopt.cpp
+    mfcpch.cpp scanutils.cpp scanutils.h unichar.h
 
 noinst_LIBRARIES = libtesseract_ccutil.a
 libtesseract_ccutil_a_SOURCES = \
     basedir.cpp bits16.cpp clst.cpp debugwin.cpp elst.cpp \
     elst2.cpp errcode.cpp globaloc.cpp hashfn.cpp mainblk.cpp \
     memblk.cpp memry.cpp ocrshell.cpp serialis.cpp strngs.cpp \
-    tprintf.cpp varable.cpp
+    tprintf.cpp varable.cpp unichar.cpp getopt.cpp

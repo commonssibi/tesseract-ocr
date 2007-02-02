@@ -112,6 +112,11 @@ pause_continue (const char *format, ...
   vsprintf(msg, format, args);  //Format into msg
   va_end(args);
 
+  #ifdef GRAPHICS_DISABLED
+  // No interaction allowed -> simply go on
+  return true;
+  #else
+
   #ifdef __UNIX__
   printf ("%s\n", msg);
   printf ("Type \"c\" to cancel, anything else to continue: ");
@@ -125,5 +130,7 @@ pause_continue (const char *format, ...
   //   return AfxMessageBox( str.string(), MB_OKCANCEL ) == IDOK;
   return::MessageBox (NULL, msg, "IMGAPP",
     MB_APPLMODAL | MB_OKCANCEL) == IDOK;
+  #endif
+
   #endif
 }

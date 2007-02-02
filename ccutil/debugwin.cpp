@@ -23,6 +23,8 @@
 
 DLLSYM INT_VAR (debug_lines, 256, "Number of lines in debug window");
 
+#ifndef GRAPHICS_DISABLED
+
 #ifdef __MAC__
 #include          <ltextedit.h>
 #include          <lwindow.h>
@@ -474,3 +476,25 @@ const char *format, ...          //special message
   #endif
 }
 #endif                           //Mac Implmentation
+
+#else                            // Non graphical debugger
+
+DEBUG_WIN::DEBUG_WIN( const char*, INT32, INT32, INT32, INT32, INT32 ) {
+}
+
+DEBUG_WIN::~DEBUG_WIN () {
+}
+
+void DEBUG_WIN::dprintf (const char *format, ...) {
+  va_list ap;
+  va_start(ap, format);
+  vfprintf(stderr, format, ap);
+  va_end(ap);
+}
+
+void await_destruction() {
+}
+
+
+#endif
+

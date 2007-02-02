@@ -24,6 +24,7 @@
 #include          "tprintf.h"
 //#include                                      "ipeerr.h"
 #include          "varable.h"
+#include          "scanutils.h"
 
 #define PLUS          '+'        //flag states
 #define MINUS         '-'
@@ -648,8 +649,14 @@ DLLSYM BOOL8 read_variables_file(                  //read the file
                                  //find name
         for (double_it.mark_cycle_pt (); !double_it.cycled_list () && strcmp (line, double_it.data ()->name); double_it.forward ());
                                  //found it
+        
+        #ifdef EMBEDDED
+        if (!double_it.cycled_list ()) {
+          doubleval = strtofloat(valptr);
+        #else
         if (!double_it.cycled_list ()
         && sscanf (valptr, "%lf", &doubleval) == 1) {
+        #endif
           foundit = TRUE;        //found the varaible
           double_it.data ()->set_value (doubleval);
           //set its value
