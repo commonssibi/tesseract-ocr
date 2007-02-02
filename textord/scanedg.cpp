@@ -28,10 +28,6 @@
 #define FLIP_COLOUR(pix)  (1-(pix))
 
 #define EWSIZE        4          /*edge operator size */
-#define UPPER       0            /*line above above */
-#define ABOVE       1            /*line above h_edge */
-#define BELOW       2            /*line below h_edge */
-#define LOWER       3            /*line below BELOW */
 
 #define XMARGIN       2          //margin needed
 #define YMARGIN       3          //by edge detector
@@ -46,80 +42,40 @@ static CRACKEDGE *free_cracks = NULL;
  **********************************************************************/
 
 DLLSYM void block_edges(                      //get edges in a block
-                        IMAGE *image,         //image to scan
                         IMAGE *t_image,       //threshold image
                         PDBLK *block,         //block in image
-                        ICOORD page_tr,       //corner of page
-                        INT16 grey_threshold  //difference threshold
+                        ICOORD page_tr        //corner of page
                        ) {
   UINT8 margin;                  //margin colour
-  UINT8 uppercolour;             //1st pix on prev line
   INT16 x;                       //line coords
   INT16 y;                       //current line
-  INT16 xext;                    //line width
-  INT16 lindex;                  //index to imlines
   ICOORD bleft;                  //bounding box
   ICOORD tright;
   ICOORD block_bleft;            //bounding box
   ICOORD block_tright;
   int xindex;                    //index to pixel
-  UINT8 *ptrs[EWSIZE];           //rotating buffer
   BLOCK_LINE_IT line_it = block; //line iterator
   IMAGELINE bwline;              //thresholded line
-  IMAGELINE imlines[EWSIZE];     //line in image
                                  //lines in progress
-  CRACKEDGE *ptrline[MAXIMAGEWIDTH];
+  CRACKEDGE *ptrlinemem[MAXIMAGEWIDTH];
+  CRACKEDGE **ptrline = ptrlinemem;
+
+  if (t_image->get_xsize()+1 > MAXIMAGEWIDTH) {
+    ptrline = new CRACKEDGE*[t_image->get_xsize()+1];
+  }
 
                                  //block box
   block->bounding_box (bleft, tright);
   block_bleft = bleft;
   block_tright = tright;
-  if (tright.x () - bleft.x () <= EWSIZE
-    || tright.y () - bleft.y () <= EWSIZE)
-    return;                      //pointlessly small
-
-  if (bleft.x () - XMARGIN > 0)
-    bleft.set_x (bleft.x () - XMARGIN);
-  else
-    bleft.set_x (0);
-  if (bleft.y () - YMARGIN > 0)
-    bleft.set_y (bleft.y () - YMARGIN);
-  else
-    bleft.set_y (0);
-  if (tright.x () + XMARGIN < page_tr.x ())
-    tright.set_x (tright.x () + XMARGIN);
-  else
-    tright.set_x (page_tr.x ());
-  if (tright.y () + YMARGIN < page_tr.y ())
-    tright.set_y (tright.y () + YMARGIN);
-  else
-    tright.set_y (page_tr.y ());
-  for (x = tright.x () - bleft.x () - 1; x >= 0; x--)
+  for (x = tright.x () - bleft.x (); x >= 0; x--)
     ptrline[x] = NULL;           //no lines in progress
 
-  for (lindex = 0; lindex < EWSIZE - 1; lindex++) {
-    imlines[lindex].init ();
-                                 //get image line
-    image->fast_get_line (bleft.x (), tright.y () - 1 - lindex, tright.x () - bleft.x (), &imlines[lindex]);
-                                 //ptrs to lines
-    ptrs[lindex] = imlines[lindex].pixels;
-  }
-  imlines[lindex].init ();
-  bwline.init ();
+  bwline.init (t_image->get_xsize());
 
-  if (tright.y () - EWSIZE / 2 >= block_tright.y ())
-    x = block_bleft.x ();
-  else
-                                 //line above first
-    x = line_it.get_line (tright.y () - EWSIZE / 2, xext);
-  t_image->fast_get_line (bleft.x (), tright.y () - EWSIZE / 2,
-    x - bleft.x () + 1 >= 3 ? x - bleft.x () + 1 : 3,
-    &bwline);
-  uppercolour = bwline.pixels[2];
-  margin = bwline.pixels[x - bleft.x ()];
+  margin = WHITE;
 
-  for (y = tright.y () - EWSIZE / 2 - 1;
-  y >= bleft.y () + (EWSIZE - 1) / 2; y--) {
+  for (y = tright.y () - 1; y >= bleft.y () - 1; y--) {
     if (y >= block_bleft.y () && y < block_tright.y ()) {
       t_image->get_line (bleft.x (), y, tright.x () - bleft.x (), &bwline,
         0);
@@ -131,33 +87,15 @@ DLLSYM void block_edges(                      //get edges in a block
       for (xindex = 0; xindex < x; xindex++)
         bwline.pixels[xindex] = margin;
     }
-    //              tprintf("At line %d, xstart=%d, xext=%d\n",
-    //                      y,x,xext);
-                                 //get image line
-    image->fast_get_line (bleft.x (), y - (EWSIZE - 1) / 2, tright.x () - bleft.x (), &imlines[lindex]);
-                                 //bottom line
-    ptrs[EWSIZE - 1] = imlines[lindex].pixels;
-    lindex++;
-    if (lindex >= EWSIZE)
-      lindex = 0;                //rotating buffer
-
-    if (ptrline[2] != NULL)
-                                 //fix the margin
-      uppercolour = FLIP_COLOUR (uppercolour);
-                                 //scan the line
     line_edges (bleft.x (), y, tright.x () - bleft.x (),
-      margin, ptrs, bwline.pixels, ptrline, grey_threshold);
-
-                                 //1st pix on prev line
-    uppercolour = bwline.pixels[2];
-
-    for (xindex = 0; xindex < EWSIZE - 1; xindex++)
-                                 //rotate ptrs
-      ptrs[xindex] = ptrs[xindex + 1];
+      margin, bwline.pixels, ptrline);
   }
 
   free_crackedges(free_cracks);  //really free them
   free_cracks = NULL;
+  if (ptrline != ptrlinemem) {
+    delete [] ptrline;
+  }
 }
 
 
@@ -264,10 +202,8 @@ INT16 x,                         //coord of line start
 INT16 y,                         //coord of line
 INT16 xext,                      //width of line
 UINT8 uppercolour,               //start of prev line
-UINT8 * ptrs[],                  //image lines
 UINT8 * bwpos,                   //thresholded line
-CRACKEDGE ** prevline,           //edges in progress
-INT16 t                          //difference threshold
+CRACKEDGE ** prevline            //edges in progress
 ) {
   int xpos;                      //current x coord
   int xmax;                      //max x coord
@@ -276,14 +212,12 @@ INT16 t                          //difference threshold
   CRACKEDGE *current;            //current h edge
   CRACKEDGE *newcurrent;         //new h edge
 
-  xmax = x + xext - 2;           //max allowable coord
-  bwpos += 2;
+  xmax = x + xext;               //max allowable coord
   prevcolour = uppercolour;      //forced plain margin
-  prevline += 2;                 //skip margin
   current = NULL;                //nothing yet
 
                                  //do each pixel
-  for (xpos = x + 2; xpos < xmax; xpos++, prevline++) {
+  for (xpos = x; xpos < xmax; xpos++, prevline++) {
     colour = *bwpos++;           //current pixel
     if (*prevline != NULL) {
                                  //changed above
@@ -292,33 +226,26 @@ INT16 t                          //difference threshold
       if (colour == prevcolour) {
         if (colour == uppercolour) {
                                  //finish a line
-          join_edges(current, *prevline); 
+          join_edges(current, *prevline);
           current = NULL;        //no edge now
         }
         else
                                  //new horiz edge
-          current = h_edge (xpos, y, xpos - x, uppercolour - colour, ptrs, *prevline, t);
+          current = h_edge (xpos, y, uppercolour - colour, *prevline);
         *prevline = NULL;        //no change this time
       }
       else {
         if (colour == uppercolour)
-          *prevline = v_edge (xpos, y, xpos - x, colour - prevcolour,
-            ptrs, *prevline, t);
+          *prevline = v_edge (xpos, y, colour - prevcolour, *prevline);
                                  //8 vs 4 connection
         else if (colour == WHITE_PIX) {
-          join_edges(current, *prevline); 
-          current = h_edge (xpos, y, xpos - x, uppercolour - colour,
-            ptrs, NULL, t);
-          *prevline = v_edge (xpos, y, xpos - x, colour - prevcolour,
-            ptrs, current, t);
+          join_edges(current, *prevline);
+          current = h_edge (xpos, y, uppercolour - colour, NULL);
+          *prevline = v_edge (xpos, y, colour - prevcolour, current);
         }
         else {
-          newcurrent =
-            h_edge (xpos, y, xpos - x, uppercolour - colour, ptrs,
-            *prevline, t);
-          *prevline =
-            v_edge (xpos, y, xpos - x, colour - prevcolour, ptrs,
-            current, t);
+          newcurrent = h_edge (xpos, y, uppercolour - colour, *prevline);
+          *prevline = v_edge (xpos, y, colour - prevcolour, current);
           current = newcurrent;  //right going h edge
         }
         prevcolour = colour;     //remember new colour
@@ -327,13 +254,11 @@ INT16 t                          //difference threshold
     else {
       if (colour != prevcolour) {
         *prevline = current =
-          v_edge (xpos, y, xpos - x, colour - prevcolour, ptrs, current,
-          t);
+          v_edge (xpos, y, colour - prevcolour, current);
         prevcolour = colour;
       }
       if (colour != uppercolour)
-        current = h_edge (xpos, y, xpos - x, uppercolour - colour,
-          ptrs, current, t);
+        current = h_edge (xpos, y, uppercolour - colour, current);
       else
         current = NULL;          //no edge now
     }
@@ -341,17 +266,17 @@ INT16 t                          //difference threshold
   if (current != NULL) {
                                  //out of block
     if (*prevline != NULL) {     //got one to join to?
-      join_edges(current, *prevline); 
+      join_edges(current, *prevline);
       *prevline = NULL;          //tidy now
     }
     else {
                                  //fake vertical
-      *prevline = v_edge (xpos, y, xpos - x, FLIP_COLOUR (prevcolour) - prevcolour, ptrs, current, t);
+      *prevline = v_edge (xpos, y, FLIP_COLOUR(prevcolour)-prevcolour, current);
     }
   }
   else if (*prevline != NULL)
                                  //continue fake
-    *prevline = v_edge (xpos, y, xpos - x, FLIP_COLOUR (prevcolour) - prevcolour, ptrs, *prevline, t);
+    *prevline = v_edge (xpos, y, FLIP_COLOUR(prevcolour)-prevcolour, *prevline);
 }
 
 
@@ -365,17 +290,10 @@ CRACKEDGE *
 h_edge (                         //horizontal edge
 INT16 x,                         //xposition
 INT16 y,                         //y position
-INT16 xindex,                    //index to lines
 INT8 sign,                       //sign of edge
-UINT8 * ptrs[],                  //image lines
-CRACKEDGE * join,                //edge to join to
-INT16 t                          //diff threshold
+CRACKEDGE * join                 //edge to join to
 ) {
-  int diff;                      //greyscale difference
-  int diff2;                     //2nd difference
   CRACKEDGE *newpt;              //return value
-  UINT8 *above;                  //line above edge
-  UINT8 *below;                  //line below edge
 
   //      check_mem("h_edge",JUSTCHECKS);
   if (free_cracks != NULL) {
@@ -387,72 +305,16 @@ INT16 t                          //diff threshold
   }
   newpt->pos.set_y (y + 1);      //coords of pt
   newpt->stepy = 0;              //edge is horizontal
-  above = ptrs[ABOVE] + xindex;  //pixel above edge
-  below = ptrs[BELOW] + xindex;  //pixel below edge
-  diff = ptrs[UPPER][xindex];    //top pixel
-  diff -= *below;                //vertical diff
 
   if (sign > 0) {
     newpt->pos.set_x (x + 1);    //start location
     newpt->stepx = -1;
-    newpt->dir = 4;              //dir code
     newpt->stepdir = 0;
-    if (diff > t) {
-                                 //must be of right sign
-      newpt->grady = diff;
-      diff2 = *(above + 1);
-      diff2 -= *(above - 1);
-      newpt->gradx = diff2;      //save gradient vector
-    }
-    else {
-                                 //no vector yet
-      newpt->gradx = newpt->grady = 0;
-    }
-    diff2 = *(above);
-    diff2 -= ptrs[LOWER][xindex];//lower difference
-    if (diff2 > diff && diff2 > t) {
-      newpt->grady = diff2;      //max vectors
-      diff2 = *(below + 1);
-      diff2 -= *(below - 1);
-      newpt->gradx = diff2;
-    }
-    else if (diff2 == diff && diff2 > t) {
-      newpt->grady += diff2;     //sum vectors
-      diff2 = *(below + 1);
-      diff2 -= *(below - 1);
-      newpt->gradx += diff2;
-    }
   }
   else {
     newpt->pos.set_x (x);        //start location
     newpt->stepx = 1;
-    newpt->dir = 0;              //dir code
     newpt->stepdir = 2;
-    if (diff < -t) {
-                                 //must be of right sign
-      newpt->grady = diff;
-      diff2 = *(above + 1);
-      diff2 -= *(above - 1);
-      newpt->gradx = diff2;      //save gradient vector
-    }
-    else {
-                                 //no vector yet
-      newpt->gradx = newpt->grady = 0;
-    }
-    diff2 = *(above);
-    diff2 -= ptrs[LOWER][xindex];//lower difference
-    if (diff2 < diff && diff2 < -t) {
-      newpt->grady = diff2;      //sum vectors
-      diff2 = *(below + 1);
-      diff2 -= *(below - 1);
-      newpt->gradx = diff2;
-    }
-    else if (diff2 == diff && diff2 < -t) {
-      newpt->grady += diff2;     //sum vectors
-      diff2 = *(below + 1);
-      diff2 -= *(below - 1);
-      newpt->gradx += diff2;
-    }
   }
 
   if (join == NULL) {
@@ -488,17 +350,9 @@ CRACKEDGE *
 v_edge (                         //vertical edge
 INT16 x,                         //xposition
 INT16 y,                         //y position
-INT16 xindex,                    //index to lines
 INT8 sign,                       //sign of edge
-UINT8 * ptrs[],                  //image lines
-CRACKEDGE * join,                //edge to join to
-INT16 t                          //diff threshold
+CRACKEDGE * join                 //edge to join to
 ) {
-  int diff;                      //greyscale difference
-  int diff2;                     //2nd difference
-  UINT8 *above;                  //line above edge
-  UINT8 *current;                //line on edge
-  UINT8 *below;                  //line below edge
   CRACKEDGE *newpt;              //return value
 
   if (free_cracks != NULL) {
@@ -510,73 +364,16 @@ INT16 t                          //diff threshold
   }
   newpt->pos.set_x (x);          //coords of pt
   newpt->stepx = 0;              //edge is vertical
-  above = ptrs[ABOVE] + xindex;  //line above edge
-  current = ptrs[BELOW] + xindex;//line containing edge
-  below = ptrs[LOWER] + xindex;  //line below edge
-  diff = *current;
-  diff -= *(current - 2);
 
   if (sign > 0) {
     newpt->pos.set_y (y);        //start location
     newpt->stepy = 1;
-    newpt->dir = 6;              //dir code
     newpt->stepdir = 3;
-    if (diff > t) {
-                                 //must be of right sign
-      newpt->gradx = diff;       //save gradient vector
-      diff2 = *(above - 1);
-      diff2 -= *(below - 1);
-      newpt->grady = diff2;
-    }
-    else {
-                                 //no vector yet
-      newpt->gradx = newpt->grady = 0;
-    }
-    diff2 = *(current + 1);
-    diff2 -= *(current - 1);
-    if (diff2 > diff && diff2 > t) {
-      newpt->gradx = diff2;
-      diff2 = *(above);
-      diff2 -= *(below);
-      newpt->grady = diff2;      //sum vectors
-    }
-    else if (diff2 == diff && diff2 > t) {
-      newpt->gradx += diff2;
-      diff2 = *(above);
-      diff2 -= *(below);
-      newpt->grady += diff2;     //sum vectors
-    }
   }
   else {
     newpt->pos.set_y (y + 1);    //start location
     newpt->stepy = -1;
-    newpt->dir = 2;              //dir code
     newpt->stepdir = 1;
-    if (diff < -t) {
-                                 //must be of right sign
-      newpt->gradx = diff;       //save gradient vector
-      diff2 = *(above - 1);
-      diff2 -= *(below - 1);
-      newpt->grady = diff2;
-    }
-    else {
-                                 //no vector yet
-      newpt->gradx = newpt->grady = 0;
-    }
-    diff2 = *(current + 1);
-    diff2 -= *(current - 1);
-    if (diff2 < diff && diff2 < -t) {
-      newpt->gradx = diff2;
-      diff2 = *(above);
-      diff2 -= *(below);
-      newpt->grady = diff2;      //sum vectors
-    }
-    else if (diff2 == diff && diff2 < -t) {
-      newpt->gradx += diff2;
-      diff2 = *(above);
-      diff2 -= *(below);
-      newpt->grady += diff2;     //sum vectors
-    }
   }
 
   if (join == NULL) {

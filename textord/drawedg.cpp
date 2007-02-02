@@ -77,36 +77,3 @@ void draw_raw_edge(                   //draw the cracks
   while (edgept != start);
 }
 
-
-/**********************************************************************
- * draw_edge_needles
- *
- * Draw gradient needles of uniform length for the directions of
- * points in the edge path.
- **********************************************************************/
-
-void draw_edge_needles(                   //draw gradients
-                       WINDOW fd,         //window to draw in
-                       CRACKEDGE *start,  //start of outline
-                       COLOUR colour      //colour to draw in
-                      ) {
-  ICOORD vector;                 //gradient vector
-  CRACKEDGE *edgept;             //current point
-
-  line_color_index(fd, colour); 
-  edgept = start;
-  do {
-    move2d (fd,
-      (float) (edgept->pos.x () + edgept->stepx * 0.5),
-      (float) (edgept->pos.y () + edgept->stepy * 0.5));
-                                 //turn to vector
-    vector = edgept->dir.vector ();
-    draw2d (fd,
-      (float) (edgept->pos.x () + edgept->stepx * 0.5
-      + vector.x () * 2.0 / DIRSCALE),
-      (float) (edgept->pos.y () + edgept->stepy * 0.5
-      + vector.y () * 2.0 / DIRSCALE));
-    edgept = edgept->next;       //next point
-  }
-  while (edgept != start);
-}

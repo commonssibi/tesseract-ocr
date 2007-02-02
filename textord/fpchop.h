@@ -51,7 +51,7 @@ class C_OUTLINE_FRAG:public ELIST_LINK
     }
     ~C_OUTLINE_FRAG () {
       if (steps != NULL)
-        free_struct(steps, stepcount); 
+        delete [] steps; 
     }
                                  //start coord
     C_OUTLINE_FRAG(ICOORD start_pt,
@@ -67,7 +67,7 @@ class C_OUTLINE_FRAG:public ELIST_LINK
 
     ICOORD start;                //start coord
     ICOORD end;                  //end coord
-    UINT8 *steps;                //step array
+    DIR128 *steps;                //step array
     INT32 stepcount;             //no of steps
     C_OUTLINE_FRAG *other_end;   //head if a tail
     INT16 ycoord;                //coord of cut pt

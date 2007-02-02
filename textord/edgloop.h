@@ -29,45 +29,6 @@
 
 #define BUCKETSIZE      16
 
-//class OL_BUCKETS
-//{
-//public:
-//                                                                      OL_BUCKETS(                                                     //constructor
-//      ICOORD                                          bleft,                                                          //corners
-//      ICOORD                                          tright);
-//
-//                                                                      ~OL_BUCKETS()                                           //cleanup
-//      {
-//              delete [bxdim*bydim] buckets;
-//      }
-//      C_OUTLINE_LIST*                 operator()(                                                     //array access
-//      INT16                                                   x,                                                                              //image coords
-//      INT16                                                   y);
-//      C_OUTLINE_LIST*                 start_scan()                                            //first non-empty bucket
-//      {
-//              for (index=0;buckets[index].empty() && index<bxdim*bydim-1;index++);
-//              return &buckets[index];
-//      }
-//      C_OUTLINE_LIST*                 scan_next()                                                     //next non-empty bucket
-//      {
-//              for (;buckets[index].empty() && index<bxdim*bydim-1;index++);
-//              return &buckets[index];
-//      }
-//      INT32                                                   count_children(                                 //recursive sum
-//      C_OUTLINE*                                      outline,                                                        //parent outline
-//      INT32                                                   max_count);                                                     //max output
-//      void                                                    extract_children(                                       //single level get
-//      C_OUTLINE*                                      outline,                                                                //parent outline
-//      C_OUTLINE_IT*                           it);                                                                    //destination iterator
-//
-//private:
-//      C_OUTLINE_LIST*                 buckets;                                                                //array of buckets
-//      INT16                                                   bxdim;                                                          //size of array
-//      INT16                                                   bydim;
-//      ICOORD                                          bl;                                                                     //corners
-//      ICOORD                                          tr;
-//      INT32                                                   index;                                                          //for extraction scan
-//};
 
 extern double_VAR_H (edges_threshold_greyfraction, 0.07,
 "Min edge diff for grad vector");
@@ -83,7 +44,9 @@ extern double_VAR_H (edges_childarea, 0.5,
 extern double_VAR_H (edges_boxarea, 0.8,
 "Min area fraction of grandchild for box");
 DLLSYM void get_outlines(                      //edge detect
+#ifndef GRAPHICS_DISABLED
                          WINDOW window,        //window for output
+#endif
                          IMAGE *image,         //image to scan
                          IMAGE *t_image,       //thresholded image
                          ICOORD page_tr,       //corner of page
@@ -96,9 +59,6 @@ void complete_edge(                  //clean and approximate
 COLOUR check_path_legal(                  //certify outline
                         CRACKEDGE *start  //start of loop
                        );
-void fill_blank_gradients(                  //invent gradients
-                          CRACKEDGE *start  //outline
-                         );
 INT16 loop_bounding_box(                    //get bounding box
                         CRACKEDGE *&start,  //edge loop
                         ICOORD &botleft,    //bounding box

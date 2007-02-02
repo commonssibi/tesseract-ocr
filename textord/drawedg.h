@@ -31,9 +31,4 @@ void draw_raw_edge(                   //draw the cracks
                    CRACKEDGE *start,  //start of loop
                    COLOUR colour      //colour to draw in
                   );
-void draw_edge_needles(                   //draw gradients
-                       WINDOW fd,         //window to draw in
-                       CRACKEDGE *start,  //start of outline
-                       COLOUR colour      //colour to draw in
-                      );
 #endif

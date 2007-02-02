@@ -27,11 +27,9 @@
 #include          "crakedge.h"
 
 DLLSYM void block_edges(                      //get edges in a block
-                        IMAGE *image,         //image to scan
                         IMAGE *t_image,       //threshold image
                         PDBLK *block,         //block in image
-                        ICOORD page_tr,       //corner of page
-                        INT16 grey_threshold  //difference threshold
+                        ICOORD page_tr        //corner of page
                        );
 void make_margins(                         //get a line
                   PDBLK *block,            //block in image
@@ -51,28 +49,20 @@ INT16 x,                         //coord of line start
 INT16 y,                         //coord of line
 INT16 xext,                      //width of line
 UINT8 uppercolour,               //start of prev line
-UINT8 * ptrs[],                  //image lines
 UINT8 * bwpos,                   //thresholded line
-CRACKEDGE ** prevline,           //edges in progress
-INT16 t                          //difference threshold
+CRACKEDGE ** prevline            //edges in progress
 );
 CRACKEDGE *h_edge (              //horizontal edge
 INT16 x,                         //xposition
 INT16 y,                         //y position
-INT16 xindex,                    //index to lines
 INT8 sign,                       //sign of edge
-UINT8 * ptrs[],                  //image lines
-CRACKEDGE * join,                //edge to join to
-INT16 t                          //diff threshold
+CRACKEDGE * join                 //edge to join to
 );
 CRACKEDGE *v_edge (              //vertical edge
 INT16 x,                         //xposition
 INT16 y,                         //y position
-INT16 xindex,                    //index to lines
 INT8 sign,                       //sign of edge
-UINT8 * ptrs[],                  //image lines
-CRACKEDGE * join,                //edge to join to
-INT16 t                          //diff threshold
+CRACKEDGE * join                 //edge to join to
 );
 void join_edges(                   //join edge fragments
                 CRACKEDGE *edge1,  //edges to join

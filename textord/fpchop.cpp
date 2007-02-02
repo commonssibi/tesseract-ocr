@@ -78,9 +78,12 @@ ROW *fixed_pitch_words(                 //find lines
                                  //boundaries
   ICOORDELT_IT cell_it = &row->char_cells;
 
+#ifndef GRAPHICS_DISABLED
   if (textord_show_page_cuts && to_win != NO_WINDOW) {
     plot_row_cells (to_win, RED, row, 0, &row->char_cells);
   }
+#endif
+
   prev_x = -MAX_INT16;
   bol = TRUE;
   blanks = 0;
@@ -118,7 +121,7 @@ ROW *fixed_pitch_words(                 //find lines
       if (box_it.data ()->bounding_box ().right () > prev_x)
         prev_x = box_it.data ()->bounding_box ().right ();
       split_to_blob (box_it.extract (), chop_coord,
-        textord_fp_chop_error + 0.5,
+        textord_fp_chop_error + 0.5f,
         &left_outlines, &left_coutlines,
         &right_outlines, &right_coutlines);
       box_it.forward ();
@@ -132,7 +135,7 @@ ROW *fixed_pitch_words(                 //find lines
     if ((!right_outlines.empty () || !right_coutlines.empty ())
       && left_outlines.empty () && left_coutlines.empty ())
       split_to_blob (NULL, chop_coord,
-        textord_fp_chop_error + 0.5,
+        textord_fp_chop_error + 0.5f,
         &left_outlines, &left_coutlines,
         &right_outlines, &right_coutlines);
     if (!left_outlines.empty ())
@@ -714,10 +717,12 @@ void insert_extra_pt(               //make extra
 
   prev_pt = it->data ();
   if (it->data_relative (1)->pos.y () > it->data_relative (-1)->pos.y ()) {
-    chop_pos = prev_pt->pos + FCOORD (0.0f, textord_fp_chop_snap);
+    chop_pos = prev_pt->pos + FCOORD (0.0f,
+                                      static_cast<float>(textord_fp_chop_snap));
   }
   else {
-    chop_pos = prev_pt->pos - FCOORD (0.0f, textord_fp_chop_snap);
+    chop_pos = prev_pt->pos - FCOORD (0.0f,
+                                      static_cast<float>(textord_fp_chop_snap));
   }
   chop_vec = it->data_relative (1)->pos - chop_pos;
   prev_pt->vec = chop_pos - prev_pt->pos;
@@ -1384,15 +1389,19 @@ C_OUTLINE_FRAG::C_OUTLINE_FRAG(                     //record fragment
   if (stepcount < 0)
     stepcount += outline->pathlength ();
   ASSERT_HOST (stepcount > 0);
-  steps = (UINT8 *) alloc_struct (stepcount);
-  if (end_index > start_index)
-    memmove (steps, outline->steps + start_index, stepcount);
+  steps = new DIR128[stepcount];
+  if (end_index > start_index) {
+    for (int i = start_index; i < end_index; ++i)
+      steps[i - start_index] = outline->step_dir(i);
+  }
   else {
-    memmove (steps, outline->steps + start_index,
-      outline->pathlength () - start_index);
+    int len = outline->pathlength();
+    int i = start_index;
+    for (; i < len; ++i)
+      steps[i - start_index] = outline->step_dir(i);
     if (end_index > 0)
-      memmove (steps + outline->pathlength () - start_index,
-        outline->steps, end_index);
+      for (; i < end_index + len; ++i)
+        steps[i - start_index] = outline->step_dir(i - len);
   }
   other_end = NULL;
   delete close(); 
@@ -1550,27 +1559,27 @@ void join_segments(                         //join pieces
                    C_OUTLINE_FRAG *bottom,  //bottom of cut
                    C_OUTLINE_FRAG *top      //top of cut
                   ) {
-  UINT8 *steps;                  //new steps
+  DIR128 *steps;                  //new steps
   INT32 stepcount;               //no of steps
   INT16 fake_count;              //fake steps
-  UINT8 fake_step;               //step entry
+  DIR128 fake_step;               //step entry
 
   ASSERT_HOST (bottom->end.x () == top->start.x ());
   fake_count = top->start.y () - bottom->end.y ();
   if (fake_count < 0) {
     fake_count = -fake_count;
-    fake_step = 64 + 31;
+    fake_step = 32;
   }
   else
-    fake_step = 192 + 31;
+    fake_step = 96;
 
   stepcount = bottom->stepcount + fake_count + top->stepcount;
-  steps = (UINT8 *) alloc_struct (stepcount);
+  steps = new DIR128[stepcount];
   memmove (steps, bottom->steps, bottom->stepcount);
-  memset (steps + bottom->stepcount, fake_step, fake_count);
+  memset (steps + bottom->stepcount, fake_step.get_dir(), fake_count);
   memmove (steps + bottom->stepcount + fake_count, top->steps,
     top->stepcount);
-  free_struct (bottom->steps, bottom->stepcount);
+  delete [] bottom->steps;
   bottom->steps = steps;
   bottom->stepcount = stepcount;
   bottom->end = top->end;
@@ -1585,25 +1594,27 @@ void join_segments(                         //join pieces
  **********************************************************************/
 
 C_OUTLINE *C_OUTLINE_FRAG::close() {  //join pieces
-  UINT8 *new_steps;              //new steps
+  DIR128 *new_steps;              //new steps
   INT32 new_stepcount;           //no of steps
   INT16 fake_count;              //fake steps
-  UINT8 fake_step;               //step entry
+  DIR128 fake_step;               //step entry
 
   ASSERT_HOST (start.x () == end.x ());
   fake_count = start.y () - end.y ();
   if (fake_count < 0) {
     fake_count = -fake_count;
-    fake_step = 64 + 31;
+    fake_step = 32;
   }
   else
-    fake_step = 192 + 31;
+    fake_step = 96;
 
   new_stepcount = stepcount + fake_count;
-  new_steps = (UINT8 *) alloc_struct (new_stepcount);
+  new_steps = new DIR128[new_stepcount];
   memmove(new_steps, steps, stepcount); 
-  memset (new_steps + stepcount, fake_step, fake_count);
-  return new C_OUTLINE (start, new_steps, new_stepcount);
+  memset (new_steps + stepcount, fake_step.get_dir(), fake_count);
+  C_OUTLINE* result = new C_OUTLINE (start, new_steps, new_stepcount);
+  delete [] new_steps;
+  return result;
 }
 
 
@@ -1618,10 +1629,10 @@ C_OUTLINE_FRAG & C_OUTLINE_FRAG::operator= (
 const C_OUTLINE_FRAG & src       //fragment to copy
 ) {
   if (steps != NULL)
-    free_struct(steps, stepcount); 
+    delete [] steps; 
 
   stepcount = src.stepcount;
-  steps = (UINT8 *) alloc_struct (stepcount);
+  steps = new DIR128[stepcount];
   memmove (steps, src.steps, stepcount);
   start = src.start;
   end = src.end;

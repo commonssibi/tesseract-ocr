@@ -95,7 +95,7 @@ void restore_underlined_blobs(                 //get chop points
           row->
               insert_blob (new BLOBNBOX (new C_BLOB (&left_coutlines)));
         else {
-          ASSERT_HOST(FALSE); 
+          ASSERT_HOST(FALSE);
           fprintf (stderr,
             "Error:no outlines after chopping from %d to %d from (%d,%d)->(%d,%d)\n",
             cell_it.data ()->x (), cell_it.data ()->y (),
@@ -119,6 +119,13 @@ void restore_underlined_blobs(                 //get chop points
             add_after_then_move (new
             BLOBNBOX (new C_BLOB (&left_coutlines)));
     }
+    if (u_line != NULL) {
+      if (u_line->blob() != NULL)
+        delete u_line->blob();
+      if (u_line->cblob() != NULL)
+        delete u_line->cblob();
+      delete u_line;
+    }
   }
   if (!ru_it.empty ()) {
     ru_it.move_to_first ();
@@ -126,7 +133,6 @@ void restore_underlined_blobs(                 //get chop points
       under_it.add_after_then_move (ru_it.extract ());
     }
   }
-
 }
 
 
