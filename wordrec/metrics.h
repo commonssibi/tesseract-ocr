@@ -54,14 +54,15 @@ extern MEASUREMENT match_priority_range;
 /*----------------------------------------------------------------------
               F u n c t i o n s
 ----------------------------------------------------------------------*/
-void init_metrics(); 
+void init_metrics();
+void end_metrics();
 
-void record_certainty(float certainty, int pass); 
+void record_certainty(float certainty, int pass);
 
-void record_search_status(int num_states, int before_best, float closeness); 
+void record_search_status(int num_states, int before_best, float closeness);
 
 #ifndef SECURE_NAMES
-void save_summary(INT32 elapsed_time); 
+void save_summary(INT32 elapsed_time);
 #endif
 
 void record_priorities(SEARCH_RECORD *the_search,
@@ -69,15 +70,15 @@ void record_priorities(SEARCH_RECORD *the_search,
                        FLOAT32 priority_1,
                        FLOAT32 priority_2);
 
-void record_samples(FLOAT32 match_pri, FLOAT32 width_pri); 
+void record_samples(FLOAT32 match_pri, FLOAT32 width_pri);
 
-void reset_width_tally(); 
+void reset_width_tally();
 
-void save_best_state(CHUNKS_RECORD *chunks_record); 
+void save_best_state(CHUNKS_RECORD *chunks_record);
 
-void start_recording(); 
+void start_recording();
 
-void stop_recording(); 
+void stop_recording();
 
 /*
 #if defined(__STDC__) || defined(__cplusplus) || MAC_OR_DOS

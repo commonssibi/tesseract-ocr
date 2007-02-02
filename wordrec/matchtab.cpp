@@ -69,8 +69,8 @@ MATCH *match_table;
  *
  * Create and clear a match table to be used to speed up the splitter.
  **********************************************************************/
-void init_match_table() { 
-  static int been_initialized = 0;
+static int been_initialized = 0;
+void init_match_table() {
   int x;
 
   if (been_initialized) {
@@ -93,6 +93,15 @@ void init_match_table() {
   }
 }
 
+void end_match_table() {
+  if (been_initialized) {
+    init_match_table();
+    memfree(match_table);
+    match_table = NULL;
+    been_initialized = 0;
+  }
+}
+
 
 /**********************************************************************
  * put_match
@@ -100,7 +109,7 @@ void init_match_table() {
  * Put a new blob and its corresponding match ratings into the match
  * table.
  **********************************************************************/
-void put_match(TBLOB *blob, CHOICES ratings) { 
+void put_match(TBLOB *blob, CHOICES ratings) {
   unsigned int topleft;
   unsigned int botright;
   unsigned int start;
@@ -108,7 +117,7 @@ void put_match(TBLOB *blob, CHOICES ratings) {
   TPOINT tp_botright;
   int x;
   /* Hash into table */
-  blob_bounding_box(blob, &tp_topleft, &tp_botright); 
+  blob_bounding_box(blob, &tp_topleft, &tp_botright);
   topleft = *(unsigned int *) &tp_topleft;
   botright = *(unsigned int *) &tp_botright;
   start = (topleft * botright) % NUM_MATCH_ENTRIES;
@@ -138,13 +147,13 @@ void put_match(TBLOB *blob, CHOICES ratings) {
  * Look up this blob in the match table to see if it needs to be
  * matched.  If it is not present then NULL is returned.
  **********************************************************************/
-CHOICES get_match(TBLOB *blob) { 
+CHOICES get_match(TBLOB *blob) {
   unsigned int topleft;
   unsigned int botright;
   TPOINT tp_topleft;
   TPOINT tp_botright;
   /* Do starting hash */
-  blob_bounding_box(blob, &tp_topleft, &tp_botright); 
+  blob_bounding_box(blob, &tp_topleft, &tp_botright);
   topleft = *(unsigned int *) &tp_topleft;
   botright = *(unsigned int *) &tp_botright;
   return (get_match_by_bounds (topleft, botright));
@@ -157,7 +166,7 @@ CHOICES get_match(TBLOB *blob) {
  * Look up this blob in the match table to see if it needs to be
  * matched.  If it is not present then NULL is returned.
  **********************************************************************/
-CHOICES get_match_by_bounds(unsigned int topleft, unsigned int botright) { 
+CHOICES get_match_by_bounds(unsigned int topleft, unsigned int botright) {
   unsigned int start;
   int x;
   /* Do starting hash */

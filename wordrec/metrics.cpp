@@ -90,7 +90,7 @@ STATE *known_best_state = NULL;  /* The right answer */
  * Set up the appropriate variables to record information about the
  * OCR process. Later calls will log the data and save a summary.
  **********************************************************************/
-void init_metrics() { 
+void init_metrics() {
   words_chopped1 = 0;
   words_chopped2 = 0;
   chops_performed1 = 0;
@@ -118,6 +118,17 @@ void init_metrics() {
   best_certainties[1] = new_tally (CERTAINTY_BUCKETS);
 }
 
+void end_metrics() {
+  memfree(states_before_best);
+  memfree(best_certainties[0]);
+  memfree(best_certainties[1]);
+  memfree(character_widths);
+  states_before_best = NULL;
+  best_certainties[0] = NULL;
+  best_certainties[1] = NULL;
+  character_widths = NULL;
+}
+
 
 /**********************************************************************
  * record_certainty
@@ -125,7 +136,7 @@ void init_metrics() {
  * Maintain a record of the best certainty values achieved on each
  * word recognition.
  **********************************************************************/
-void record_certainty(float certainty, int pass) { 
+void record_certainty(float certainty, int pass) {
   int bucket;
 
   if (certainty / CERTAINTY_BUCKET_SIZE < MAXINT)
@@ -144,8 +155,8 @@ void record_certainty(float certainty, int pass) {
  * is kept in global memory and accumulated over multiple segmenter
  * searches.
  **********************************************************************/
-void record_search_status(int num_states, int before_best, float closeness) { 
-  inc_tally_bucket(states_before_best, before_best); 
+void record_search_status(int num_states, int before_best, float closeness) {
+  inc_tally_bucket(states_before_best, before_best);
 
   if (first_pass) {
     if (num_states == num_seg_states + 1)
@@ -167,14 +178,14 @@ void record_search_status(int num_states, int before_best, float closeness) {
  *
  * Save the summary information into the file "file.sta".
  **********************************************************************/
-void save_summary(INT32 elapsed_time) { 
+void save_summary(INT32 elapsed_time) {
   #ifndef SECURE_NAMES
   char outfilename[CHARS_PER_LINE];
   FILE *f;
   int x;
   int total;
 
-  strcpy(outfilename, imagefile); 
+  strcpy(outfilename, imagefile);
   strcat (outfilename, ".sta");
   f = open_file (outfilename, "w");
 
@@ -233,9 +244,9 @@ void save_summary(INT32 elapsed_time) {
     tally_entry (best_certainties[0], x),
     tally_entry (best_certainties[1], x));
 
-  PrintIntMatcherStats(f); 
-  dj_statistics(f); 
-  fclose(f); 
+  PrintIntMatcherStats(f);
+  dj_statistics(f);
+  fclose(f);
   #endif
 }
 
@@ -251,7 +262,7 @@ void record_priorities(SEARCH_RECORD *the_search,
                        STATE *old_state,
                        FLOAT32 priority_1,
                        FLOAT32 priority_2) {
-  record_samples(priority_1, priority_2); 
+  record_samples(priority_1, priority_2);
 }
 
 
@@ -260,9 +271,9 @@ void record_priorities(SEARCH_RECORD *the_search,
  *
  * Remember the priority samples to summarize them later.
  **********************************************************************/
-void record_samples(FLOAT32 match_pri, FLOAT32 width_pri) { 
-  ADD_SAMPLE(match_priority_range, match_pri); 
-  ADD_SAMPLE(width_priority_range, width_pri); 
+void record_samples(FLOAT32 match_pri, FLOAT32 width_pri) {
+  ADD_SAMPLE(match_priority_range, match_pri);
+  ADD_SAMPLE(width_priority_range, width_pri);
 }
 
 
@@ -271,21 +282,22 @@ void record_samples(FLOAT32 match_pri, FLOAT32 width_pri) {
  *
  * Create a tally record and initialize it.
  **********************************************************************/
-void reset_width_tally() { 
+void reset_width_tally() {
   character_widths = new_tally (20);
-  new_measurement(width_measure); 
+  new_measurement(width_measure);
   width_measure.num_samples = 158;
   width_measure.sum_of_samples = 125.0;
   width_measure.sum_of_squares = 118.0;
 }
 
 
+#ifndef GRAPHICS_DISABLED
 /**********************************************************************
  * save_best_state
  *
  * Save this state away to be compared later.
  **********************************************************************/
-void save_best_state(CHUNKS_RECORD *chunks_record) { 
+void save_best_state(CHUNKS_RECORD *chunks_record) {
   STATE state;
   SEARCH_STATE chunk_groups;
   int num_joints;
@@ -298,23 +310,24 @@ void save_best_state(CHUNKS_RECORD *chunks_record) {
 
     chunk_groups = bin_to_chunks (&state, num_joints);
     display_segmentation (chunks_record->chunks, chunk_groups);
-    memfree(chunk_groups); 
+    memfree(chunk_groups);
 
     cprintf ("Enter the correct segmentation > ");
-    fflush(stdout); 
+    fflush(stdout);
     state.part1 = 0;
     scanf ("%x", &state.part2);
 
     chunk_groups = bin_to_chunks (&state, num_joints);
     display_segmentation (chunks_record->chunks, chunk_groups);
-    memfree(chunk_groups); 
+    memfree(chunk_groups);
     window_wait(segm_window);  /* == 'n') */
 
     if (known_best_state)
-      free_state(known_best_state); 
+      free_state(known_best_state);
     known_best_state = new_state (&state);
   }
 }
+#endif
 
 
 /**********************************************************************
@@ -322,7 +335,7 @@ void save_best_state(CHUNKS_RECORD *chunks_record) {
  *
  * Set up everything needed to record the priority voters.
  **********************************************************************/
-void start_recording() { 
+void start_recording() {
   if (save_priorities) {
     priority_file_1 = open_file ("Priorities1", "w");
     priority_file_2 = open_file ("Priorities2", "w");
@@ -336,10 +349,10 @@ void start_recording() {
  *
  * Put an end to the priority recording mechanism.
  **********************************************************************/
-void stop_recording() { 
+void stop_recording() {
   if (save_priorities) {
-    fclose(priority_file_1); 
-    fclose(priority_file_2); 
-    fclose(priority_file_3); 
+    fclose(priority_file_1);
+    fclose(priority_file_2);
+    fclose(priority_file_3);
   }
 }

@@ -57,37 +57,40 @@ class CHAR_SAMPLE:public ELIST_LINK
                 char c);
 
     ~CHAR_SAMPLE () {
+      // We own the image, so it has to be deleted.
+      if (sample_image != NULL)
+        delete sample_image;
     }
 
-    float match_sample(CHAR_SAMPLE *test_sample, BOOL8 updating); 
+    float match_sample(CHAR_SAMPLE *test_sample, BOOL8 updating);
 
-    INT32 n_matches() { 
+    INT32 n_matches() {
       return n_samples_matched;
     }
 
-    IMAGE *image() { 
+    IMAGE *image() {
       return sample_image;
     }
 
-    PBLOB *blob() { 
+    PBLOB *blob() {
       return sample_blob;
     }
 
-    DENORM *denorm() { 
+    DENORM *denorm() {
       return sample_denorm;
     }
 
-    double mean_score(); 
+    double mean_score();
 
-    double variance(); 
+    double variance();
 
-    char character() { 
+    char character() {
       return ch;
     }
 
-    void print(FILE *f); 
+    void print(FILE *f);
 
-    void reset_match_statistics(); 
+    void reset_match_statistics();
 
     NEWDELETE2 (CHAR_SAMPLE) private:
     IMAGE * sample_image;
@@ -104,40 +107,40 @@ class CHAR_SAMPLES:public ELIST_LINK
   public:
     CHAR_SAMPLES();  //empty constructor
 
-    CHAR_SAMPLES(CHAR_SAMPLE *sample); 
+    CHAR_SAMPLES(CHAR_SAMPLE *sample);
 
     ~CHAR_SAMPLES () {           //destructor
     }
 
-    INT32 n_samples() { 
+    INT32 n_samples() {
       return samples.length ();
     }
 
-    void add_sample(CHAR_SAMPLE *sample); 
+    void add_sample(CHAR_SAMPLE *sample);
 
-    void build_prototype(); 
+    void build_prototype();
 
-    void rebuild_prototype(INT32 new_xsize, INT32 new_ysize); 
+    void rebuild_prototype(INT32 new_xsize, INT32 new_ysize);
 
-    void add_sample_to_prototype(CHAR_SAMPLE *sample); 
+    void add_sample_to_prototype(CHAR_SAMPLE *sample);
 
-    CHAR_PROTO *prototype() { 
+    CHAR_PROTO *prototype() {
       return proto;
     }
 
-    void find_best_sample(); 
+    void find_best_sample();
 
-    float match_score(CHAR_SAMPLE *sample); 
+    float match_score(CHAR_SAMPLE *sample);
 
-    float nn_match_score(CHAR_SAMPLE *sample); 
+    float nn_match_score(CHAR_SAMPLE *sample);
 
-    char character() { 
+    char character() {
       return ch;
     }
 
-    void assign_to_char(); 
+    void assign_to_char();
 
-    void print(FILE *f); 
+    void print(FILE *f);
 
     NEWDELETE2 (CHAR_SAMPLES) private:
     ClusterType type;
@@ -163,36 +166,36 @@ class CHAR_PROTO
 
     ~CHAR_PROTO ();
 
-    float match_sample(CHAR_SAMPLE *test_sample); 
+    float match_sample(CHAR_SAMPLE *test_sample);
 
-    float match(CHAR_PROTO *test_proto); 
+    float match(CHAR_PROTO *test_proto);
 
-    INT32 n_samples() { 
+    INT32 n_samples() {
       return nsamples;
     }
 
-    INT32 x_size() { 
+    INT32 x_size() {
       return xsize;
     }
 
-    INT32 y_size() { 
+    INT32 y_size() {
       return ysize;
     }
 
-    float **data() { 
+    float **data() {
       return proto;
     }
-    char character() { 
+    char character() {
       return ch;
     }
 
-    void enlarge_prototype(INT32 new_xsize, INT32 new_ysize); 
+    void enlarge_prototype(INT32 new_xsize, INT32 new_ysize);
 
-    void add_sample(CHAR_SAMPLE *sample); 
+    void add_sample(CHAR_SAMPLE *sample);
 
-    IMAGE *make_image(); 
+    IMAGE *make_image();
 
-    void print(FILE *f); 
+    void print(FILE *f);
 
     NEWDELETE2 (CHAR_PROTO) private:
     INT32 xsize;

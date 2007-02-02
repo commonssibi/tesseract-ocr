@@ -62,10 +62,10 @@ extern int NO_BLOCK;
  *
  * Startup recog program ready to recognize words.
  **********************************************************************/
-int start_recog(const char *configfile, const char *textbase) { 
+int start_recog(const char *configfile, const char *textbase) {
 
-  program_editup(configfile); 
-  program_editup2(textbase); 
+  program_editup(configfile);
+  program_editup2(textbase);
   return (0);
 }
 
@@ -75,36 +75,37 @@ int start_recog(const char *configfile, const char *textbase) {
  *
  * Initialize all the things in the program that need to be initialized.
  **********************************************************************/
-void program_editup(const char *configfile) { 
-  init_ms_debug(); 
-  init_dj_debug(); 
+void program_editup(const char *configfile) {
+  init_ms_debug();
+  init_dj_debug();
 
-  program_variables(); 
-  mfeature_variables(); 
+  program_variables();
+  mfeature_variables();
 
   if (configfile != NULL) {
     //              cprintf ("Reading configuration from file '%s'\n", configfile);
     /* Read config file */
-    read_variables(configfile); 
+    read_variables(configfile);
   }
   /* Initialize subsystems */
-  program_init(); 
-  mfeature_init(); 
-  setup_cp_maps(); 
+  program_init();
+  mfeature_init();
+  setup_cp_maps();
 }
 
 
 /*-------------------------------------------------------------------------*/
-void program_editup2(const char *textbase) { 
-  strcpy(imagefile, textbase); 
+void program_editup2(const char *textbase) {
+  if (textbase != NULL) {
+    strcpy(imagefile, textbase);
+    /* Read in data files */
+    edit_with_ocr(textbase);
+  }
 
-  /* Read in data files */
-  edit_with_ocr(textbase); 
-
-  init_metrics(); 
+  init_metrics();
   pass2_ok_split = ok_split;
   pass2_seg_states = num_seg_states;
-  reset_width_tally(); 
+  reset_width_tally();
 }
 
 
@@ -114,25 +115,25 @@ void program_editup2(const char *textbase) {
  * Initialize all the things in the program needed before the classifier
  * code is called.
  **********************************************************************/
-void edit_with_ocr(const char *imagename) { 
+void edit_with_ocr(const char *imagename) {
   char name[FILENAMESIZE];       /*base name of file */
 
   if (write_output) {
-    strcpy(name, imagename); 
+    strcpy(name, imagename);
     strcat (name, ".txt");
                                  //xiaofan
     textfile = open_file (name, "w");
   }
   if (write_raw_output) {
-    strcpy(name, imagename); 
+    strcpy(name, imagename);
     strcat (name, ".raw");
     rawfile = open_file (name, "w");
   }
   if (record_matcher_output) {
-    strcpy(name, imagename); 
+    strcpy(name, imagename);
     strcat (name, ".mlg");
     matcher_fp = open_file (name, "w");
-    strcpy(name, imagename); 
+    strcpy(name, imagename);
     strcat (name, ".ctx");
     correct_fp = open_file (name, "r");
   }
@@ -144,7 +145,7 @@ void edit_with_ocr(const char *imagename) {
  *
  * Cleanup and exit the recog program.
  **********************************************************************/
-int end_recog() { 
+int end_recog() {
   program_editdown (0);
 
   return (0);
@@ -157,8 +158,8 @@ int end_recog() {
  * This function holds any nessessary post processing for the Wise Owl
  * program.
  **********************************************************************/
-void program_editdown(INT32 elasped_time) { 
-  dj_cleanup(); 
+void program_editdown(INT32 elasped_time) {
+  dj_cleanup();
   if (display_text)
     cprintf ("\n");
   if (!NO_BLOCK && write_output)
@@ -169,17 +170,27 @@ void program_editdown(INT32 elasped_time) {
     #ifdef __UNIX__
     fsync (fileno (textfile));
     #endif
-    fclose(textfile); 
+    fclose(textfile);
   }
   if (write_raw_output) {
     #ifdef __UNIX__
     fsync (fileno (rawfile));
     #endif
-    fclose(rawfile); 
+    fclose(rawfile);
   }
-  close_choices(); 
+  close_choices();
   if (tessedit_save_stats)
     save_summary (elasped_time);
+  end_match_table();
+  InitChoiceAccum();
+  if (global_hash != NULL) {
+    free_mem(global_hash);
+    global_hash = NULL;
+  }
+  end_metrics();
+  end_permute();
+  end_permdawg();
+  free_variables();
 }
 
 
@@ -188,11 +199,11 @@ void program_editdown(INT32 elasped_time) {
  *
  * Get ready to do some pass 1 stuff.
  **********************************************************************/
-void set_pass1() { 
+void set_pass1() {
   blob_skip = FALSE;
   ok_split = 70.0;
   num_seg_states = 15;
-  SettupPass1(); 
+  SettupPass1();
   first_pass = 1;
 }
 
@@ -202,11 +213,11 @@ void set_pass1() {
  *
  * Get ready to do some pass 2 stuff.
  **********************************************************************/
-void set_pass2() { 
+void set_pass2() {
   blob_skip = FALSE;
   ok_split = pass2_ok_split;
   num_seg_states = pass2_seg_states;
-  SettupPass2(); 
+  SettupPass2();
   first_pass = 0;
 }
 
@@ -226,12 +237,12 @@ CHOICES_LIST cc_recog(TWERD *tessword,
 
   if (SetErrorTrap (NULL)) {
     cprintf ("Tess copped out!\n");
-    ReleaseErrorTrap(); 
+    ReleaseErrorTrap();
     class_string (best_choice) = NULL;
     return NULL;
   }
-  InitChoiceAccum(); 
-  init_match_table(); 
+  InitChoiceAccum();
+  init_match_table();
   for (fx = 0; fx < MAX_FX && (acts[OCR] & (FXSELECT << fx)) == 0; fx++);
   results =
     chop_word_main(tessword,
@@ -240,9 +251,9 @@ CHOICES_LIST cc_recog(TWERD *tessword,
                    best_raw_choice,
                    tester,
                    trainer);
-  DebugWordChoices(); 
-  reset_hyphen_word(); 
-  ReleaseErrorTrap(); 
+  DebugWordChoices();
+  reset_hyphen_word();
+  ReleaseErrorTrap();
   return results;
 }
 
@@ -253,7 +264,7 @@ CHOICES_LIST cc_recog(TWERD *tessword,
  * Test the dictionaries, returning NO_PERM (0) if not found, or one of the
  * DAWG_PERM values if found, according to the dictionary.
  **********************************************************************/
-int dict_word(const char *word) { 
+int dict_word(const char *word) {
 
   if (test_freq_words (word))
     return FREQ_DAWG_PERM;

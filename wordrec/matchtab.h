@@ -34,11 +34,12 @@
 /*----------------------------------------------------------------------
               F u n c t i o n s
 ----------------------------------------------------------------------*/
-void init_match_table(); 
+void init_match_table();
+void end_match_table();
 
-void put_match(TBLOB *blob, CHOICES ratings); 
+void put_match(TBLOB *blob, CHOICES ratings);
 
-CHOICES get_match(TBLOB *blob); 
+CHOICES get_match(TBLOB *blob);
 
-CHOICES get_match_by_bounds(unsigned int topleft, unsigned int botright); 
+CHOICES get_match_by_bounds(unsigned int topleft, unsigned int botright);
 #endif
