@@ -43,20 +43,20 @@ void *edge_window = NULL;
  *
  * Macro to display edge points in a window.
  **********************************************************************/
-void display_edgepts(LIST outlines) { 
+void display_edgepts(LIST outlines) {
   void *window;
   /* Set up window */
   if (edge_window == NULL) {
     edge_window = c_create_window ("Edges", 750, 150,
-      200, 128, -200.0, 200.0, 0.0, 256.0);
+      400, 128, -400.0, 400.0, 0.0, 256.0);
   }
   else {
-    c_clear_window(edge_window); 
+    c_clear_window(edge_window);
   }
   /* Render the outlines */
   window = edge_window;
   /* Reclaim old memory */
-  iterate(outlines) { 
+  iterate(outlines) {
     render_edgepts (window, (EDGEPT *) first (outlines), White);
   }
 }
@@ -67,15 +67,15 @@ void display_edgepts(LIST outlines) {
  *
  * Display the edges of this blob in the edges window.
  **********************************************************************/
-void draw_blob_edges(TBLOB *blob) { 
+void draw_blob_edges(TBLOB *blob) {
   TESSLINE *ol;
   LIST edge_list = NIL;
 
   if (display_splits) {
     for (ol = blob->outlines; ol != NULL; ol = ol->next)
       push_on (edge_list, ol->loop);
-    display_edgepts(edge_list); 
-    destroy(edge_list); 
+    display_edgepts(edge_list);
+    destroy(edge_list);
   }
 }
 
@@ -90,26 +90,26 @@ void mark_outline(EDGEPT *edgept) {  /* Start of point list */
   float x = edgept->pos.x;
   float y = edgept->pos.y;
 
-  c_line_color_index(window, Red); 
-  c_move(window, x, y); 
+  c_line_color_index(window, Red);
+  c_move(window, x, y);
 
   x -= 4;
   y -= 12;
-  c_draw(window, x, y); 
+  c_draw(window, x, y);
 
   x -= 2;
   y += 4;
-  c_draw(window, x, y); 
+  c_draw(window, x, y);
 
   x -= 4;
   y += 2;
-  c_draw(window, x, y); 
+  c_draw(window, x, y);
 
   x += 10;
   y += 6;
-  c_draw(window, x, y); 
+  c_draw(window, x, y);
 
-  c_make_current(window); 
+  c_make_current(window);
 }
 
 
@@ -120,11 +120,11 @@ void mark_outline(EDGEPT *edgept) {  /* Start of point list */
  * the marks in the current window.  The marks are stored in the second
  * sublist. The first sublist is left unmodified.
  **********************************************************************/
-void mark_split(SPLIT *split) { 
+void mark_split(SPLIT *split) {
   void *window = edge_window;
 
-  c_line_color_index(window, Green); 
+  c_line_color_index(window, Green);
   c_move (window, (float) split->point1->pos.x, (float) split->point1->pos.y);
   c_draw (window, (float) split->point2->pos.x, (float) split->point2->pos.y);
-  c_make_current(window); 
+  c_make_current(window);
 }

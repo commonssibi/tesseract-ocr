@@ -52,7 +52,7 @@ freeseam, SEAMBLOCK, "SEAM", seamcount);
  * Check to see if either of these points are present in the current
  * split.  Return TRUE if one of them is.
  **********************************************************************/
-bool point_in_split(SPLIT *split, EDGEPT *point1, EDGEPT *point2) { 
+bool point_in_split(SPLIT *split, EDGEPT *point1, EDGEPT *point2) {
   return ((split) ?
     ((exact_point (split->point1, point1) ||
     exact_point (split->point1, point2) ||
@@ -67,7 +67,7 @@ bool point_in_split(SPLIT *split, EDGEPT *point1, EDGEPT *point2) {
  * Check to see if either of these points are present in the current
  * seam.  Return TRUE if one of them is.
  **********************************************************************/
-bool point_in_seam(SEAM *seam, SPLIT *split) { 
+bool point_in_seam(SEAM *seam, SPLIT *split) {
   return (point_in_split (seam->split1, split->point1, split->point2) ||
     point_in_split (seam->split2, split->point1, split->point2) ||
     point_in_split (seam->split3, split->point1, split->point2));
@@ -79,7 +79,7 @@ bool point_in_seam(SEAM *seam, SPLIT *split) {
  *
  * Add another seam to a collection of seams.
  **********************************************************************/
-SEAMS add_seam(SEAMS seam_list, SEAM *seam) { 
+SEAMS add_seam(SEAMS seam_list, SEAM *seam) {
   return (array_push (seam_list, seam));
 }
 
@@ -91,7 +91,7 @@ SEAMS add_seam(SEAMS seam_list, SEAM *seam) {
  * references from the second seam to the first one.  The argument
  * convention is patterned after strcpy.
  **********************************************************************/
-void combine_seams(SEAM *dest_seam, SEAM *source_seam) { 
+void combine_seams(SEAM *dest_seam, SEAM *source_seam) {
   dest_seam->priority += source_seam->priority;
   dest_seam->location += source_seam->location;
   dest_seam->location /= 2;
@@ -120,7 +120,7 @@ void combine_seams(SEAM *dest_seam, SEAM *source_seam) {
     else
       cprintf ("combine_seam: Seam is too crowded, can't be combined !\n");
   }
-  free_seam(source_seam); 
+  free_seam(source_seam);
 }
 
 
@@ -139,7 +139,7 @@ void delete_seam(void *arg) {  //SEAM  *seam)
       delete_split (seam->split2);
     if (seam->split3)
       delete_split (seam->split3);
-    free_seam(seam); 
+    free_seam(seam);
   }
 }
 
@@ -150,13 +150,47 @@ void delete_seam(void *arg) {  //SEAM  *seam)
  * Free all the seams that have been allocated in this list.  Reclaim
  * the memory for each of the splits as well.
  **********************************************************************/
-void free_seam_list(SEAMS seam_list) { 
+void free_seam_list(SEAMS seam_list) {
   int x;
 
   array_loop (seam_list, x) delete_seam (array_value (seam_list, x));
-  array_free(seam_list); 
+  array_free(seam_list);
 }
 
+
+/**********************************************************************
+ * test_insert_seam
+ *
+ * Return true if insert_seam will succeed.
+ **********************************************************************/
+bool test_insert_seam(SEAMS seam_list,
+                      int index,
+                      TBLOB *left_blob,
+                      TBLOB *first_blob) {
+  SEAM *test_seam;
+  TBLOB *blob;
+  int test_index;
+  int list_length;
+
+  list_length = array_count (seam_list);
+  for (test_index = 0, blob = first_blob->next;
+  test_index < index; test_index++, blob = blob->next) {
+    test_seam = (SEAM *) array_value (seam_list, test_index);
+    if (test_index + test_seam->widthp < index &&
+        test_seam->widthp + test_index == index - 1 &&
+        account_splits_right(test_seam, blob) < 0)
+      return false;
+  }
+  for (test_index = index, blob = left_blob->next;
+  test_index < list_length; test_index++, blob = blob->next) {
+    test_seam = (SEAM *) array_value (seam_list, test_index);
+    if (test_index - test_seam->widthn >= index &&
+        test_index - test_seam->widthn == index &&
+        account_splits_left(test_seam, first_blob, blob) < 0)
+      return false;
+  }
+  return true;
+}
 
 /**********************************************************************
  * insert_seam
@@ -178,18 +212,32 @@ SEAMS insert_seam(SEAMS seam_list,
   for (test_index = 0, blob = first_blob->next;
   test_index < index; test_index++, blob = blob->next) {
     test_seam = (SEAM *) array_value (seam_list, test_index);
-    if (test_index + test_seam->widthp >= index)
+    if (test_index + test_seam->widthp >= index) {
       test_seam->widthp++;       /*got in the way */
-    else if (test_seam->widthp + test_index == index - 1)
-      account_splits_right(test_seam, blob); 
+    }
+    else if (test_seam->widthp + test_index == index - 1) {
+      test_seam->widthp = account_splits_right(test_seam, blob);
+      if (test_seam->widthp < 0) {
+        cprintf ("Failed to find any right blob for a split!\n");
+        print_seam("New dud seam", seam);
+        print_seam("Failed seam", test_seam);
+      }
+    }
   }
   for (test_index = index, blob = left_blob->next;
   test_index < list_length; test_index++, blob = blob->next) {
     test_seam = (SEAM *) array_value (seam_list, test_index);
-    if (test_index - test_seam->widthn < index)
+    if (test_index - test_seam->widthn < index) {
       test_seam->widthn++;       /*got in the way */
-    else if (test_index - test_seam->widthn == index)
-      account_splits_left(test_seam, first_blob, blob); 
+    }
+    else if (test_index - test_seam->widthn == index) {
+      test_seam->widthn = account_splits_left(test_seam, first_blob, blob);
+      if (test_seam->widthn < 0) {
+        cprintf ("Failed to find any left blob for a split!\n");
+        print_seam("New dud seam", seam);
+        print_seam("Failed seam", test_seam);
+      }
+    }
   }
   return (array_insert (seam_list, index, seam));
 }
@@ -201,7 +249,7 @@ SEAMS insert_seam(SEAMS seam_list,
  * Account for all the splits by looking to the right.
  * in the blob list.
  **********************************************************************/
-void account_splits_right(SEAM *seam, TBLOB *blob) { 
+int account_splits_right(SEAM *seam, TBLOB *blob) {
   INT8 found_em[3];
   INT8 width;
 
@@ -209,7 +257,7 @@ void account_splits_right(SEAM *seam, TBLOB *blob) {
   found_em[1] = seam->split2 == NULL;
   found_em[2] = seam->split3 == NULL;
   if (found_em[0] && found_em[1] && found_em[2])
-    return;
+    return 0;
   width = 0;
   do {
     if (!found_em[0])
@@ -219,15 +267,13 @@ void account_splits_right(SEAM *seam, TBLOB *blob) {
     if (!found_em[2])
       found_em[2] = find_split_in_blob (seam->split3, blob);
     if (found_em[0] && found_em[1] && found_em[2]) {
-      seam->widthp = width;
-      return;
+      return width;
     }
     width++;
     blob = blob->next;
   }
   while (blob != NULL);
-  seam->widthp = 127;
-  cprintf ("Failed to find any right blob for a split!\n");
+  return -1;
 }
 
 
@@ -237,7 +283,7 @@ void account_splits_right(SEAM *seam, TBLOB *blob) {
  * Account for all the splits by looking to the left.
  * in the blob list.
  **********************************************************************/
-void account_splits_left(SEAM *seam, TBLOB *blob, TBLOB *end_blob) { 
+int account_splits_left(SEAM *seam, TBLOB *blob, TBLOB *end_blob) {
   static INT32 depth = 0;
   static INT8 width;
   static INT8 found_em[3];
@@ -262,12 +308,10 @@ void account_splits_left(SEAM *seam, TBLOB *blob, TBLOB *end_blob) {
   if (!found_em[0] || !found_em[1] || !found_em[2]) {
     width++;
     if (depth == 0) {
-      width = 127;
-      cprintf ("Failed to find any left blob for a split!\n");
+      width = -1;
     }
   }
-  if (depth == 0)
-    seam->widthn = width;
+  return width;
 }
 
 
@@ -276,11 +320,22 @@ void account_splits_left(SEAM *seam, TBLOB *blob, TBLOB *end_blob) {
  *
  * Return TRUE if the split is somewhere in this blob.
  **********************************************************************/
-bool find_split_in_blob(SPLIT *split, TBLOB *blob) { 
+bool find_split_in_blob(SPLIT *split, TBLOB *blob) {
   TESSLINE *outline;
 
+#if 0
   for (outline = blob->outlines; outline != NULL; outline = outline->next)
     if (is_split_outline (outline, split))
+      return TRUE;
+  return FALSE;
+#endif
+  for (outline = blob->outlines; outline != NULL; outline = outline->next)
+    if (point_in_outline(split->point1, outline))
+      break;
+  if (outline == NULL)
+    return FALSE;
+  for (outline = blob->outlines; outline != NULL; outline = outline->next)
+    if (point_in_outline(split->point2, outline))
       return TRUE;
   return FALSE;
 }
@@ -292,19 +347,19 @@ bool find_split_in_blob(SPLIT *split, TBLOB *blob) {
  * Merge these two seams into a new seam.  Duplicate the split records
  * in both of the input seams.  Return the resultant seam.
  **********************************************************************/
-SEAM *join_two_seams(SEAM *seam1, SEAM *seam2) { 
+SEAM *join_two_seams(SEAM *seam1, SEAM *seam2) {
   SEAM *result = NULL;
   SEAM *temp;
 
-  assert(seam1 &&seam2); 
+  assert(seam1 &&seam2);
 
   if ((seam1->split3 == NULL && seam2->split2 == NULL ||
     seam1->split2 == NULL && seam2->split3 == NULL ||
     seam1->split1 == NULL ||
   seam2->split1 == NULL) && (!shared_split_points (seam1, seam2))) {
-    clone_seam(result, seam1); 
-    clone_seam(temp, seam2); 
-    combine_seams(result, temp); 
+    clone_seam(result, seam1);
+    clone_seam(temp, seam2);
+    combine_seams(result, temp);
   }
   return (result);
 }
@@ -343,7 +398,7 @@ SEAM *new_seam(PRIORITY priority,
  *
  * Create a collection of seam records in an array.
  **********************************************************************/
-SEAMS new_seam_list() { 
+SEAMS new_seam_list() {
   return (array_new (NUM_STARTING_SEAMS));
 }
 
@@ -354,9 +409,9 @@ SEAMS new_seam_list() {
  * Print a list of splits.  Show the coordinates of both points in
  * each split.
  **********************************************************************/
-void print_seam(const char *label, SEAM *seam) { 
+void print_seam(const char *label, SEAM *seam) {
   if (seam) {
-    cprintf(label); 
+    cprintf(label);
     cprintf (" %6.2f @ %5d, p=%d, n=%d ",
       seam->priority, seam->location, seam->widthp, seam->widthn);
 
@@ -382,13 +437,13 @@ void print_seam(const char *label, SEAM *seam) {
  * Print a list of splits.  Show the coordinates of both points in
  * each split.
  **********************************************************************/
-void print_seams(const char *label, SEAMS seams) { 
+void print_seams(const char *label, SEAMS seams) {
   int x;
   char number[CHARS_PER_LINE];
 
   if (seams) {
     cprintf ("%s\n", label);
-    array_loop(seams, x) { 
+    array_loop(seams, x) {
       sprintf (number, "%2d:   ", x);
       print_seam (number, (SEAM *) array_value (seams, x));
     }
@@ -404,7 +459,7 @@ void print_seams(const char *label, SEAMS seams) {
  * points in common. Return TRUE if any of the same points are present
  * in any of the splits of both seams.
  **********************************************************************/
-int shared_split_points(SEAM *seam1, SEAM *seam2) { 
+int shared_split_points(SEAM *seam1, SEAM *seam2) {
   if (seam1 == NULL || seam2 == NULL)
     return (FALSE);
 

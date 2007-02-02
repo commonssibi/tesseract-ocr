@@ -49,7 +49,7 @@ typedef struct seam_record
 
 typedef ARRAY SEAMS;             /*  SEAMS  */
 
-extern SEAM *newseam(); 
+extern SEAM *newseam();
 
 /*----------------------------------------------------------------------
               M a c r o s
@@ -89,17 +89,22 @@ else {                                              \
 /*----------------------------------------------------------------------
               F u n c t i o n s
 ----------------------------------------------------------------------*/
-bool point_in_split(SPLIT *split, EDGEPT *point1, EDGEPT *point2); 
+bool point_in_split(SPLIT *split, EDGEPT *point1, EDGEPT *point2);
 
-bool point_in_seam(SEAM *seam, SPLIT *split); 
+bool point_in_seam(SEAM *seam, SPLIT *split);
 
-SEAMS add_seam(SEAMS seam_list, SEAM *seam); 
+SEAMS add_seam(SEAMS seam_list, SEAM *seam);
 
-void combine_seams(SEAM *dest_seam, SEAM *source_seam); 
+void combine_seams(SEAM *dest_seam, SEAM *source_seam);
 
 void delete_seam(void *arg);  //SEAM  *seam);
 
-void free_seam_list(SEAMS seam_list); 
+void free_seam_list(SEAMS seam_list);
+
+bool test_insert_seam(SEAMS seam_list,
+                      int index,
+                      TBLOB *left_blob,
+                      TBLOB *first_blob);
 
 SEAMS insert_seam(SEAMS seam_list,
                   int index,
@@ -107,13 +112,13 @@ SEAMS insert_seam(SEAMS seam_list,
                   TBLOB *left_blob,
                   TBLOB *first_blob);
 
-void account_splits_right(SEAM *seam, TBLOB *blob); 
+int account_splits_right(SEAM *seam, TBLOB *blob);
 
-void account_splits_left(SEAM *seam, TBLOB *blob, TBLOB *end_blob); 
+int account_splits_left(SEAM *seam, TBLOB *blob, TBLOB *end_blob);
 
-bool find_split_in_blob(SPLIT *split, TBLOB *blob); 
+bool find_split_in_blob(SPLIT *split, TBLOB *blob);
 
-SEAM *join_two_seams(SEAM *seam1, SEAM *seam2); 
+SEAM *join_two_seams(SEAM *seam1, SEAM *seam2);
 
 SEAM *new_seam(PRIORITY priority,
                int x_location,
@@ -121,11 +126,11 @@ SEAM *new_seam(PRIORITY priority,
                SPLIT *split2,
                SPLIT *split3);
 
-SEAMS new_seam_list(); 
+SEAMS new_seam_list();
 
-void print_seam(const char *label, SEAM *seam); 
+void print_seam(const char *label, SEAM *seam);
 
-void print_seams(const char *label, SEAMS seams); 
+void print_seams(const char *label, SEAMS seams);
 
-int shared_split_points(SEAM *seam1, SEAM *seam2); 
+int shared_split_points(SEAM *seam1, SEAM *seam2);
 #endif

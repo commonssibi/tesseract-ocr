@@ -26,7 +26,7 @@
               I n c l u d e s
 ----------------------------------------------------------------------*/
 #include "matrix.h"
-#include "util.h"
+#include "cutil.h"
 #include "freelist.h"
 #include "callcpp.h"
 

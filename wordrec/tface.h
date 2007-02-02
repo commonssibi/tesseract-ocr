@@ -4,7 +4,7 @@
 #include "host.h"
 #include "choicearr.h"
 #include "tessclas.h"
-#include "util.h"
+#include "cutil.h"
 
 /*----------------------------------------------------------------------------
           Function Prototypes
