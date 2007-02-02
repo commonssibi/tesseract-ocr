@@ -141,7 +141,7 @@ void start_sbdaemon() {  /*start the daemon */
     shminfo.shmsize = PIPESIZE;  /*size of pipe buffer */
     #ifdef __UNIX__
                                  /*command on host */
-    sprintf (arg2, "%s=0x%lx; export %s; %s -1 0 " INT32FORMAT " %s", SBADDR, sbaddr, SBADDR, SBDAEMON, shminfo.shmsize, getenv (DISP));
+    sprintf (arg2, "%s=0x%x; export %s; %s -1 0 " INT32FORMAT " %s", SBADDR, sbaddr, SBADDR, SBDAEMON, shminfo.shmsize, getenv (DISP));
     #else
                                  /*command on host */
     sprintf (arg2, "%s -1 0 %d %s", SBDAEMON, shminfo.shmsize, getenv (DISP));
@@ -158,7 +158,7 @@ void start_sbdaemon() {  /*start the daemon */
   //   shminfo.pid=two_way_pipe(argv[0],argv,shminfo.fds);       /*start daemon*/
   #else
   if (two_way_pipe (argv[0], argv, shminfo.fds) != 0) {
-    cleanup_sbdaemon(); 
+    cleanup_sbdaemon();
   }
   else {
                                  //anonymous
@@ -195,7 +195,7 @@ void cleanup_sbdaemon() {  /*forget about the daemon */
     shminfo.shmid = NULL;
   }
   if (event_sem != NULL) {
-    CloseHandle(event_sem); 
+    CloseHandle(event_sem);
     event_sem = NULL;
   }
   #elif defined(__UNIX__)
@@ -232,7 +232,7 @@ BOOL8 remote_display(            //check for remote
 
   xenv = getenv (DISP);          /*get display variable */
   if (xenv != NULL) {
-    strcpy(name, xenv); 
+    strcpy(name, xenv);
     nameend = strchr (name, ':');
     if (nameend != NULL)
       *nameend = '\0';           /*chop display off */
@@ -311,9 +311,9 @@ void kick_daemon(           /*empty queue */
   static INT16 reads_pending = 0;/*acknowledges pending */
 
   if (mode == COUNT_READS) {
-    lock_events(); 
+    lock_events();
     reads_pending--;             /*got a read */
-    unlock_events(); 
+    unlock_events();
     return;
   }
   if (shminfo.shmstart == NULL)
@@ -328,7 +328,7 @@ void kick_daemon(           /*empty queue */
     PRIMITIVES = shminfo.usedsize;
     if (WriteFile (shminfo.fds[OUTFD], "xx", 2, &nwrite, NULL) == 0
     || nwrite != 2) {
-      cleanup_sbdaemon(); 
+      cleanup_sbdaemon();
       return;
     }
     #endif
@@ -342,7 +342,7 @@ void kick_daemon(           /*empty queue */
         if (WriteFile (shminfo.fds[OUTFD], (const char *) shminfo.shmstart,
           shminfo.usedsize, &nwrite, NULL) == 0
         || nwrite != (UINT32) shminfo.usedsize) {
-          cleanup_sbdaemon(); 
+          cleanup_sbdaemon();
           return;
         }
         #endif
@@ -350,9 +350,9 @@ void kick_daemon(           /*empty queue */
       }
       else
         shminfo.usedsize = -1;   /*need to wait */
-      lock_events(); 
+      lock_events();
       reads_pending++;           /*acknowledges due */
-      unlock_events(); 
+      unlock_events();
     }
     if (mode == FLUSH_IN || reads_pending > MAX_PENDING || mode == AWAIT_BUFFER
       #ifdef __UNIX__
@@ -388,7 +388,7 @@ void kick_daemon(           /*empty queue */
                 real_event.y = event.y;
                 real_event.next = NULL;
                                  /*add event to queue */
-                add_event(&real_event); 
+                add_event(&real_event);
             }
             else
               reads_pending--;   /*got acknowledge */
@@ -451,7 +451,7 @@ void kick_daemon(           /*empty queue */
           strcat (cmd, argv[argind]);
     }
 
-    GetStartupInfo(&start_info); 
+    GetStartupInfo(&start_info);
       start_info.wShowWindow = FALSE;
       start_info.hStdInput = sends[0];
       start_info.hStdOutput = sends[1];

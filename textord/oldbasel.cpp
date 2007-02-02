@@ -64,7 +64,6 @@ EXTERN double_VAR (textord_oldbl_jumplimit, 0.15,
 #define SPLINESIZE      23
 
 #define ABS(x) ((x)<0 ? (-(x)) : (x))
-#define MAX(x,y) ((x) > (y) ? (x) : (y))
 
 /**********************************************************************
  * make_old_baselines
@@ -99,7 +98,7 @@ void make_old_baselines(                  //make splines
           blob_it.data ()->bounding_box ().bottom ());
     }
   }
-  correlate_lines(block); 
+  correlate_lines(block);
 }
 
 
@@ -133,7 +132,7 @@ void correlate_lines(                 //cleanup lines
     rows[rowindex++] = row_it.data ();
 
                                  /*try to fix bad lines */
-  correlate_neighbours(block, rows, rowcount); 
+  correlate_neighbours(block, rows, rowcount);
 
   block->xheight = (float) correlate_with_stats (rows, rowcount);
   /*use stats */
@@ -143,7 +142,7 @@ void correlate_lines(                 //cleanup lines
   if (block->xheight < textord_min_xheight)
     block->xheight = (float) textord_min_xheight;
 
-  free_mem(rows); 
+  free_mem(rows);
 }
 
 
@@ -371,8 +370,10 @@ void find_textlines(                  //get baseline
   else
     make_first_baseline (blobcoords, blobcount,
       xcoords, ycoords, spline, &row->baseline, jumplimit);
+#ifndef GRAPHICS_DISABLED
   if (textord_show_final_rows)
     row->baseline.plot (to_win, GOLDENROD);
+#endif
   if (blobcount > 1) {
     bestpart = partition_line (blobcoords, blobcount,
       &partcount, partids, partsizes,
@@ -414,11 +415,11 @@ void find_textlines(                  //get baseline
   else
     make_first_xheight (row, blobcoords, lineheight, (int) block->line_size,
       blobcount, &row->baseline, jumplimit);
-  free_mem(partids); 
-  free_mem(xcoords); 
-  free_mem(ycoords); 
-  free_mem(blobcoords); 
-  free_mem(ydiffs); 
+  free_mem(partids);
+  free_mem(xcoords);
+  free_mem(ycoords);
+  free_mem(blobcoords);
+  free_mem(ydiffs);
 }
 
 
@@ -732,7 +733,7 @@ float ydiffs[]                   /*diff from spline */
         blobcoords[blobindex].bottom ());
     }
     bestpart =
-      choose_partition(diff, partdiffs, bestpart, jumplimit, numparts); 
+      choose_partition(diff, partdiffs, bestpart, jumplimit, numparts);
                                  /*record partition */
     partids[blobindex] = bestpart;
     partsizes[bestpart]++;       /*another in it */
@@ -749,7 +750,7 @@ float ydiffs[]                   /*diff from spline */
         blobcoords[blobindex].bottom ());
     }
     bestpart =
-      choose_partition(diff, partdiffs, bestpart, jumplimit, numparts); 
+      choose_partition(diff, partdiffs, bestpart, jumplimit, numparts);
                                  /*record partition */
     partids[blobindex] = bestpart;
     partsizes[bestpart]++;       /*another in it */
@@ -1555,20 +1556,20 @@ float jumplimit                  /*min ascender height */
     tprintf ("blobcount=%d, mode_count=%d, mode_t=%d\n",
       blobcount, mode_count, mode_threshold);
   }
-  find_top_modes(&heightstat, HEIGHTBUCKETS, modelist, MODENUM); 
+  find_top_modes(&heightstat, HEIGHTBUCKETS, modelist, MODENUM);
   if (textord_oldbl_debug) {
     for (blobindex = 0; blobindex < MODENUM; blobindex++)
       tprintf ("mode[%d]=%d ", blobindex, modelist[blobindex]);
     tprintf ("\n");
   }
-  pick_x_height(row, modelist, &heightstat, mode_threshold); 
+  pick_x_height(row, modelist, &heightstat, mode_threshold);
 
   if (textord_oldbl_debug)
     tprintf ("Output xheight=%g\n", row->xheight);
   if (row->xheight < 0 && textord_oldbl_debug)
     tprintf ("warning: Row Line height < 0; %4.2f\n", row->xheight);
 
-  free_mem(heights); 
+  free_mem(heights);
 
   if (sign_bit < 0)
     row->xheight = -row->xheight;
@@ -1611,6 +1612,8 @@ QSPLINE * baseline               /*established */
  * input distribution.
  **********************************************************************/
 
+const int kMinModeFactor = 12;
+
 void
 find_top_modes (                 //get modes
 STATS * stats,                   //stats to hack
@@ -1622,6 +1625,7 @@ int modelist[], int modenum      //no of modes to get
   int last_max = MAX_INT32;
   int i;
   int mode;
+  int total_max = 0;
 
   for (mode_count = 0; mode_count < modenum; mode_count++) {
     mode = 0;
@@ -1635,6 +1639,9 @@ int modelist[], int modenum      //no of modes to get
     }
     last_i = mode;
     last_max = stats->pile_count (last_i);
+    total_max += last_max;
+    if (last_max <= total_max / kMinModeFactor)
+      mode = 0;
     modelist[mode_count] = mode;
   }
 }

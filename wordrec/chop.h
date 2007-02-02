@@ -72,29 +72,30 @@ extern int chop_enable;
 /*----------------------------------------------------------------------
               F u n c t i o n s
 ----------------------------------------------------------------------*/
-PRIORITY point_priority(EDGEPT *point); 
+PRIORITY point_priority(EDGEPT *point);
 
-void add_point_to_list(POINT_GROUP point_list, EDGEPT *point); 
+void add_point_to_list(POINT_GROUP point_list, EDGEPT *point);
 
-int angle_change(EDGEPT *point1, EDGEPT *point2, EDGEPT *point3); 
+int angle_change(EDGEPT *point1, EDGEPT *point2, EDGEPT *point3);
 
-void init_chop(); 
+void init_chop();
 
-int is_little_chunk(EDGEPT *point1, EDGEPT *point2); 
+int is_little_chunk(EDGEPT *point1, EDGEPT *point2);
 
-int is_small_area(EDGEPT *point1, EDGEPT *point2); 
+int is_small_area(EDGEPT *point1, EDGEPT *point2);
 
 EDGEPT *pick_close_point(EDGEPT *critical_point,
                          EDGEPT *vertical_point,
                          int *best_dist);
 
-void prioritize_points(TESSLINE *outline, POINT_GROUP points); 
+void prioritize_points(TESSLINE *outline, POINT_GROUP points);
 
-void new_min_point(EDGEPT *local_min, POINT_GROUP points); 
+void new_min_point(EDGEPT *local_min, POINT_GROUP points);
 
-void new_max_point(EDGEPT *local_max, POINT_GROUP points); 
+void new_max_point(EDGEPT *local_max, POINT_GROUP points);
 
-EDGEPT *vertical_projection_point(EDGEPT *split_point, EDGEPT *target_point); 
+void vertical_projection_point(EDGEPT *split_point, EDGEPT *target_point,
+                               EDGEPT** best_point);
 
 /*
 #if defined(__STDC__) || defined(__cplusplus)

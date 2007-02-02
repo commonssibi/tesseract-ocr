@@ -106,9 +106,9 @@ FILL_SPEC;
 /*---------------------------------------------------------------------------
             Private Function Prototypes
 ----------------------------------------------------------------------------*/
-FLOAT32 BucketStart(int Bucket, FLOAT32 Offset, int NumBuckets); 
+FLOAT32 BucketStart(int Bucket, FLOAT32 Offset, int NumBuckets);
 
-FLOAT32 BucketEnd(int Bucket, FLOAT32 Offset, int NumBuckets); 
+FLOAT32 BucketEnd(int Bucket, FLOAT32 Offset, int NumBuckets);
 
 void DoFill(FILL_SPEC *FillSpec,
             CLASS_PRUNER Pruner,
@@ -116,7 +116,7 @@ void DoFill(FILL_SPEC *FillSpec,
             register UINT32 ClassCount,
             register UINT32 WordIndex);
 
-BOOL8 FillerDone(TABLE_FILLER *Filler); 
+BOOL8 FillerDone(TABLE_FILLER *Filler);
 
 void FillPPCircularBits (UINT32
 ParamTable[NUM_PP_BUCKETS][WERDS_PER_PP_VECTOR],
@@ -125,16 +125,18 @@ int Bit, FLOAT32 Center, FLOAT32 Spread);
 void FillPPLinearBits (UINT32 ParamTable[NUM_PP_BUCKETS][WERDS_PER_PP_VECTOR],
 int Bit, FLOAT32 Center, FLOAT32 Spread);
 
-CLASS_ID GetClassToDebug(const char *Prompt); 
+#ifndef GRAPHICS_DISABLED
+CLASS_ID GetClassToDebug(const char *Prompt);
+#endif
 
 void GetCPPadsForLevel(int Level,
                        FLOAT32 *EndPad,
                        FLOAT32 *SidePad,
                        FLOAT32 *AnglePad);
 
-C_COL GetMatchColorFor(FLOAT32 Evidence); 
+C_COL GetMatchColorFor(FLOAT32 Evidence);
 
-void GetNextFill(TABLE_FILLER *Filler, FILL_SPEC *Fill); 
+void GetNextFill(TABLE_FILLER *Filler, FILL_SPEC *Fill);
 
 void InitTableFiller(FLOAT32 EndPad,
                      FLOAT32 SidePad,
@@ -142,14 +144,16 @@ void InitTableFiller(FLOAT32 EndPad,
                      PROTO Proto,
                      TABLE_FILLER *Filler);
 
-void RenderIntFeature(void *window, INT_FEATURE Feature, C_COL Color); 
+#ifndef GRAPHICS_DISABLED
+void RenderIntFeature(void *window, INT_FEATURE Feature, C_COL Color);
 
 void RenderIntProto(void *window,
                     INT_CLASS Class,
                     PROTO_ID ProtoId,
                     C_COL Color);
+#endif
 
-int TruncateParam(FLOAT32 Param, int Min, int Max, char *Id); 
+int TruncateParam(FLOAT32 Param, int Min, int Max, char *Id);
 
 /*
 #if defined(__STDC__) || defined(__cplusplus)
@@ -257,7 +261,7 @@ void *IntMatchWindow = NULL;
               Public Code
 ----------------------------------------------------------------------------**/
 /*---------------------------------------------------------------------------*/
-int AddIntClass(INT_TEMPLATES Templates, CLASS_ID ClassId, INT_CLASS Class) { 
+int AddIntClass(INT_TEMPLATES Templates, CLASS_ID ClassId, INT_CLASS Class) {
 /*
  **	Parameters:
  **		Templates	templates to add new class to
@@ -301,7 +305,7 @@ int AddIntClass(INT_TEMPLATES Templates, CLASS_ID ClassId, INT_CLASS Class) {
 
 
 /*---------------------------------------------------------------------------*/
-int AddIntConfig(INT_CLASS Class) { 
+int AddIntConfig(INT_CLASS Class) {
 /*
  **	Parameters:
  **		Class	class to add new configuration to
@@ -324,7 +328,7 @@ int AddIntConfig(INT_CLASS Class) {
 
 
 /*---------------------------------------------------------------------------*/
-int AddIntProto(INT_CLASS Class) { 
+int AddIntProto(INT_CLASS Class) {
 /*
  **	Parameters:
  **		Class	class to add new proto to
@@ -408,20 +412,20 @@ AddProtoToClassPruner (PROTO Proto, CLASS_ID ClassId, INT_TEMPLATES Templates)
   ClassMask = CPrunerMaskFor (MAX_LEVEL, ClassIndex);
 
   for (Level = NumCPLevels - 1; Level >= 0; Level--) {
-    GetCPPadsForLevel(Level, &EndPad, &SidePad, &AnglePad); 
+    GetCPPadsForLevel(Level, &EndPad, &SidePad, &AnglePad);
     ClassCount = CPrunerMaskFor (Level, ClassIndex);
-    InitTableFiller(EndPad, SidePad, AnglePad, Proto, &TableFiller); 
+    InitTableFiller(EndPad, SidePad, AnglePad, Proto, &TableFiller);
 
     while (!FillerDone (&TableFiller)) {
-      GetNextFill(&TableFiller, &FillSpec); 
-      DoFill(&FillSpec, Pruner, ClassMask, ClassCount, WordIndex); 
+      GetNextFill(&TableFiller, &FillSpec);
+      DoFill(&FillSpec, Pruner, ClassMask, ClassCount, WordIndex);
     }
   }
 }                                /* AddProtoToClassPruner */
 
 
 /*---------------------------------------------------------------------------*/
-void AddProtoToProtoPruner(PROTO Proto, int ProtoId, INT_CLASS Class) { 
+void AddProtoToProtoPruner(PROTO Proto, int ProtoId, INT_CLASS Class) {
 /*
  **	Parameters:
  **		Proto	floating-pt proto to be added to proto pruner
@@ -473,7 +477,7 @@ void AddProtoToProtoPruner(PROTO Proto, int ProtoId, INT_CLASS Class) {
 
 
 /*---------------------------------------------------------------------------*/
-int BucketFor(FLOAT32 Param, FLOAT32 Offset, int NumBuckets) { 
+int BucketFor(FLOAT32 Param, FLOAT32 Offset, int NumBuckets) {
 /*
  **	Parameters:
  **		Param		parameter value to map into a bucket number
@@ -502,7 +506,7 @@ int BucketFor(FLOAT32 Param, FLOAT32 Offset, int NumBuckets) {
 
 
 /*---------------------------------------------------------------------------*/
-int CircBucketFor(FLOAT32 Param, FLOAT32 Offset, int NumBuckets) { 
+int CircBucketFor(FLOAT32 Param, FLOAT32 Offset, int NumBuckets) {
 /*
  **	Parameters:
  **		Param		parameter value to map into a circular bucket
@@ -531,7 +535,8 @@ int CircBucketFor(FLOAT32 Param, FLOAT32 Offset, int NumBuckets) {
 
 
 /*---------------------------------------------------------------------------*/
-void UpdateMatchDisplay() { 
+#ifndef GRAPHICS_DISABLED
+void UpdateMatchDisplay() {
 /*
  **	Parameters: none
  **	Globals:
@@ -544,12 +549,12 @@ void UpdateMatchDisplay() {
  **	History: Thu Mar 21 15:40:19 1991, DSJ, Created.
  */
   if (IntMatchWindow != NULL)
-    c_make_current(IntMatchWindow); 
+    c_make_current(IntMatchWindow);
 }                                /* ClearMatchDisplay */
-
+#endif
 
 /*---------------------------------------------------------------------------*/
-void ConvertConfig(BIT_VECTOR Config, int ConfigId, INT_CLASS Class) { 
+void ConvertConfig(BIT_VECTOR Config, int ConfigId, INT_CLASS Class) {
 /*
  **	Parameters:
  **		Config		config to be added to class
@@ -581,7 +586,7 @@ void ConvertConfig(BIT_VECTOR Config, int ConfigId, INT_CLASS Class) {
 
 
 /*---------------------------------------------------------------------------*/
-void ConvertProto(PROTO Proto, int ProtoId, INT_CLASS Class) { 
+void ConvertProto(PROTO Proto, int ProtoId, INT_CLASS Class) {
 /*
  **	Parameters:
  **		Proto	floating-pt proto to be converted to integer format
@@ -626,7 +631,7 @@ void ConvertProto(PROTO Proto, int ProtoId, INT_CLASS Class) {
 
 
 /*---------------------------------------------------------------------------*/
-INT_TEMPLATES CreateIntTemplates(CLASSES FloatProtos) { 
+INT_TEMPLATES CreateIntTemplates(CLASSES FloatProtos) {
 /*
  **	Parameters:
  **		FloatProtos	prototypes in old floating pt format
@@ -652,10 +657,10 @@ INT_TEMPLATES CreateIntTemplates(CLASSES FloatProtos) {
       assert (UnusedClassIdIn (IntTemplates, ClassId));
 
       IClass = NewIntClass (NumProtosIn (FClass), NumConfigsIn (FClass));
-      AddIntClass(IntTemplates, ClassId, IClass); 
+      AddIntClass(IntTemplates, ClassId, IClass);
 
       for (ProtoId = 0; ProtoId < NumProtosIn (FClass); ProtoId++) {
-        AddIntProto(IClass); 
+        AddIntProto(IClass);
         ConvertProto (ProtoIn (FClass, ProtoId), ProtoId, IClass);
         AddProtoToProtoPruner (ProtoIn (FClass, ProtoId), ProtoId,
           IClass);
@@ -664,7 +669,7 @@ INT_TEMPLATES CreateIntTemplates(CLASSES FloatProtos) {
       }
 
       for (ConfigId = 0; ConfigId < NumConfigsIn (FClass); ConfigId++) {
-        AddIntConfig(IClass); 
+        AddIntConfig(IClass);
         ConvertConfig (ConfigIn (FClass, ConfigId), ConfigId, IClass);
       }
     }
@@ -674,7 +679,8 @@ INT_TEMPLATES CreateIntTemplates(CLASSES FloatProtos) {
 
 
 /*---------------------------------------------------------------------------*/
-void DisplayIntFeature(INT_FEATURE Feature, FLOAT32 Evidence) { 
+#ifndef GRAPHICS_DISABLED
+void DisplayIntFeature(INT_FEATURE Feature, FLOAT32 Evidence) {
 /*
  **	Parameters:
  **		Feature		pico-feature to be displayed
@@ -690,12 +696,12 @@ void DisplayIntFeature(INT_FEATURE Feature, FLOAT32 Evidence) {
   C_COL Color;
 
   Color = GetMatchColorFor (Evidence);
-  RenderIntFeature(IntMatchWindow, Feature, Color); 
+  RenderIntFeature(IntMatchWindow, Feature, Color);
 }                                /* DisplayIntFeature */
 
 
 /*---------------------------------------------------------------------------*/
-void DisplayIntProto(INT_CLASS Class, PROTO_ID ProtoId, FLOAT32 Evidence) { 
+void DisplayIntProto(INT_CLASS Class, PROTO_ID ProtoId, FLOAT32 Evidence) {
 /*
  **	Parameters:
  **		Class		class to take proto from
@@ -712,13 +718,13 @@ void DisplayIntProto(INT_CLASS Class, PROTO_ID ProtoId, FLOAT32 Evidence) {
   C_COL Color;
 
   Color = GetMatchColorFor (Evidence);
-  RenderIntProto(IntMatchWindow, Class, ProtoId, Color); 
+  RenderIntProto(IntMatchWindow, Class, ProtoId, Color);
 
 }                                /* DisplayIntProto */
-
+#endif
 
 /*---------------------------------------------------------------------------*/
-void InitIntProtoVars() { 
+void InitIntProtoVars() {
 /*
  **	Parameters: none
  **	Globals: none
@@ -728,24 +734,24 @@ void InitIntProtoVars() {
  **	Exceptions: none
  **	History: Tue Feb 12 08:04:34 1991, DSJ, Created.
  */
-  MakeNumCPLevels(); 
-  MakeCPAnglePadLoose(); 
-  MakeCPAnglePadMedium(); 
-  MakeCPAnglePadTight(); 
-  MakeCPEndPadLoose(); 
-  MakeCPEndPadMedium(); 
-  MakeCPEndPadTight(); 
-  MakeCPSidePadLoose(); 
-  MakeCPSidePadMedium(); 
-  MakeCPSidePadTight(); 
-  MakePPAnglePad(); 
-  MakePPEndPad(); 
-  MakePPSidePad(); 
+  MakeNumCPLevels();
+  MakeCPAnglePadLoose();
+  MakeCPAnglePadMedium();
+  MakeCPAnglePadTight();
+  MakeCPEndPadLoose();
+  MakeCPEndPadMedium();
+  MakeCPEndPadTight();
+  MakeCPSidePadLoose();
+  MakeCPSidePadMedium();
+  MakeCPSidePadTight();
+  MakePPAnglePad();
+  MakePPEndPad();
+  MakePPSidePad();
 }                                /* InitIntProtoVars */
 
 
 /*---------------------------------------------------------------------------*/
-INT_CLASS NewIntClass(int MaxNumProtos, int MaxNumConfigs) { 
+INT_CLASS NewIntClass(int MaxNumProtos, int MaxNumConfigs) {
 /*
  **	Parameters:
  **		MaxNumProtos	number of protos to allocate space for
@@ -801,12 +807,12 @@ void free_int_class(  /*class to free */
     Efree (ProtoSetIn (int_class, i));
   }
   Efree (int_class->ProtoLengths);
-  Efree(int_class); 
+  Efree(int_class);
 }
 
 
 /*---------------------------------------------------------------------------*/
-INT_TEMPLATES NewIntTemplates() { 
+INT_TEMPLATES NewIntTemplates() {
 /*
  **	Parameters: none
  **	Globals: none
@@ -835,19 +841,19 @@ INT_TEMPLATES NewIntTemplates() {
 
 
 /*---------------------------------------------------------------------------*/
-void free_int_templates(INT_TEMPLATES templates) { 
+void free_int_templates(INT_TEMPLATES templates) {
   int i;
 
   for (i = 0; i < NumClassesIn (templates); i++)
     free_int_class (ClassForIndex (templates, i));
   for (i = 0; i < NumClassPrunersIn (templates); i++)
     Efree (templates->ClassPruner[i]);
-  Efree(templates); 
+  Efree(templates);
 }
 
 
 /*---------------------------------------------------------------------------*/
-INT_TEMPLATES ReadIntTemplates(FILE *File, BOOL8 swap) { 
+INT_TEMPLATES ReadIntTemplates(FILE *File, BOOL8 swap) {
 /*
  **	Parameters:
  **		File		open file to read templates from
@@ -869,16 +875,26 @@ INT_TEMPLATES ReadIntTemplates(FILE *File, BOOL8 swap) {
 
   /* first read the high level template struct */
   Templates = NewIntTemplates ();
-  if ((nread =
-    fread ((char *) Templates, 1, sizeof (INT_TEMPLATES_STRUCT),
-    File)) != sizeof (INT_TEMPLATES_STRUCT))
+  // Read Templates in parts for 64 bit compatibility.
+  if (fread(&Templates->NumClasses, sizeof(int), 1, File) != 1 ||
+      fread(&Templates->NumClassPruners, sizeof(int), 1, File) != 1)
     cprintf ("Bad read of inttemp!\n");
-  //      int tmp=__NATIVE__;
-                                 //xiaofan
-  // swap status is determined automatically
-  if (swap && Templates->NumClassPruners > 0 &&
-      Templates->NumClassPruners < 1000)
-    swap = FALSE;
+  for (i = 0; i <= MAX_CLASS_ID; ++i) {
+    if (fread(&Templates->IndexFor[i], sizeof(CLASS_INDEX), 1, File) != 1)
+      cprintf("Bad read of inttemp!\n");
+  }
+  for (i = 0; i < MAX_NUM_CLASSES; ++i) {
+    if (fread(&Templates->ClassIdFor[i], sizeof(CLASS_ID), 1, File) != 1)
+      cprintf("Bad read of inttemp!\n");
+  }
+  for (i = 0; i < MAX_NUM_CLASSES + MAX_NUM_CLASS_PRUNERS; ++i) {
+    int junk;
+    if (fread(&junk, sizeof(junk), 1, File) != 1)
+      cprintf("Bad read of inttemp!\n");
+  }
+  // Swap status is determined automatically.
+  swap = Templates->NumClassPruners < 0 ||
+         Templates->NumClassPruners > MAX_NUM_CLASS_PRUNERS;
   if (swap) {
     reverse32 (&Templates->NumClassPruners);
     reverse32 (&Templates->NumClasses);
@@ -911,9 +927,19 @@ INT_TEMPLATES ReadIntTemplates(FILE *File, BOOL8 swap) {
   for (i = 0; i < NumClassesIn (Templates); i++) {
     /* first read in the high level struct for the class */
     Class = (INT_CLASS) Emalloc (sizeof (INT_CLASS_STRUCT));
-    if ((nread = fread ((char *) Class, 1, sizeof (INT_CLASS_STRUCT), File))
-      != sizeof (INT_CLASS_STRUCT))
+    if (fread(&Class->NumProtos, sizeof(Class->NumProtos), 1, File) != 1 ||
+        fread(&Class->NumProtoSets, sizeof(Class->NumProtoSets), 1, File) != 1 ||
+        fread(&Class->NumConfigs, sizeof(Class->NumConfigs), 1, File) != 1)
       cprintf ("Bad read of inttemp!\n");
+    for (j = 0; j <= MAX_NUM_PROTO_SETS; ++j) {
+      int junk;
+      if (fread(&junk, sizeof(junk), 1, File) != 1)
+        cprintf ("Bad read of inttemp!\n");
+    }
+    for (j = 0; j < MAX_NUM_CONFIGS; ++j) {
+      if (fread(&Class->ConfigLengths[j], sizeof(UINT16), 1, File) != 1)
+        cprintf ("Bad read of inttemp!\n");
+    }
     if (swap) {
       reverse16 (&Class->NumProtos);
       for (j = 0; j < MAX_NUM_CONFIGS; j++)
@@ -954,7 +980,8 @@ INT_TEMPLATES ReadIntTemplates(FILE *File, BOOL8 swap) {
 
 
 /*---------------------------------------------------------------------------*/
-void ShowMatchDisplay() { 
+#ifndef GRAPHICS_DISABLED
+void ShowMatchDisplay() {
 /*
  **	Parameters: none
  **	Globals:
@@ -974,10 +1001,10 @@ void ShowMatchDisplay() {
       -130.0, 130.0, -130.0, 130.0);
   }
   else
-    c_clear_window(IntMatchWindow); 
+    c_clear_window(IntMatchWindow);
 
   window = IntMatchWindow;
-  c_line_color_index(window, Grey); 
+  c_line_color_index(window, Grey);
   /* Default size of drawing */
   if (NormMethod == baseline) {
     c_move (window, -1000.0, INT_BASELINE);
@@ -1002,20 +1029,20 @@ void ShowMatchDisplay() {
     c_draw (window, INT_XCENTER - INT_XRADIUS, INT_YCENTER + INT_YRADIUS);
     c_move (window, INT_XCENTER + INT_XRADIUS, INT_YCENTER - INT_YRADIUS);
     c_draw (window, INT_XCENTER + INT_XRADIUS, INT_YCENTER + INT_YRADIUS);
-    c_move(window, INT_MIN_X, INT_MIN_Y); 
-    c_draw(window, INT_MIN_X, INT_MAX_Y); 
-    c_move(window, INT_MIN_X, INT_MIN_Y); 
-    c_draw(window, INT_MAX_X, INT_MIN_Y); 
-    c_move(window, INT_MAX_X, INT_MAX_Y); 
-    c_draw(window, INT_MIN_X, INT_MAX_Y); 
-    c_move(window, INT_MAX_X, INT_MAX_Y); 
-    c_draw(window, INT_MAX_X, INT_MIN_Y); 
+    c_move(window, INT_MIN_X, INT_MIN_Y);
+    c_draw(window, INT_MIN_X, INT_MAX_Y);
+    c_move(window, INT_MIN_X, INT_MIN_Y);
+    c_draw(window, INT_MAX_X, INT_MIN_Y);
+    c_move(window, INT_MAX_X, INT_MAX_Y);
+    c_draw(window, INT_MIN_X, INT_MAX_Y);
+    c_move(window, INT_MAX_X, INT_MAX_Y);
+    c_draw(window, INT_MAX_X, INT_MIN_Y);
   }
 }                                /* ShowMatchDisplay */
-
+#endif
 
 /*---------------------------------------------------------------------------*/
-void WriteIntTemplates(FILE *File, INT_TEMPLATES Templates) { 
+void WriteIntTemplates(FILE *File, INT_TEMPLATES Templates) {
 /*
  **	Parameters:
  **		File		open file to write templates to
@@ -1062,7 +1089,7 @@ void WriteIntTemplates(FILE *File, INT_TEMPLATES Templates) {
               Private Code
 ----------------------------------------------------------------------------**/
 /*---------------------------------------------------------------------------*/
-FLOAT32 BucketStart(int Bucket, FLOAT32 Offset, int NumBuckets) { 
+FLOAT32 BucketStart(int Bucket, FLOAT32 Offset, int NumBuckets) {
 /*
  **	Parameters:
  **		Bucket		bucket whose start is to be computed
@@ -1083,7 +1110,7 @@ FLOAT32 BucketStart(int Bucket, FLOAT32 Offset, int NumBuckets) {
 
 
 /*---------------------------------------------------------------------------*/
-FLOAT32 BucketEnd(int Bucket, FLOAT32 Offset, int NumBuckets) { 
+FLOAT32 BucketEnd(int Bucket, FLOAT32 Offset, int NumBuckets) {
 /*
  **	Parameters:
  **		Bucket		bucket whose end is to be computed
@@ -1153,7 +1180,7 @@ void DoFill(FILL_SPEC *FillSpec,
 
 
 /*---------------------------------------------------------------------------*/
-BOOL8 FillerDone(TABLE_FILLER *Filler) { 
+BOOL8 FillerDone(TABLE_FILLER *Filler) {
 /*
  **	Parameters:
  **		Filler		table filler to check if done
@@ -1263,7 +1290,8 @@ int Bit, FLOAT32 Center, FLOAT32 Spread) {
 
 
 /*---------------------------------------------------------------------------*/
-CLASS_ID GetClassToDebug(const char *Prompt) { 
+#ifndef GRAPHICS_DISABLED
+CLASS_ID GetClassToDebug(const char *Prompt) {
 /*
  **	Parameters:
  **		Prompt	prompt to print while waiting for input from window
@@ -1277,7 +1305,7 @@ CLASS_ID GetClassToDebug(const char *Prompt) {
   return window_wait (IntMatchWindow);
 
 }                                /* GetClassToDebug */
-
+#endif
 
 /*---------------------------------------------------------------------------*/
 void GetCPPadsForLevel(int Level,
@@ -1332,7 +1360,7 @@ void GetCPPadsForLevel(int Level,
 
 
 /*---------------------------------------------------------------------------*/
-C_COL GetMatchColorFor(FLOAT32 Evidence) { 
+C_COL GetMatchColorFor(FLOAT32 Evidence) {
 /*
  **	Parameters:
  **		Evidence	evidence value to return color for
@@ -1358,7 +1386,7 @@ C_COL GetMatchColorFor(FLOAT32 Evidence) {
 
 
 /*---------------------------------------------------------------------------*/
-void GetNextFill(TABLE_FILLER *Filler, FILL_SPEC *Fill) { 
+void GetNextFill(TABLE_FILLER *Filler, FILL_SPEC *Fill) {
 /*
  **	Parameters:
  **		Filler		filler to get next fill spec from
@@ -1585,7 +1613,8 @@ FLOAT32 AnglePad, PROTO Proto, TABLE_FILLER * Filler)
 
 
 /*---------------------------------------------------------------------------*/
-void RenderIntFeature(void *window, INT_FEATURE Feature, C_COL Color) { 
+#ifndef GRAPHICS_DISABLED
+void RenderIntFeature(void *window, INT_FEATURE Feature, C_COL Color) {
 /*
  **	Parameters:
  **		ShapeList	shape list to add feature rendering to
@@ -1599,7 +1628,7 @@ void RenderIntFeature(void *window, INT_FEATURE Feature, C_COL Color) {
  */
   FLOAT32 X, Y, Dx, Dy, Length;
 
-  c_line_color_index(window, Color); 
+  c_line_color_index(window, Color);
   assert (Feature != NULL);
   assert (Color != 0);
 
@@ -1649,7 +1678,7 @@ void RenderIntProto(void *window,
   assert (Class != NULL);
   assert (ProtoId < NumIntProtosIn (Class));
   assert (Color != 0);
-  c_line_color_index(window, Color); 
+  c_line_color_index(window, Color);
 
   ProtoSet = ProtoSetIn (Class, SetForProto (ProtoId));
   ProtoSetIndex = IndexForProto (ProtoId);
@@ -1683,10 +1712,10 @@ void RenderIntProto(void *window,
   c_move (window, X - Dx, Y - Dy);
   c_draw (window, X + Dx, Y + Dy);
 }                                /* RenderIntProto */
-
+#endif
 
 /*---------------------------------------------------------------------------*/
-int TruncateParam(FLOAT32 Param, int Min, int Max, char *Id) { 
+int TruncateParam(FLOAT32 Param, int Min, int Max, char *Id) {
 /*
  **	Parameters:
  **		Param		parameter value to be truncated

@@ -27,7 +27,7 @@
 ----------------------------------------------------------------------*/
 #include "freelist.h"
 #include "closed.h"
-#include "util.h"
+#include "cutil.h"
 #include "callcpp.h"
 //#include <process.h>
 #ifdef __UNIX__
@@ -72,7 +72,8 @@ int hash_add(HASH_TABLE state_table, STATE *state) {
     if (++x >= table_limit)
       x = 0;
   }
-  print_string ("warning: hash table is full");
+  cprintf("warning: hash table is full");
+  
   abort(); 
   return 0;
 }

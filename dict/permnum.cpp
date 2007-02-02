@@ -48,7 +48,9 @@ static const char *allowed_char_strs[] = {
   "adfjmnos", "aceopu", "bcglnrptvy"
 };
 
-static int number_state_table[7][8] = { {
+const int kNumStates = 7;
+
+static int number_state_table[kNumStates][8] = { {
                                  /* 0. Beginning of string        */
   /*	l	d	o	a	t	1	2	3                    */
     0, 1, 1, -99, -99, 4, -99, -99
@@ -71,6 +73,16 @@ static int number_state_table[7][8] = { {
   {                              /* 6. After 3rd  char */
     -99, -1, -1, -99, -2, -99, -99, -99
   }
+};
+
+// The state is coded with its true state shifted left by kStateShift.
+// A repeat count (starting with 0) is stored in the lower bits
+// No state is allowed to occur more than kMaxRepeats times.
+const int kStateShift = 4;
+const int kRepeatMask = (1 << kStateShift) - 1;
+
+const int kMaxRepeats[kNumStates] = {
+  3, 10, 3, 3, 3, 3, 3
 };
 
 make_float_var (good_number, GOOD_NUMBER, make_good_number,
@@ -145,7 +157,7 @@ make_int_var (number_depth, 3, make_number_depth,
  * Assign an adjusted value to a string that is a word.  The value
  * that this word choice has is based on case and punctuation rules.
  **********************************************************************/
-void adjust_number(A_CHOICE *best_choice, float *certainty_array) { 
+void adjust_number(A_CHOICE *best_choice, float *certainty_array) {
   float adjust_factor;
 
   if (adjust_debug)
@@ -167,7 +179,7 @@ void adjust_number(A_CHOICE *best_choice, float *certainty_array) {
   }
 
   class_probability (best_choice) -= RATING_PAD;
-  LogNewWordChoice(best_choice, adjust_factor, certainty_array); 
+  LogNewWordChoice(best_choice, adjust_factor, certainty_array);
   if (adjust_debug)
     cprintf (" --> %4.2f\n", class_probability (best_choice));
 }
@@ -213,7 +225,8 @@ void append_number_choices(int state,
 
     if (state != -1) {
 
-      if (state == 3 && char_index + 3 < array_count (choices)) {
+      if ((state >> kStateShift) == 3 &&
+          char_index + 3 < array_count (choices)) {
         return;
       }
 
@@ -228,7 +241,7 @@ void append_number_choices(int state,
               certainty_array);
             if (best_probability (*result) > *limit) {
               free_choice (first (*result));
-              pop_off(*result); 
+              pop_off(*result);
             }
             else {
               *limit = best_probability (*result);
@@ -259,11 +272,11 @@ void append_number_choices(int state,
  * Initialize anything that needs to be set up for the permute
  * functions.
  **********************************************************************/
-void init_permnum() { 
-  make_good_number(); 
-  make_ok_number(); 
-  make_number_debug(); 
-  make_number_depth(); 
+void init_permnum() {
+  make_good_number();
+  make_ok_number();
+  make_number_debug();
+  make_number_depth();
 }
 
 
@@ -312,22 +325,31 @@ int number_state_change(int state,           //current state
                         const char *word) {  //current char
   int char_type;                 //type of char
   int new_state;                 //state to return
+  int old_state = state >> kStateShift;
+  int repeats = state & kRepeatMask;
   int index;
   char copy_word[4];             //tolowered chars
 
-  char_type = number_character_type (*word, state);
+  char_type = number_character_type (*word, old_state);
   if (char_type == -1)
     return -1;
-  new_state = number_state_table[state][char_type];
+  new_state = number_state_table[old_state][char_type];
+  if (new_state == old_state) {
+    ++repeats;
+    if (repeats >= kMaxRepeats[old_state])
+      return -1;
+  } else {
+    repeats = 0;
+  }
   if (new_state >= 0)
-    return new_state;
+    return (new_state << kStateShift) | repeats;
   if (new_state == -99)
     return -1;
 
   //now check to see if the last state-3 chars in the word
   //make an allowable word. For now only 3 letter words
   //are allowed
-  if (state != 6)
+  if (old_state != 6)
     return -1;                   //only 3 letters now
   copy_word[0] = tolower (word[-3]);
   copy_word[1] = tolower (word[-2]);
@@ -335,7 +357,7 @@ int number_state_change(int state,           //current state
   copy_word[3] = '\0';
   for (index = 0; allowed_alpha_strs[index] != NULL; index++) {
     if (strcmp (copy_word, allowed_alpha_strs[index]) == 0)
-      return -new_state;
+      return (-new_state) << kStateShift;
   }
   return -1;                     //not a good word
 }
@@ -410,7 +432,7 @@ A_CHOICE *number_permute_and_select(CHOICES_LIST char_choices,
         clone_choice (best_choice, first (result));
       }
       free_choice (first (result));
-      pop_off(result); 
+      pop_off(result);
     }
   }
   return (best_choice);
@@ -423,7 +445,7 @@ A_CHOICE *number_permute_and_select(CHOICES_LIST char_choices,
  * Check to see if this string is a pure number (one that does not end
  * with alphabetic characters).
  **********************************************************************/
-int pure_number(const char *string) { 
+int pure_number(const char *string) {
   int x;
 
   for (x = strlen (string) - 1; x >= 0; x--) {
@@ -443,7 +465,7 @@ int pure_number(const char *string) {
  * Check this string to see if it is a valid number.  Return TRUE if
  * it is.
  **********************************************************************/
-int valid_number(const char *string) { 
+int valid_number(const char *string) {
   int state = 0;
   int char_index;
   int num_chars = strlen (string);

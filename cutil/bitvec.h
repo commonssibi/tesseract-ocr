@@ -22,7 +22,7 @@
           Include Files and Type Defines
 ----------------------------------------------------------------------------**/
 #define BITSINLONG      32       /*no of bits in a long */
-typedef unsigned long *BIT_VECTOR;
+typedef unsigned int *BIT_VECTOR;
 
 /**----------------------------------------------------------------------------
           Public Function Prototypes
@@ -63,15 +63,15 @@ for (index=0;index<length;index++)\
 /*--------------------------------------------------------------------------
         Public Function Prototypes
 --------------------------------------------------------------------------*/
-BIT_VECTOR ExpandBitVector(BIT_VECTOR Vector, int NewNumBits); 
+BIT_VECTOR ExpandBitVector(BIT_VECTOR Vector, int NewNumBits);
 
-void FreeBitVector(BIT_VECTOR BitVector); 
+void FreeBitVector(BIT_VECTOR BitVector);
 
 int hamming_distance(register unsigned long *array1,
                      register unsigned long *array2,
                      register int length);
 
-BIT_VECTOR NewBitVector(int NumBits); 
+BIT_VECTOR NewBitVector(int NumBits);
 /*
 #if defined(__STDC__) || defined(__cplusplus)
 # define _ARGS(s) s

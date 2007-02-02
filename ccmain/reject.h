@@ -128,7 +128,11 @@ BOOL8 ambig_word(const char *start_word,
                  INT16 test_char_pos  //idx to char to alter
                 );
 const char *char_ambiguities(char c); 
-void test_ambigs(const char *word); 
+
+#ifndef EMBEDDED
+void test_ambigs(const char *word);
+#endif
+ 
 void nn_recover_rejects(WERD_RES *word, ROW *row); 
 void nn_match_word(  //Match a word
                    WERD_RES *word,

@@ -175,12 +175,14 @@ ADAPT_TEMPLATES NewAdaptedTemplates() {
 
 /*-------------------------------------------------------------------------------*/
 void free_adapted_templates(ADAPT_TEMPLATES templates) { 
-  int i;
 
-  for (i = 0; i < NumClassesIn (templates->Templates); i++)
-    free_adapted_class (templates->Class[i]);
-  free_int_templates (templates->Templates);
-  Efree(templates); 
+  if (templates != NULL) {
+    int i;
+    for (i = 0; i < NumClassesIn (templates->Templates); i++)
+      free_adapted_class (templates->Class[i]);
+    free_int_templates (templates->Templates);
+    Efree(templates); 
+  }
 }
 
 

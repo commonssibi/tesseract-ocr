@@ -441,8 +441,8 @@ void MEM_ALLOCATOR::check(                     //check consistency
                                  //out of bounds
         || chunk + chunksize - block->blockstart <= 0 || block->blockend - (chunk + chunksize) < 0)
         BADMEMCHUNKS.error ("check_mem", ABORT,
-          "Block=%x, Prev chunk=%x, Chunk=%x, Size=%x",
-          (int) block, (int) prevchunk, (int) chunk,
+          "Block=%p, Prev chunk=%p, Chunk=%p, Size=%x",
+          block, prevchunk, chunk,
           (int) chunk->size);
 
       else if (chunk->size < 0) {
@@ -486,7 +486,7 @@ void MEM_ALLOCATOR::check(                     //check consistency
       totbiggest * sizeof (MEMUNION));
   }
   if (level >= MEMCHECKS)
-    display_counts(); 
+    display_counts();
 }
 
 
@@ -544,7 +544,7 @@ void *MEM_ALLOCATOR::alloc_p(              //permanent space
   }
   chunk->size = -count;          //mark as in use
   if (mem_mallocdepth > 0) {
-    set_owner(chunk, caller); 
+    set_owner(chunk, caller);
   }
   else {
     chunk->owner = 0;
@@ -632,7 +632,7 @@ void *MEM_ALLOCATOR::alloc(              //get memory
   }
   block->freechunk = chunk;      //next free block
   if (mem_mallocdepth > 0) {
-    set_owner(chunkstart, caller); 
+    set_owner(chunkstart, caller);
   }
   else {
     chunkstart->owner = 0;
@@ -902,7 +902,7 @@ void *trace_caller(             //trace stack
   sp = (unsigned) (&depth + 9);
   pc = *(int *) (sp - 20);
   rp = 0;
-  get_pcspace(&rec1, pc); 
+  get_pcspace(&rec1, pc);
   rec1.cur_frsize = 0xc0;
   rec1.currlo = pc & ~3;
   rec1.curdp = 0;

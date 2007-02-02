@@ -66,8 +66,8 @@ void add_word(                             //to block list
               BLOCK_LIST *dest_block_list  //add to this
              );
 WINDOW bln_word_window_handle();  //return handle
-void build_image_window(BOX page_bounding_box); 
-MENU_ROOT *build_menu(); 
+void build_image_window(BOX page_bounding_box);
+MENU_ROOT *build_menu();
 void debug_window_handle();  //return handle
 void display_bln_lines(WINDOW window,
                        COLOUR colour,
@@ -82,12 +82,12 @@ void do_new_source(            //serialise
 void do_re_display (BOOL8 word_painter (
 BLOCK *, ROW *, WERD *));
 const BOX do_tidy_cmd();  //tidy
-void do_view_cmd(); 
+void do_view_cmd();
 void do_write_file(            //serialise
                    char *name  //file name
                   );
-void smd_cmd(); 
-void pgeditor_main(); 
+void smd_cmd();
+void pgeditor_main(BLOCK_LIST *blocks);
 void pgeditor_msg(  //message display
                   const char *msg);
                                  //of serialised file

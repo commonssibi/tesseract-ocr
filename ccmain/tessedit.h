@@ -46,7 +46,7 @@ void recognize_page(STRING& image_name);
 void end_tesseract();
 
 #ifdef _TIFFIO_
-void read_tiff_image(TIFF* tif);
+void read_tiff_image(TIFF* tif, IMAGE* image);
 #endif
 
 //handle for "MODES"
@@ -63,5 +63,5 @@ void extend_moded_commands(INT32 mode,
 void extend_unmoded_commands(INT32 cmd_event,
                              char *new_value  //changed value if any
                             );
-void set_tess_tweak_vars(); 
+void set_tess_tweak_vars();
 #endif

@@ -23,7 +23,7 @@
           Include Files and Type Defines
 ----------------------------------------------------------------------------**/
 #include "general.h"
-#include "util.h"
+#include "cutil.h"
 #include "ocrfeatures.h"
 
 /*

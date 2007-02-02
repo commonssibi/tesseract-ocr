@@ -28,11 +28,12 @@
 /**----------------------------------------------------------------------------
           Public Function Prototypes
 ----------------------------------------------------------------------------**/
-FLOAT32 ComputeNormMatch(CLASS_ID ClassId, FEATURE Feature, BOOL8 DebugMatch); 
+FLOAT32 ComputeNormMatch(CLASS_ID ClassId, FEATURE Feature, BOOL8 DebugMatch);
 
-void GetNormProtos(); 
+void GetNormProtos();
+void FreeNormProtos();
 
-void InitNormProtoVars(); 
+void InitNormProtoVars();
 
 /*
 #if defined(__STDC__) || defined(__cplusplus)

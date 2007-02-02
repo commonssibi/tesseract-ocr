@@ -23,6 +23,7 @@
 #include          "varable.h"
 #include          "tessclas.h"
 #include          "notdll.h"
+#include          "tessembedded.h"
 
 extern BOOL_VAR_H (tessedit_read_image, TRUE, "Ensure the image is read");
 INT32 api_main(                   //run from api

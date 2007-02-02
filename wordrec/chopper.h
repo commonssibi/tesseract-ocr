@@ -34,7 +34,7 @@
 #include "matrix.h"
 #include "stopper.h"
 #include "states.h"
-#include "util.h"
+#include "cutil.h"
 
 /*----------------------------------------------------------------------
               F u n c t i o n s

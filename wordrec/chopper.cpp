@@ -85,7 +85,7 @@ class_certainty   (choice) = -MAX_FLOAT32) \
  *
  * Copy the list of outlines.
  **********************************************************************/
-void preserve_outline(EDGEPT *start) { 
+void preserve_outline(EDGEPT *start) {
   EDGEPT *srcpt;
 
   if (start == NULL)
@@ -101,7 +101,7 @@ void preserve_outline(EDGEPT *start) {
 
 
 /**************************************************************************/
-void preserve_outline_tree(TESSLINE *srcline) { 
+void preserve_outline_tree(TESSLINE *srcline) {
   TESSLINE *outline;
 
   for (outline = srcline; outline != NULL; outline = outline->next) {
@@ -117,7 +117,7 @@ void preserve_outline_tree(TESSLINE *srcline) {
  *
  * Copy the list of outlines.
  **********************************************************************/
-EDGEPT *restore_outline(EDGEPT *start) { 
+EDGEPT *restore_outline(EDGEPT *start) {
   EDGEPT *srcpt;
   EDGEPT *real_start;
   EDGEPT *deadpt;
@@ -140,7 +140,7 @@ EDGEPT *restore_outline(EDGEPT *start) {
       deadpt->prev->next = srcpt;
       deadpt->prev->vec.x = srcpt->pos.x - deadpt->prev->pos.x;
       deadpt->prev->vec.y = srcpt->pos.y - deadpt->prev->pos.y;
-      oldedgept(deadpt); 
+      oldedgept(deadpt);
     }
     else
       srcpt = srcpt->next;
@@ -151,7 +151,7 @@ EDGEPT *restore_outline(EDGEPT *start) {
 
 
 /******************************************************************************/
-void restore_outline_tree(TESSLINE *srcline) { 
+void restore_outline_tree(TESSLINE *srcline) {
   TESSLINE *outline;
 
   for (outline = srcline; outline != NULL; outline = outline->next) {
@@ -169,7 +169,7 @@ void restore_outline_tree(TESSLINE *srcline) {
  * Try to split the this blob after this one.  Check to make sure that
  * it was successful.
  **********************************************************************/
-SEAM *attempt_blob_chop(TWERD *word, INT32 blob_number, SEAMS seam_list) { 
+SEAM *attempt_blob_chop(TWERD *word, INT32 blob_number, SEAMS seam_list) {
   TBLOB *blob;
   TBLOB *other_blob;
   SEAM *seam;
@@ -206,7 +206,7 @@ SEAM *attempt_blob_chop(TWERD *word, INT32 blob_number, SEAMS seam_list) {
       cprintf ("\n** no seam picked *** \n");
   }
   if (seam) {
-    apply_seam(blob, other_blob, seam); 
+    apply_seam(blob, other_blob, seam);
   }
 
   if ((seam == NULL) ||
@@ -216,19 +216,22 @@ SEAM *attempt_blob_chop(TWERD *word, INT32 blob_number, SEAMS seam_list) {
     check_blob (other_blob) ||
     !(check_seam_order (blob, seam) &&
     check_seam_order (other_blob, seam)) ||
-  any_shared_split_points (seam_list, seam)) {
+    any_shared_split_points (seam_list, seam) ||
+    !test_insert_seam(seam_list, blob_number, blob, word->blobs)) {
 
     blob->next = next_blob;
     if (seam) {
-      undo_seam(blob, other_blob, seam); 
-      delete_seam(seam); 
+      undo_seam(blob, other_blob, seam);
+      delete_seam(seam);
+#ifndef GRAPHICS_DISABLED
       if (chop_debug) {
-        display_blob(blob, Red); 
+        display_blob(blob, Red);
         cprintf ("\n** seam being removed ** \n");
       }
+#endif
     }
     else {
-      oldblob(other_blob); 
+      oldblob(other_blob);
     }
 
     if (repair_unchopped_blobs)
@@ -244,7 +247,7 @@ SEAM *attempt_blob_chop(TWERD *word, INT32 blob_number, SEAMS seam_list) {
  *
  * Return true if any of the splits share a point with this one.
  **********************************************************************/
-int any_shared_split_points(SEAMS seam_list, SEAM *seam) { 
+int any_shared_split_points(SEAMS seam_list, SEAM *seam) {
   int length;
   int index;
 
@@ -261,7 +264,7 @@ int any_shared_split_points(SEAMS seam_list, SEAM *seam) {
  *
  * Return true if blob has a non whole outline.
  **********************************************************************/
-int check_blob(TBLOB *blob) { 
+int check_blob(TBLOB *blob) {
   TESSLINE *outline;
   EDGEPT *edgept;
 
@@ -350,7 +353,7 @@ CHOICES_LIST improve_one_blob(TWERD *word,
  * blob then there is a problem (and FALSE should be returned to the
  * caller).
  **********************************************************************/
-INT16 check_seam_order(TBLOB *blob, SEAM *seam) { 
+INT16 check_seam_order(TBLOB *blob, SEAM *seam) {
   TESSLINE *outline;
   TESSLINE *last_outline;
   INT8 found_em[3];
@@ -417,8 +420,8 @@ CHOICES_LIST chop_word_main(register TWERD *word,
   static STATE chop_states[64];  //in between states
 
   state_count = 0;
-  set_null_choice(best_choice); 
-  set_null_choice(raw_choice); 
+  set_null_choice(best_choice);
+  set_null_choice(raw_choice);
 
   char_choices = new_choice_list ();
 
@@ -433,7 +436,7 @@ CHOICES_LIST chop_word_main(register TWERD *word,
     pblob = blob;
   }
   bit_count = index - 1;
-  permute_characters(char_choices, rating_limit, best_choice, raw_choice); 
+  permute_characters(char_choices, rating_limit, best_choice, raw_choice);
 
   set_n_ones (&state, array_count (char_choices) - 1);
   if (matcher_fp != NULL) {
@@ -485,16 +488,16 @@ CHOICES_LIST chop_word_main(register TWERD *word,
 
   }
   if (ratings != NULL)
-    free_matrix(ratings); 
+    free_matrix(ratings);
   if (did_chopping || tester || trainer)
     char_choices = rebuild_current_state (word->blobs, seam_list, &state,
       char_choices, fx);
   if (seam_list != NULL)
-    free_seam_list(seam_list); 
+    free_seam_list(seam_list);
   if (matcher_fp != NULL) {
     best_state = state;
   }
-  FilterWordChoices(); 
+  FilterWordChoices();
   return char_choices;
 }
 
@@ -537,7 +540,7 @@ void improve_by_chopping(register TWERD *word,
       chop_states + *state_count, correct_state,
       pass);
     if (choices != NULL) {
-      LogNewSplit(blob_number); 
+      LogNewSplit(blob_number);
       permute_characters (choices,
         class_probability (best_choice),
         best_choice, raw_choice);
@@ -595,7 +598,7 @@ void improve_by_chopping(register TWERD *word,
  * These are the results of the last classification.  Find a likely
  * place to apply splits.
  **********************************************************************/
-INT16 select_blob_to_split(CHOICES_LIST char_choices, float rating_ceiling) { 
+INT16 select_blob_to_split(CHOICES_LIST char_choices, float rating_ceiling) {
   CHOICES this_choice;
   int x;
   float worst = -MAX_FLOAT32;
@@ -607,7 +610,7 @@ INT16 select_blob_to_split(CHOICES_LIST char_choices, float rating_ceiling) {
   else
     cprintf ("rating_ceiling = No Limit\n");
 
-  for_each_choice(char_choices, x) { 
+  for_each_choice(char_choices, x) {
     this_choice = (CHOICES) array_value (char_choices, x);
     if (this_choice == NIL) {
       return (x);
@@ -636,7 +639,7 @@ INT16 select_blob_to_split(CHOICES_LIST char_choices, float rating_ceiling) {
  * present in the starting segmentation.  Each of the seams created
  * by this routine have location information only.
  **********************************************************************/
-SEAMS start_seam_list(TBLOB *blobs) { 
+SEAMS start_seam_list(TBLOB *blobs) {
   TBLOB *blob;
   SEAMS seam_list;
   TPOINT topleft;
@@ -647,7 +650,7 @@ SEAMS start_seam_list(TBLOB *blobs) {
 
   for (blob = blobs; blob->next != NULL; blob = blob->next) {
 
-    blob_bounding_box(blob, &topleft, &botright); 
+    blob_bounding_box(blob, &topleft, &botright);
     location = botright.x;
     blob_bounding_box (blob->next, &topleft, &botright);
     location += topleft.x;
@@ -667,14 +670,14 @@ SEAMS start_seam_list(TBLOB *blobs) {
  * Check to see if one of these outlines is totally contained within
  * the bounding box of the other.
  **********************************************************************/
-INT16 total_containment(TBLOB *blob1, TBLOB *blob2) { 
+INT16 total_containment(TBLOB *blob1, TBLOB *blob2) {
   TPOINT topleft1;
   TPOINT botright1;
   TPOINT topleft2;
   TPOINT botright2;
 
-  blob_bounding_box(blob1, &topleft1, &botright1); 
-  blob_bounding_box(blob2, &topleft2, &botright2); 
+  blob_bounding_box(blob1, &topleft1, &botright1);
+  blob_bounding_box(blob2, &topleft2, &botright2);
 
   return (bounds_inside (topleft1, botright1, topleft2, botright2) ||
     bounds_inside (topleft2, botright2, topleft1, botright1));

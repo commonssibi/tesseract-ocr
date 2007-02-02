@@ -50,7 +50,7 @@
 */
 #ifdef HAVE_CONFIG_H
 #include "config_auto.h"
-#ifdef MOTOROLA_BYTE_ORDER
+#if defined(MOTOROLA_BYTE_ORDER) || defined(WORDS_BIGENDIAN)
 #define __MOTO__  // Big-endian.
 #endif
 #endif
@@ -157,7 +157,7 @@ typedef unsigned char UINT8;
 typedef short INT16;
 typedef unsigned short UINT16;
 #if (_MSC_VER < 1200)            //%%% vkr for VC 6.0
-typedef long INT32;
+typedef int INT32;
 typedef unsigned int UINT32;
 #endif                           //%%% vkr for VC 6.0
 typedef float FLOAT32;
@@ -172,7 +172,7 @@ typedef unsigned char *PUINT8;
 typedef short *PINT16;
 typedef unsigned short *PUINT16;
 #if (_MSC_VER < 1200)            //%%% vkr for VC 6.0
-typedef long *PINT32;
+typedef int *PINT32;
 typedef unsigned int *PUINT32;
 #endif                           //%%% vkr for VC 6.0
 typedef float *PFLOAT32;
@@ -184,14 +184,14 @@ typedef const SIGNED char *PCINT8;
 typedef const unsigned char *PCUINT8;
 typedef const short *PCINT16;
 typedef const unsigned short *PCUINT16;
-typedef const long *PCINT32;
+typedef const int *PCINT32;
 typedef const unsigned int *PCUINT32;
 typedef const float *PCFLOAT32;
 typedef const double *PCFLOAT64;
 
 typedef void *PVOID;
 
-#define INT32FORMAT "%ld"
+#define INT32FORMAT "%d"
 
 #define MAX_INT8  0x7f
 #define MAX_INT16 0x7fff
