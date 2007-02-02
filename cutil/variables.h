@@ -25,7 +25,7 @@
 #ifndef VARIABLES_H
 #define VARIABLES_H
 
-#include "util.h"
+#include "cutil.h"
 #include "oldlist.h"
 
 /*----------------------------------------------------------------------
@@ -71,7 +71,7 @@ extern VALUE dummy;              /* Needed for macros */
 
 #define float_variable(name,string,default)                \
 dummy.float_part = default;                              \
-add_variable (&name, "", dummy, float_read, float_write)
+add_32bit_variable (&name, "", dummy, float_read, float_write)
 
 /**********************************************************************
  * string_variable
@@ -81,8 +81,8 @@ add_variable (&name, "", dummy, float_read, float_write)
  **********************************************************************/
 
 #define string_variable(name,string,default)              \
-dummy.char_part = strsave (default);                    \
-add_variable (&name, "", dummy, string_read, string_write)
+dummy.char_part = default;                    \
+add_ptr_variable (&name, "", dummy, string_read, string_write)
 
 /**********************************************************************
  * int_variable
@@ -93,7 +93,7 @@ add_variable (&name, "", dummy, string_read, string_write)
 
 #define int_variable(name,string,default)                 \
 dummy.int_part = default;                              \
-add_variable (&name, "", dummy, int_read, int_write)
+add_32bit_variable (&name, "", dummy, int_read, int_write)
 
 #else
 /**********************************************************************
@@ -105,7 +105,7 @@ add_variable (&name, "", dummy, int_read, int_write)
 
 #define float_variable(name,string,default)                \
 dummy.float_part = default;                              \
-add_variable (&name, string, dummy, float_read, float_write)
+add_32bit_variable (&name, string, dummy, float_read, float_write)
 
 /**********************************************************************
  * string_variable
@@ -115,8 +115,8 @@ add_variable (&name, string, dummy, float_read, float_write)
  **********************************************************************/
 
 #define string_variable(name,string,default)              \
-dummy.char_part = strsave (default);                    \
-add_variable (&name, string, dummy, string_read, string_write)
+dummy.char_part = default;                    \
+add_ptr_variable (&name, string, dummy, string_read, string_write)
 
 /**********************************************************************
  * int_variable
@@ -127,34 +127,42 @@ add_variable (&name, string, dummy, string_read, string_write)
 
 #define int_variable(name,string,default)                 \
 dummy.int_part = default;                              \
-add_variable (&name, string, dummy, int_read, int_write)
+add_32bit_variable (&name, string, dummy, int_read, int_write)
 #endif
 
 /*--------------------------------------------------------------------------
         Public Function Prototoypes
 ----------------------------------------------------------------------------*/
-void add_variable(void *address,
-                  const char *string,
-                  VALUE default_value,
-                  variables_io reader,
-                  variables_io writer);
+void free_variables();
 
-void float_read(VARIABLE *variable, char *string); 
+void add_ptr_variable(void *address,
+                      const char *string,
+                      VALUE default_value,
+                      variables_io reader,
+                      variables_io writer);
 
-void float_write(VARIABLE *variable, char *string); 
+void add_32bit_variable(void *address,
+                        const char *string,
+                        VALUE default_value,
+                        variables_io reader,
+                        variables_io writer);
 
-void int_read(VARIABLE *variable, char *string); 
+void float_read(VARIABLE *variable, char *string);
 
-void int_write(VARIABLE *variable, char *string); 
+void float_write(VARIABLE *variable, char *string);
 
-void read_variables(const char *filename); 
+void int_read(VARIABLE *variable, char *string);
+
+void int_write(VARIABLE *variable, char *string);
+
+void read_variables(const char *filename);
 
 int same_var_name(void *item1,   //VARIABLE *variable,
                   void *item2);  //char     *string)
 
-void string_read(VARIABLE *variable, char *string); 
+void string_read(VARIABLE *variable, char *string);
 
-void string_write(VARIABLE *variable, char *string); 
+void string_write(VARIABLE *variable, char *string);
 
-char *strip_line(char *string); 
+char *strip_line(char *string);
 #endif
