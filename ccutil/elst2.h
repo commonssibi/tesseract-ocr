@@ -114,7 +114,7 @@ class DLLSYM ELIST2
       return !last;
     }
 
-    BOOL8 singleton() { 
+    BOOL8 singleton() {
       return last ? (last == last->next) : FALSE;
     }
 
@@ -165,7 +165,7 @@ class DLLSYM ELIST2
 
 class DLLSYM ELIST2_ITERATOR
 {
-  friend void ELIST2::assign_to_sublist(ELIST2_ITERATOR *, ELIST2_ITERATOR *); 
+  friend void ELIST2::assign_to_sublist(ELIST2_ITERATOR *, ELIST2_ITERATOR *);
 
   ELIST2 *list;                  //List being iterated
   ELIST2_LINK *prev;             //prev element
@@ -232,7 +232,7 @@ class DLLSYM ELIST2_ITERATOR
     ELIST2_LINK *extract();  //remove from list
 
                                  //go to start of list
-    ELIST2_LINK *move_to_first(); 
+    ELIST2_LINK *move_to_first();
 
     ELIST2_LINK *move_to_last();  //go to end of list
 
@@ -294,6 +294,7 @@ inline void ELIST2_ITERATOR::set_to_list(  //change list
   cycle_pt = NULL;               //await explicit set
   started_cycling = FALSE;
   ex_current_was_last = FALSE;
+  ex_current_was_cycle_pt = FALSE;
 }
 
 
@@ -303,8 +304,8 @@ inline void ELIST2_ITERATOR::set_to_list(  //change list
  *  CONSTRUCTOR - set iterator to specified list;
  **********************************************************************/
 
-inline ELIST2_ITERATOR::ELIST2_ITERATOR(ELIST2 *list_to_iterate) { 
-  set_to_list(list_to_iterate); 
+inline ELIST2_ITERATOR::ELIST2_ITERATOR(ELIST2 *list_to_iterate) {
+  set_to_list(list_to_iterate);
 }
 
 
@@ -519,7 +520,7 @@ inline void ELIST2_ITERATOR::add_before_stay_put(  // element to add
  *  iterator.
  **********************************************************************/
 
-inline void ELIST2_ITERATOR::add_list_after(ELIST2 *list_to_add) { 
+inline void ELIST2_ITERATOR::add_list_after(ELIST2 *list_to_add) {
   #ifdef _DEBUG
   if (!this)
     NULL_OBJECT.error ("ELIST2_ITERATOR::add_list_after", ABORT, NULL);
@@ -573,7 +574,7 @@ inline void ELIST2_ITERATOR::add_list_after(ELIST2 *list_to_add) {
  *  iterator.
  **********************************************************************/
 
-inline void ELIST2_ITERATOR::add_list_before(ELIST2 *list_to_add) { 
+inline void ELIST2_ITERATOR::add_list_before(ELIST2 *list_to_add) {
   #ifdef _DEBUG
   if (!this)
     NULL_OBJECT.error ("ELIST2_ITERATOR::add_list_before", ABORT, NULL);
@@ -625,7 +626,7 @@ inline void ELIST2_ITERATOR::add_list_before(ELIST2 *list_to_add) {
  *  is to be deleted, this is the callers responsibility.
  **********************************************************************/
 
-inline ELIST2_LINK *ELIST2_ITERATOR::extract() { 
+inline ELIST2_LINK *ELIST2_ITERATOR::extract() {
   ELIST2_LINK *extracted_link;
 
   #ifdef _DEBUG
@@ -672,7 +673,7 @@ inline ELIST2_LINK *ELIST2_ITERATOR::extract() {
  *  Return data just in case anyone wants it.
  **********************************************************************/
 
-inline ELIST2_LINK *ELIST2_ITERATOR::move_to_first() { 
+inline ELIST2_LINK *ELIST2_ITERATOR::move_to_first() {
   #ifdef _DEBUG
   if (!this)
     NULL_OBJECT.error ("ELIST2_ITERATOR::move_to_first", ABORT, NULL);
@@ -694,7 +695,7 @@ inline ELIST2_LINK *ELIST2_ITERATOR::move_to_first() {
  *  Return data just in case anyone wants it.
  **********************************************************************/
 
-inline ELIST2_LINK *ELIST2_ITERATOR::move_to_last() { 
+inline ELIST2_LINK *ELIST2_ITERATOR::move_to_last() {
   #ifdef _DEBUG
   if (!this)
     NULL_OBJECT.error ("ELIST2_ITERATOR::move_to_last", ABORT, NULL);
@@ -720,7 +721,7 @@ inline ELIST2_LINK *ELIST2_ITERATOR::move_to_last() {
  *  by a forward, add_after_then_move or add_after_then_move.
  **********************************************************************/
 
-inline void ELIST2_ITERATOR::mark_cycle_pt() { 
+inline void ELIST2_ITERATOR::mark_cycle_pt() {
   #ifdef _DEBUG
   if (!this)
     NULL_OBJECT.error ("ELIST2_ITERATOR::mark_cycle_pt", ABORT, NULL);
@@ -743,7 +744,7 @@ inline void ELIST2_ITERATOR::mark_cycle_pt() {
  *
  **********************************************************************/
 
-inline BOOL8 ELIST2_ITERATOR::at_first() { 
+inline BOOL8 ELIST2_ITERATOR::at_first() {
   #ifdef _DEBUG
   if (!this)
     NULL_OBJECT.error ("ELIST2_ITERATOR::at_first", ABORT, NULL);
@@ -765,7 +766,7 @@ inline BOOL8 ELIST2_ITERATOR::at_first() {
  *
  **********************************************************************/
 
-inline BOOL8 ELIST2_ITERATOR::at_last() { 
+inline BOOL8 ELIST2_ITERATOR::at_last() {
   #ifdef _DEBUG
   if (!this)
     NULL_OBJECT.error ("ELIST2_ITERATOR::at_last", ABORT, NULL);
@@ -787,7 +788,7 @@ inline BOOL8 ELIST2_ITERATOR::at_last() {
  *
  **********************************************************************/
 
-inline BOOL8 ELIST2_ITERATOR::cycled_list() { 
+inline BOOL8 ELIST2_ITERATOR::cycled_list() {
   #ifdef _DEBUG
   if (!this)
     NULL_OBJECT.error ("ELIST2_ITERATOR::cycled_list", ABORT, NULL);
@@ -807,7 +808,7 @@ inline BOOL8 ELIST2_ITERATOR::cycled_list() {
  *
  **********************************************************************/
 
-inline INT32 ELIST2_ITERATOR::length() { 
+inline INT32 ELIST2_ITERATOR::length() {
   #ifdef _DEBUG
   if (!this)
     NULL_OBJECT.error ("ELIST2_ITERATOR::length", ABORT, NULL);
@@ -838,7 +839,7 @@ const void *, const void *)) {
   #endif
 
   list->sort (comparator);
-  move_to_first(); 
+  move_to_first();
 }
 
 

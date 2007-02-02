@@ -57,7 +57,7 @@ void (*zapper) (ELIST2_LINK *)) {
     last = NULL;                 //set list empty
     while (ptr) {
       next = ptr->next;
-      zapper(ptr); 
+      zapper(ptr);
       ptr = next;
     }
   }
@@ -78,7 +78,7 @@ void
 ELIST2::internal_deep_copy (ELIST2_LINK * (*copier) (ELIST2_LINK *),
 const ELIST2 * list) {           //list being copied
   ELIST2_ITERATOR from_it ((ELIST2 *) list);
-  ELIST2_ITERATOR to_it(this); 
+  ELIST2_ITERATOR to_it(this);
 
   #ifdef _DEBUG
   if (!this)
@@ -131,7 +131,7 @@ void ELIST2::assign_to_sublist(                            //to this list
  **********************************************************************/
 
 INT32 ELIST2::length() {  //count elements
-  ELIST2_ITERATOR it(this); 
+  ELIST2_ITERATOR it(this);
   INT32 count = 0;
 
   #ifdef _DEBUG
@@ -157,7 +157,7 @@ void
 ELIST2::sort (                   //sort elements
 int comparator (                 //comparison routine
 const void *, const void *)) {
-  ELIST2_ITERATOR it(this); 
+  ELIST2_ITERATOR it(this);
   INT32 count;
   ELIST2_LINK **base;            //ptr array to sort
   ELIST2_LINK **current;
@@ -188,7 +188,7 @@ const void *, const void *)) {
     it.add_to_end (*current);
     current++;
   }
-  free(base); 
+  free(base);
 }
 
 
@@ -201,8 +201,8 @@ const void *, const void *)) {
  *  function is invoked on the COPY.
  **********************************************************************/
 
-void ELIST2::prep_serialise() { 
-  ELIST2_ITERATOR this_it(this); 
+void ELIST2::prep_serialise() {
+  ELIST2_ITERATOR this_it(this);
   INT32 count = 0;
 
   #ifdef _DEBUG
@@ -231,7 +231,7 @@ void ELIST2::prep_serialise() {
 void
 ELIST2::internal_dump (FILE * f,
 void element_serialiser (FILE *, ELIST2_LINK *)) {
-  ELIST2_ITERATOR this_it(this); 
+  ELIST2_ITERATOR this_it(this);
 
   #ifdef _DEBUG
   if (!this)
@@ -257,7 +257,7 @@ void element_serialiser (FILE *, ELIST2_LINK *)) {
 void
 ELIST2::internal_de_dump (FILE * f,
 ELIST2_LINK * element_de_serialiser (FILE *)) {
-  INT32 count = (INT32) last;
+  INT32 count = (ptrdiff_t) last;
   ELIST2_ITERATOR this_it;
   ELIST2_LINK *de_serialised_element;
 
@@ -291,7 +291,7 @@ ELIST2_LINK * element_de_serialiser (FILE *)) {
  *  REMEMBER: ALL LISTS ARE CIRCULAR.
  **********************************************************************/
 
-ELIST2_LINK *ELIST2_ITERATOR::forward() { 
+ELIST2_LINK *ELIST2_ITERATOR::forward() {
   #ifdef _DEBUG
   if (!this)
     NULL_OBJECT.error ("ELIST2_ITERATOR::forward", ABORT, NULL);
@@ -332,7 +332,7 @@ ELIST2_LINK *ELIST2_ITERATOR::forward() {
  *  REMEMBER: ALL LISTS ARE CIRCULAR.
  **********************************************************************/
 
-ELIST2_LINK *ELIST2_ITERATOR::backward() { 
+ELIST2_LINK *ELIST2_ITERATOR::backward() {
   #ifdef _DEBUG
   if (!this)
     NULL_OBJECT.error ("ELIST2_ITERATOR::backward", ABORT, NULL);

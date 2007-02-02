@@ -56,7 +56,7 @@ void (*zapper) (void *)) {       //ptr to zapper functn
     while (ptr) {
       next = ptr->next;
       zapper (ptr->data);
-      delete(ptr); 
+      delete(ptr);
       ptr = next;
     }
   }
@@ -87,7 +87,7 @@ void CLIST::shallow_clear() {  //destroy all links
     last = NULL;                 //set list empty
     while (ptr) {
       next = ptr->next;
-      delete(ptr); 
+      delete(ptr);
       ptr = next;
     }
   }
@@ -108,7 +108,7 @@ void
 CLIST::internal_deep_copy (void *(*copier) (void *),
 const CLIST * list) {            //list being copied
   CLIST_ITERATOR from_it ((CLIST *) list);
-  CLIST_ITERATOR to_it(this); 
+  CLIST_ITERATOR to_it(this);
 
   #ifdef _DEBUG
   if (!this)
@@ -161,7 +161,7 @@ void CLIST::assign_to_sublist(                           //to this list
  **********************************************************************/
 
 INT32 CLIST::length() {  //count elements
-  CLIST_ITERATOR it(this); 
+  CLIST_ITERATOR it(this);
   INT32 count = 0;
 
   #ifdef _DEBUG
@@ -185,7 +185,7 @@ void
 CLIST::sort (                    //sort elements
 int comparator (                 //comparison routine
 const void *, const void *)) {
-  CLIST_ITERATOR it(this); 
+  CLIST_ITERATOR it(this);
   INT32 count;
   void **base;                   //ptr array to sort
   void **current;
@@ -216,7 +216,7 @@ const void *, const void *)) {
     it.add_to_end (*current);
     current++;
   }
-  free(base); 
+  free(base);
 }
 
 
@@ -229,8 +229,8 @@ const void *, const void *)) {
  *  function is invoked on the COPY.
  **********************************************************************/
 
-void CLIST::prep_serialise() { 
-  CLIST_ITERATOR this_it(this); 
+void CLIST::prep_serialise() {
+  CLIST_ITERATOR this_it(this);
   INT32 count = 0;
 
   #ifdef _DEBUG
@@ -258,7 +258,7 @@ void CLIST::prep_serialise() {
 
 void
 CLIST::internal_dump (FILE * f, void element_serialiser (FILE *, void *)) {
-  CLIST_ITERATOR this_it(this); 
+  CLIST_ITERATOR this_it(this);
 
   #ifdef _DEBUG
   if (!this)
@@ -283,7 +283,7 @@ CLIST::internal_dump (FILE * f, void element_serialiser (FILE *, void *)) {
 
 void
 CLIST::internal_de_dump (FILE * f, void *element_de_serialiser (FILE *)) {
-  INT32 count = (INT32) last;
+  INT32 count = (ptrdiff_t) last;
   CLIST_ITERATOR this_it;
 
   #ifdef _DEBUG
@@ -310,7 +310,7 @@ CLIST::internal_de_dump (FILE * f, void *element_de_serialiser (FILE *)) {
  *  REMEMBER: ALL LISTS ARE CIRCULAR.
  **********************************************************************/
 
-void *CLIST_ITERATOR::forward() { 
+void *CLIST_ITERATOR::forward() {
   #ifdef _DEBUG
   if (!this)
     NULL_OBJECT.error ("CLIST_ITERATOR::forward", ABORT, NULL);
@@ -390,7 +390,7 @@ void *CLIST_ITERATOR::data_relative(                //get data + or - ...
  *  (This function can't be INLINEd because it contains a loop)
  **********************************************************************/
 
-void *CLIST_ITERATOR::move_to_last() { 
+void *CLIST_ITERATOR::move_to_last() {
   #ifdef _DEBUG
   if (!this)
     NULL_OBJECT.error ("CLIST_ITERATOR::move_to_last", ABORT, NULL);
@@ -399,7 +399,7 @@ void *CLIST_ITERATOR::move_to_last() {
   #endif
 
   while (current != list->last)
-    forward(); 
+    forward();
 
   if (current == NULL)
     return NULL;

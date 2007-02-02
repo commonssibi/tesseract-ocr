@@ -81,7 +81,7 @@ void (*zapper) (ELIST_LINK *)) {
     last = NULL;                 //set list empty
     while (ptr) {
       next = ptr->next;
-      zapper(ptr); 
+      zapper(ptr);
       ptr = next;
     }
   }
@@ -102,7 +102,7 @@ void
 ELIST::internal_deep_copy (ELIST_LINK * (*copier) (ELIST_LINK *),
 const ELIST * list) {            //list being copied
   ELIST_ITERATOR from_it ((ELIST *) list);
-  ELIST_ITERATOR to_it(this); 
+  ELIST_ITERATOR to_it(this);
 
   #ifdef _DEBUG
   if (!this)
@@ -155,7 +155,7 @@ void ELIST::assign_to_sublist(                           //to this list
  **********************************************************************/
 
 INT32 ELIST::length() {  //count elements
-  ELIST_ITERATOR it(this); 
+  ELIST_ITERATOR it(this);
   INT32 count = 0;
 
   #ifdef _DEBUG
@@ -181,7 +181,7 @@ void
 ELIST::sort (                    //sort elements
 int comparator (                 //comparison routine
 const void *, const void *)) {
-  ELIST_ITERATOR it(this); 
+  ELIST_ITERATOR it(this);
   INT32 count;
   ELIST_LINK **base;             //ptr array to sort
   ELIST_LINK **current;
@@ -212,7 +212,7 @@ const void *, const void *)) {
     it.add_to_end (*current);
     current++;
   }
-  free(base); 
+  free(base);
 }
 
 
@@ -225,8 +225,8 @@ const void *, const void *)) {
  *  function is invoked on the COPY.
  **********************************************************************/
 
-void ELIST::prep_serialise() { 
-  ELIST_ITERATOR this_it(this); 
+void ELIST::prep_serialise() {
+  ELIST_ITERATOR this_it(this);
   INT32 count = 0;
 
   #ifdef _DEBUG
@@ -255,7 +255,7 @@ void ELIST::prep_serialise() {
 void
 ELIST::internal_dump (FILE * f,
 void element_serialiser (FILE *, ELIST_LINK *)) {
-  ELIST_ITERATOR this_it(this); 
+  ELIST_ITERATOR this_it(this);
 
   #ifdef _DEBUG
   if (!this)
@@ -281,7 +281,7 @@ void element_serialiser (FILE *, ELIST_LINK *)) {
 void
 ELIST::internal_de_dump (FILE * f,
 ELIST_LINK * element_de_serialiser (FILE *)) {
-  INT32 count = (INT32) last;
+  INT32 count = (ptrdiff_t) last;
   ELIST_ITERATOR this_it;
   ELIST_LINK *de_serialised_element;
 
@@ -313,7 +313,7 @@ ELIST_LINK * element_de_serialiser (FILE *)) {
  *  REMEMBER: ALL LISTS ARE CIRCULAR.
  **********************************************************************/
 
-ELIST_LINK *ELIST_ITERATOR::forward() { 
+ELIST_LINK *ELIST_ITERATOR::forward() {
   #ifdef _DEBUG
   if (!this)
     NULL_OBJECT.error ("ELIST_ITERATOR::forward", ABORT, NULL);
@@ -393,7 +393,7 @@ ELIST_LINK *ELIST_ITERATOR::data_relative(                //get data + or - ...
  *  (This function can't be INLINEd because it contains a loop)
  **********************************************************************/
 
-ELIST_LINK *ELIST_ITERATOR::move_to_last() { 
+ELIST_LINK *ELIST_ITERATOR::move_to_last() {
   #ifdef _DEBUG
   if (!this)
     NULL_OBJECT.error ("ELIST_ITERATOR::move_to_last", ABORT, NULL);
@@ -402,7 +402,7 @@ ELIST_LINK *ELIST_ITERATOR::move_to_last() {
   #endif
 
   while (current != list->last)
-    forward(); 
+    forward();
 
   return current;
 }

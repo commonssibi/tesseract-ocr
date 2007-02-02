@@ -19,6 +19,7 @@
 
 #include          "mfcpch.h"     //precompiled headers
 #include "serialis.h"
+#include "scanutils.h"
 
 /* **************************************************************************
 
@@ -77,7 +78,7 @@ DLLSYM void serialise_FLOAT64(FILE *f, double the_float) {
 
 DLLSYM double de_serialise_FLOAT64(FILE *f) { 
   double the_float;
-
+  
   if (fscanf (f, "%lg", &the_float) != 1)
     READFAILED.error ("de_serialise_FLOAT64", ABORT, NULL);
   return the_float;

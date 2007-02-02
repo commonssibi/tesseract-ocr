@@ -89,7 +89,7 @@ class DLLSYM ELIST_LINK
   ELIST_LINK *next;
 
   public:
-    ELIST_LINK() { 
+    ELIST_LINK() {
       next = NULL;
     }
     //constructor
@@ -145,7 +145,7 @@ class DLLSYM ELIST
       return !last;
     }
 
-    BOOL8 singleton() { 
+    BOOL8 singleton() {
       return last ? (last == last->next) : FALSE;
     }
 
@@ -196,7 +196,7 @@ class DLLSYM ELIST
 
 class DLLSYM ELIST_ITERATOR
 {
-  friend void ELIST::assign_to_sublist(ELIST_ITERATOR *, ELIST_ITERATOR *); 
+  friend void ELIST::assign_to_sublist(ELIST_ITERATOR *, ELIST_ITERATOR *);
 
   ELIST *list;                   //List being iterated
   ELIST_LINK *prev;              //prev element
@@ -322,6 +322,7 @@ inline void ELIST_ITERATOR::set_to_list(  //change list
   cycle_pt = NULL;               //await explicit set
   started_cycling = FALSE;
   ex_current_was_last = FALSE;
+  ex_current_was_cycle_pt = FALSE;
 }
 
 
@@ -331,8 +332,8 @@ inline void ELIST_ITERATOR::set_to_list(  //change list
  *  CONSTRUCTOR - set iterator to specified list;
  **********************************************************************/
 
-inline ELIST_ITERATOR::ELIST_ITERATOR(ELIST *list_to_iterate) { 
-  set_to_list(list_to_iterate); 
+inline ELIST_ITERATOR::ELIST_ITERATOR(ELIST *list_to_iterate) {
+  set_to_list(list_to_iterate);
 }
 
 
@@ -529,7 +530,7 @@ inline void ELIST_ITERATOR::add_before_stay_put(  // element to add
  *  iterator.
  **********************************************************************/
 
-inline void ELIST_ITERATOR::add_list_after(ELIST *list_to_add) { 
+inline void ELIST_ITERATOR::add_list_after(ELIST *list_to_add) {
   #ifdef _DEBUG
   if (!this)
     NULL_OBJECT.error ("ELIST_ITERATOR::add_list_after", ABORT, NULL);
@@ -579,7 +580,7 @@ inline void ELIST_ITERATOR::add_list_after(ELIST *list_to_add) {
  *  iterator.
  **********************************************************************/
 
-inline void ELIST_ITERATOR::add_list_before(ELIST *list_to_add) { 
+inline void ELIST_ITERATOR::add_list_before(ELIST *list_to_add) {
   #ifdef _DEBUG
   if (!this)
     NULL_OBJECT.error ("ELIST_ITERATOR::add_list_before", ABORT, NULL);
@@ -627,7 +628,7 @@ inline void ELIST_ITERATOR::add_list_before(ELIST *list_to_add) {
  *  is to be deleted, this is the callers responsibility.
  **********************************************************************/
 
-inline ELIST_LINK *ELIST_ITERATOR::extract() { 
+inline ELIST_LINK *ELIST_ITERATOR::extract() {
   ELIST_LINK *extracted_link;
 
   #ifdef _DEBUG
@@ -672,7 +673,7 @@ inline ELIST_LINK *ELIST_ITERATOR::extract() {
  *  Return data just in case anyone wants it.
  **********************************************************************/
 
-inline ELIST_LINK *ELIST_ITERATOR::move_to_first() { 
+inline ELIST_LINK *ELIST_ITERATOR::move_to_first() {
   #ifdef _DEBUG
   if (!this)
     NULL_OBJECT.error ("ELIST_ITERATOR::move_to_first", ABORT, NULL);
@@ -698,7 +699,7 @@ inline ELIST_LINK *ELIST_ITERATOR::move_to_first() {
  *  by a forward, add_after_then_move or add_after_then_move.
  **********************************************************************/
 
-inline void ELIST_ITERATOR::mark_cycle_pt() { 
+inline void ELIST_ITERATOR::mark_cycle_pt() {
   #ifdef _DEBUG
   if (!this)
     NULL_OBJECT.error ("ELIST_ITERATOR::mark_cycle_pt", ABORT, NULL);
@@ -721,7 +722,7 @@ inline void ELIST_ITERATOR::mark_cycle_pt() {
  *
  **********************************************************************/
 
-inline BOOL8 ELIST_ITERATOR::at_first() { 
+inline BOOL8 ELIST_ITERATOR::at_first() {
   #ifdef _DEBUG
   if (!this)
     NULL_OBJECT.error ("ELIST_ITERATOR::at_first", ABORT, NULL);
@@ -743,7 +744,7 @@ inline BOOL8 ELIST_ITERATOR::at_first() {
  *
  **********************************************************************/
 
-inline BOOL8 ELIST_ITERATOR::at_last() { 
+inline BOOL8 ELIST_ITERATOR::at_last() {
   #ifdef _DEBUG
   if (!this)
     NULL_OBJECT.error ("ELIST_ITERATOR::at_last", ABORT, NULL);
@@ -765,7 +766,7 @@ inline BOOL8 ELIST_ITERATOR::at_last() {
  *
  **********************************************************************/
 
-inline BOOL8 ELIST_ITERATOR::cycled_list() { 
+inline BOOL8 ELIST_ITERATOR::cycled_list() {
   #ifdef _DEBUG
   if (!this)
     NULL_OBJECT.error ("ELIST_ITERATOR::cycled_list", ABORT, NULL);
@@ -785,7 +786,7 @@ inline BOOL8 ELIST_ITERATOR::cycled_list() {
  *
  **********************************************************************/
 
-inline INT32 ELIST_ITERATOR::length() { 
+inline INT32 ELIST_ITERATOR::length() {
   #ifdef _DEBUG
   if (!this)
     NULL_OBJECT.error ("ELIST_ITERATOR::length", ABORT, NULL);
@@ -816,7 +817,7 @@ const void *, const void *)) {
   #endif
 
   list->sort (comparator);
-  move_to_first(); 
+  move_to_first();
 }
 
 

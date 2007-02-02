@@ -166,13 +166,11 @@ class DLLSYM STRING
     void de_dump(  //read external bits
                  FILE *f) {
       char *instring;            //input from read
-      INT32 length;              //length of string
 
-      instring = (char *) de_serialise_bytes (f, (int) ptr);
-      length = (INT32) ptr;
+      instring = (char *) de_serialise_bytes (f, (ptrdiff_t) ptr);
       ptr = NULL;
       *this = instring;
-      free_mem(instring); 
+      free_mem(instring);
     }
 
     make_serialise (STRING)

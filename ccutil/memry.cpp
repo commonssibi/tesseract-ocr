@@ -68,7 +68,7 @@ DLLSYM void check_mem(                     //check consistency
                      ) {
   big_mem.check (string, level);
   main_mem.check (string, level);
-  check_structs(level); 
+  check_structs(level);
 }
 
 
@@ -85,6 +85,7 @@ DLLSYM void check_mem(                     //check consistency
 DLLSYM char *alloc_string(             //allocate string
                           INT32 count  //no of chars required
                          ) {
+#ifdef RAYS_MALLOC
   char *string;                  //allocated string
 
   if (count < 1 || count > MAX_CHUNK) {
@@ -112,6 +113,9 @@ DLLSYM char *alloc_string(             //allocate string
     string[0] = 0;               //mark its id
   }
   return &string[1];             //string for user
+#else
+  return static_cast<char*>(malloc(count));
+#endif
 }
 
 
@@ -124,7 +128,8 @@ DLLSYM char *alloc_string(             //allocate string
 DLLSYM void free_string(              //free a string
                         char *string  //string to free
                        ) {
-  if (((int) string & 3) == 1) { //one over word
+#ifdef RAYS_MALLOC
+  if (((ptrdiff_t) string & 3) == 1) { //one over word
     string--;                    //get id marker
     if (*string == 0) {
       free_mem(string);  //generally free it
@@ -137,6 +142,9 @@ DLLSYM void free_string(              //free a string
     }
   }
   tprintf ("Non-string given to free_string");
+#else
+  free(string);
+#endif
 }
 
 
@@ -161,6 +169,7 @@ const char *name                 //name of type
 const char *                     //name of type
 #endif
 ) {
+#ifdef RAYS_MALLOC
   MEMUNION *element;             //current element
   MEMUNION *returnelement;       //return value
   INT32 struct_count;            //no of required structs
@@ -223,6 +232,9 @@ const char *                     //name of type
     }
   }
   return returnelement;          //free cell
+#else
+  return malloc(count);
+#endif
 }
 
 
@@ -242,6 +254,7 @@ const char *name                 //name of type
 const char *                     //name of type
 #endif
 ) {
+#ifdef RAYS_MALLOC
   MEMUNION *end_element;         //current element
   MEMUNION *element;             //current element
   MEMUNION *prev_element;        //previous element
@@ -262,7 +275,7 @@ const char *                     //name of type
 
   if (deadstruct == NULL) {
                                  //not really legal
-    check_struct(MEMCHECKS, count); 
+    check_struct(MEMCHECKS, count);
   }
   else {
     if (struct_count < MAX_STRUCTS) {
@@ -289,7 +302,7 @@ const char *                     //name of type
                                  //traverse and destroy
           nextblock = element->ptr;
                                  //free all the blocks
-          old_struct_block(element); 
+          old_struct_block(element);
           index++;
         }
                                  //none left any more
@@ -341,7 +354,7 @@ const char *                     //name of type
             nextblock = block->ptr;
             blocks_in_use[struct_count]--;
                                  //free all the blocks
-            old_struct_block(block); 
+            old_struct_block(block);
           }
           else {
             prev_block = block;
@@ -354,6 +367,9 @@ const char *                     //name of type
     else
       free_mem(deadstruct);  //free directly
   }
+#else
+  free(deadstruct);
+#endif
 }
 
 
@@ -488,7 +504,7 @@ DLLSYM void free_mem(                //free mem from alloc_mem
   else
     main_mem.dealloc (oldchunk, NULL);
   #else
-  free(oldchunk); 
+  free(oldchunk);
   #endif
 }
 
@@ -510,6 +526,6 @@ DLLSYM void free_big_mem(                //free mem from alloc_mem
   else
     big_mem.dealloc (oldchunk, NULL);
   #else
-  free(oldchunk); 
+  free(oldchunk);
   #endif
 }
