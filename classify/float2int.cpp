@@ -90,7 +90,7 @@ void ComputeIntCharNormArray(FEATURE NormFeature,
 
 
 /*---------------------------------------------------------------------------*/
-void ComputeIntFeatures(FEATURE_SET Features, INT_FEATURE_ARRAY IntFeatures) { 
+void ComputeIntFeatures(FEATURE_SET Features, INT_FEATURE_ARRAY IntFeatures) {
 /*
  **	Parameters:
  **		Features	floating point pico-features to be converted
@@ -121,5 +121,6 @@ void ComputeIntFeatures(FEATURE_SET Features, INT_FEATURE_ARRAY IntFeatures) {
       YShift, INT_FEAT_RANGE);
     IntFeatures[Fid].Theta = CircBucketFor (ParamOf (Feature, PicoFeatDir),
       ANGLE_SHIFT, INT_FEAT_RANGE);
+    IntFeatures[Fid].CP_misses = 0;
   }
 }                                /* ComputeIntFeatures */

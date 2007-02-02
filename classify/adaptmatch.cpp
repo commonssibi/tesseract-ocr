@@ -35,7 +35,7 @@
 #include "stopper.h"
 #include "permute.h"
 #include "context.h"
-#include "minmax.h"
+#include "ndminx.h"
 #include "intproto.h"
 #include "const.h"
 #include "globals.h"
@@ -131,7 +131,7 @@ char *BaselineClassifier(TBLOB *Blob,
                          ADAPT_TEMPLATES Templates,
                          ADAPT_RESULTS *Results);
 
-void make_config_pruner(INT_TEMPLATES templates, CONFIG_PRUNER *config_pruner); 
+void make_config_pruner(INT_TEMPLATES templates, CONFIG_PRUNER *config_pruner);
 
 void CharNormClassifier(TBLOB *Blob,
                         LINE_STATS *LineStats,
@@ -146,7 +146,7 @@ void ClassifyAsNoise(TBLOB *Blob,
 int CompareCurrentRatings(const void *arg1,
                           const void *arg2);  //CLASS_ID                              *Class2);
 
-LIST ConvertMatchesToChoices(ADAPT_RESULTS *Results); 
+LIST ConvertMatchesToChoices(ADAPT_RESULTS *Results);
 
 void DebugAdaptiveClassifier(TBLOB *Blob,
                              LINE_STATS *LineStats,
@@ -172,7 +172,7 @@ int GetBaselineFeatures(TBLOB *Blob,
                         CLASS_NORMALIZATION_ARRAY CharNormArray,
                         FLOAT32 *BlobLength);
 
-FLOAT32 GetBestRatingFor(TBLOB *Blob, LINE_STATS *LineStats, CLASS_ID ClassId); 
+FLOAT32 GetBestRatingFor(TBLOB *Blob, LINE_STATS *LineStats, CLASS_ID ClassId);
 
 int GetCharNormFeatures(TBLOB *Blob,
                         LINE_STATS *LineStats,
@@ -195,7 +195,7 @@ int GetIntCharNormFeatures(TBLOB *Blob,
                            CLASS_NORMALIZATION_ARRAY CharNormArray,
                            FLOAT32 *BlobLength);
 
-void InitMatcherRatings(register FLOAT32 *Rating); 
+void InitMatcherRatings(register FLOAT32 *Rating);
 
 void MakeNewTemporaryConfig(ADAPT_TEMPLATES Templates,
                             CLASS_ID ClassId,
@@ -215,19 +215,19 @@ void MakePermanent(ADAPT_TEMPLATES Templates,
                    TBLOB *Blob,
                    LINE_STATS *LineStats);
 
-int MakeTempProtoPerm(void *item1, void *item2); 
+int MakeTempProtoPerm(void *item1, void *item2);
 
-int NumBlobsIn(TWERD *Word); 
+int NumBlobsIn(TWERD *Word);
 
-int NumOutlinesInBlob(TBLOB *Blob); 
+int NumOutlinesInBlob(TBLOB *Blob);
 
-void PrintAdaptiveMatchResults(FILE *File, ADAPT_RESULTS *Results); 
+void PrintAdaptiveMatchResults(FILE *File, ADAPT_RESULTS *Results);
 
-void RemoveBadMatches(ADAPT_RESULTS *Results); 
+void RemoveBadMatches(ADAPT_RESULTS *Results);
 
-void RemoveExtraPuncs(ADAPT_RESULTS *Results); 
+void RemoveExtraPuncs(ADAPT_RESULTS *Results);
 
-void SetAdaptiveThreshold(FLOAT32 Threshold); 
+void SetAdaptiveThreshold(FLOAT32 Threshold);
 void ShowBestMatchFor(TBLOB *Blob,
                       LINE_STATS *LineStats,
                       CLASS_ID ClassId,
@@ -563,7 +563,7 @@ int tess_bn_matching = 0;
               Public Code
 ----------------------------------------------------------------------------**/
 /*---------------------------------------------------------------------------*/
-LIST AdaptiveClassifier(TBLOB *Blob, TBLOB *DotBlob, TEXTROW *Row) { 
+LIST AdaptiveClassifier(TBLOB *Blob, TBLOB *DotBlob, TEXTROW *Row) {
 /*
  **							Parameters:
  **              Blob            blob to be classified
@@ -589,6 +589,8 @@ LIST AdaptiveClassifier(TBLOB *Blob, TBLOB *DotBlob, TEXTROW *Row) {
   ADAPT_RESULTS Results;
   LINE_STATS LineStats;
 
+  if (AdaptedTemplates == NULL)
+    AdaptedTemplates = NewAdaptedTemplates ();
   EnterClassifyMode;
 
   Results.BlobLength = MAX_FLOAT32;
@@ -596,29 +598,31 @@ LIST AdaptiveClassifier(TBLOB *Blob, TBLOB *DotBlob, TEXTROW *Row) {
   Results.BestRating = WORST_POSSIBLE_RATING;
   Results.BestClass = NO_CLASS;
   Results.BestConfig = 0;
-  GetLineStatsFromRow(Row, &LineStats); 
+  GetLineStatsFromRow(Row, &LineStats);
   InitMatcherRatings (Results.Ratings);
 
-  DoAdaptiveMatch(Blob, &LineStats, &Results); 
-  RemoveBadMatches(&Results); 
+  DoAdaptiveMatch(Blob, &LineStats, &Results);
+  RemoveBadMatches(&Results);
 
   /* save ratings in a global so that CompareCurrentRatings() can see them */
   CurrentRatings = Results.Ratings;
   qsort ((void *) (Results.Classes), Results.NumMatches,
     sizeof (CLASS_ID), CompareCurrentRatings);
-  RemoveExtraPuncs(&Results); 
+  RemoveExtraPuncs(&Results);
   Choices = ConvertMatchesToChoices (&Results);
 
   if (MatcherDebugLevel >= 1) {
     cprintf ("AD Matches =  ");
-    PrintAdaptiveMatchResults(stdout, &Results); 
+    PrintAdaptiveMatchResults(stdout, &Results);
   }
 
   if (LargeSpeckle (Blob, Row))
     Choices = AddLargeSpeckleTo (Choices);
 
+#ifndef GRAPHICS_DISABLED
   if (EnableAdaptiveDebugger)
-    DebugAdaptiveClassifier(Blob, &LineStats, &Results); 
+    DebugAdaptiveClassifier(Blob, &LineStats, &Results);
+#endif
 
   NumClassesOutput += count (Choices);
   if (Choices == NIL) {
@@ -675,7 +679,7 @@ void AdaptToWord(TWERD *Word,
     if (LearningDebugLevel >= 1)
       cprintf ("\n\nAdapting to word = %s\n", BestChoice);
     #endif
-    GetLineStatsFromRow(Row, &LineStats); 
+    GetLineStatsFromRow(Row, &LineStats);
 
     GetAdaptThresholds(Word,
                        &LineStats,
@@ -685,7 +689,7 @@ void AdaptToWord(TWERD *Word,
 
     for (Blob = Word->blobs, Threshold = Thresholds;
     Blob != NULL; Blob = Blob->next, BestChoice++, Threshold++) {
-      InitIntFX(); 
+      InitIntFX();
 
       if (rejmap != NULL)
         map_char = *map++;
@@ -720,13 +724,13 @@ void AdaptToWord(TWERD *Word,
           else {
             #ifndef SECURE_NAMES
             if (LearningDebugLevel >= 1)
-              cprintf ("Adapting to char = %c\n", *BestChoice);
+              cprintf ("Adapting to char = %c, thr= %g\n", *BestChoice, *Threshold);
             #endif
-            AdaptToChar(Blob, &LineStats, *BestChoice, *Threshold); 
+            AdaptToChar(Blob, &LineStats, *BestChoice, *Threshold);
           }
         }
         else
-          AdaptToPunc(Blob, &LineStats, *BestChoice, *Threshold); 
+          AdaptToPunc(Blob, &LineStats, *BestChoice, *Threshold);
       }
     }
     if (LearningDebugLevel >= 1)
@@ -736,7 +740,7 @@ void AdaptToWord(TWERD *Word,
 
 
 /*---------------------------------------------------------------------------*/
-void EndAdaptiveClassifier() { 
+void EndAdaptiveClassifier() {
 /*
  **							Parameters: none
  **							Globals:
@@ -759,25 +763,41 @@ void EndAdaptiveClassifier() {
 
   #ifndef SECURE_NAMES
   if (EnableAdaptiveMatcher && SaveAdaptedTemplates) {
-    strcpy(Filename, imagefile); 
-    strcat(Filename, ADAPT_TEMPLATE_SUFFIX); 
+    strcpy(Filename, imagefile);
+    strcat(Filename, ADAPT_TEMPLATE_SUFFIX);
     File = fopen (Filename, "wb");
     if (File == NULL)
       cprintf ("Unable to save adapted templates to %s!\n", Filename);
     else {
       cprintf ("\nSaving adapted templates to %s ...", Filename);
-      fflush(stdout); 
-      WriteAdaptedTemplates(File, AdaptedTemplates); 
+      fflush(stdout);
+      WriteAdaptedTemplates(File, AdaptedTemplates);
       cprintf ("\n");
-      fclose(File); 
+      fclose(File);
     }
   }
   #endif
+  EndDangerousAmbigs();
+  FreeNormProtos();
+  free_int_templates(PreTrainedTemplates);
+  PreTrainedTemplates = NULL;
+  FreeBitVector(AllProtosOn);
+  FreeBitVector(PrunedProtos);
+  FreeBitVector(AllConfigsOn);
+  FreeBitVector(AllProtosOff);
+  FreeBitVector(AllConfigsOff);
+  FreeBitVector(TempProtoMask);
+  AllProtosOn = NULL;
+  PrunedProtos = NULL;
+  AllConfigsOn = NULL;
+  AllProtosOff = NULL;
+  AllConfigsOff = NULL;
+  TempProtoMask = NULL;
 }                                /* EndAdaptiveClassifier */
 
 
 /*---------------------------------------------------------------------------*/
-void InitAdaptiveClassifier() { 
+void InitAdaptiveClassifier() {
 /*
  **							Parameters: none
  **							Globals:
@@ -811,12 +831,12 @@ void InitAdaptiveClassifier() {
   if (!EnableAdaptiveMatcher)
     return;
 
-  strcpy(Filename, demodir); 
-  strcat(Filename, BuiltInTemplatesFile); 
+  strcpy(Filename, demodir);
+  strcat(Filename, BuiltInTemplatesFile);
   #ifndef SECURE_NAMES
   //      cprintf( "\nReading built-in templates from %s ...",
   //              Filename);
-  fflush(stdout); 
+  fflush(stdout);
   #endif
 
   #ifdef __UNIX__
@@ -825,21 +845,21 @@ void InitAdaptiveClassifier() {
   File = Efopen (Filename, "rb");
   #endif
   PreTrainedTemplates = ReadIntTemplates (File, TRUE);
-  fclose(File); 
+  fclose(File);
 
-  strcpy(Filename, demodir); 
-  strcat(Filename, BuiltInCutoffsFile); 
+  strcpy(Filename, demodir);
+  strcat(Filename, BuiltInCutoffsFile);
   #ifndef SECURE_NAMES
   //      cprintf( "\nReading built-in pico-feature cutoffs from %s ...",
   //              Filename);
-  fflush(stdout); 
+  fflush(stdout);
   #endif
   ReadNewCutoffs (Filename, PreTrainedTemplates->IndexFor, CharNormCutoffs);
 
-  GetNormProtos(); 
+  GetNormProtos();
 
-  InitIntegerMatcher(); 
-  InitIntegerFX(); 
+  InitIntegerMatcher();
+  InitIntegerFX();
 
   AllProtosOn = NewBitVector (MAX_NUM_PROTOS);
   PrunedProtos = NewBitVector (MAX_NUM_PROTOS);
@@ -854,20 +874,20 @@ void InitAdaptiveClassifier() {
   zero_all_bits (AllConfigsOff, WordsInVectorOfSize (MAX_NUM_CONFIGS));
 
   if (UsePreAdaptedTemplates) {
-    strcpy(Filename, imagefile); 
-    strcat(Filename, ADAPT_TEMPLATE_SUFFIX); 
+    strcpy(Filename, imagefile);
+    strcat(Filename, ADAPT_TEMPLATE_SUFFIX);
     File = fopen (Filename, "rb");
     if (File == NULL)
       AdaptedTemplates = NewAdaptedTemplates ();
     else {
       #ifndef SECURE_NAMES
       cprintf ("\nReading pre-adapted templates from %s ...", Filename);
-      fflush(stdout); 
+      fflush(stdout);
       #endif
       AdaptedTemplates = ReadAdaptedTemplates (File);
       cprintf ("\n");
-      fclose(File); 
-      PrintAdaptedTemplates(stdout, AdaptedTemplates); 
+      fclose(File);
+      PrintAdaptedTemplates(stdout, AdaptedTemplates);
 
       for (i = 0; i < NumClassesIn (AdaptedTemplates->Templates); i++) {
         BaselineCutoffs[i] =
@@ -886,12 +906,12 @@ void InitAdaptiveClassifier() {
 
 void ResetAdaptiveClassifier() {
   free_adapted_templates(AdaptedTemplates);
-  AdaptedTemplates = NewAdaptedTemplates ();
+  AdaptedTemplates = NULL;
 }
 
 
 /*---------------------------------------------------------------------------*/
-void InitAdaptiveClassifierVars() { 
+void InitAdaptiveClassifierVars() {
 /*
  **							Parameters: none
  **							Globals: none
@@ -908,37 +928,37 @@ void InitAdaptiveClassifierVars() {
   string_variable (BuiltInCutoffsFile, "BuiltInCutoffsFile",
     BUILT_IN_CUTOFFS_FILE);
 
-  MakeEnableAdaptiveMatcher(); 
-  MakeUsePreAdaptedTemplates(); 
-  MakeSaveAdaptedTemplates(); 
+  MakeEnableAdaptiveMatcher();
+  MakeUsePreAdaptedTemplates();
+  MakeSaveAdaptedTemplates();
 
-  MakeEnableLearning(); 
-  MakeEnableAdaptiveDebugger(); 
-  MakeBadMatchPad(); 
-  MakeGoodAdaptiveMatch(); 
-  MakeGreatAdaptiveMatch(); 
-  MakeNoiseBlobLength(); 
-  MakeMinNumPermClasses(); 
-  MakeReliableConfigThreshold(); 
-  MakeMaxAngleDelta(); 
-  MakeLearningDebugLevel(); 
-  MakeMatcherDebugLevel(); 
-  MakeMatchDebugFlags(); 
-  MakeRatingMargin(); 
-  MakePerfectRating(); 
-  MakeEnableIntFX(); 
-  MakeEnableNewAdaptRules(); 
-  MakeRatingScale(); 
-  MakeCertaintyScale(); 
+  MakeEnableLearning();
+  MakeEnableAdaptiveDebugger();
+  MakeBadMatchPad();
+  MakeGoodAdaptiveMatch();
+  MakeGreatAdaptiveMatch();
+  MakeNoiseBlobLength();
+  MakeMinNumPermClasses();
+  MakeReliableConfigThreshold();
+  MakeMaxAngleDelta();
+  MakeLearningDebugLevel();
+  MakeMatcherDebugLevel();
+  MakeMatchDebugFlags();
+  MakeRatingMargin();
+  MakePerfectRating();
+  MakeEnableIntFX();
+  MakeEnableNewAdaptRules();
+  MakeRatingScale();
+  MakeCertaintyScale();
 
-  InitPicoFXVars(); 
+  InitPicoFXVars();
   InitOutlineFXVars();  //?
 
 }                                /* InitAdaptiveClassifierVars */
 
 
 /*---------------------------------------------------------------------------*/
-void PrintAdaptiveStatistics(FILE *File) { 
+void PrintAdaptiveStatistics(FILE *File) {
 /*
  **							Parameters:
  **							File
@@ -975,13 +995,13 @@ void PrintAdaptiveStatistics(FILE *File) {
   fprintf (File, "\tNumber of words adapted to: %d\n", NumWordsAdaptedTo);
   fprintf (File, "\tNumber of chars adapted to: %d\n", NumCharsAdaptedTo);
 
-  PrintAdaptedTemplates(File, AdaptedTemplates); 
+  PrintAdaptedTemplates(File, AdaptedTemplates);
   #endif
 }                                /* PrintAdaptiveStatistics */
 
 
 /*---------------------------------------------------------------------------*/
-void SettupPass1() { 
+void SettupPass1() {
 /*
  **							Parameters: none
  **							Globals:
@@ -1001,13 +1021,13 @@ void SettupPass1() {
     setting of EnableLearning. */
   EnableLearning = old_enable_learning;
 
-  SettupStopperPass1(); 
+  SettupStopperPass1();
 
 }                                /* SettupPass1 */
 
 
 /*---------------------------------------------------------------------------*/
-void SettupPass2() { 
+void SettupPass2() {
 /*
  **							Parameters: none
  **							Globals:
@@ -1020,7 +1040,7 @@ void SettupPass2() {
 **							History: Mon Apr 15 16:39:29 1991, DSJ, Created.
 */
   EnableLearning = FALSE;
-  SettupStopperPass2(); 
+  SettupStopperPass2();
 
 }                                /* SettupPass2 */
 
@@ -1068,7 +1088,7 @@ void MakeNewAdaptedClass(TBLOB *Blob,
   Features = ExtractOutlineFeatures (Blob, LineStats);
   NumFeatures = NumFeaturesIn (Features);
   if (NumFeatures > UNLIKELY_NUM_FEAT) {
-    FreeFeatureSet(Features); 
+    FreeFeatureSet(Features);
     return;
   }
 
@@ -1098,19 +1118,19 @@ void MakeNewAdaptedClass(TBLOB *Blob,
     ProtoX (Proto) = ParamOf (Feature, OutlineFeatX);
     ProtoY (Proto) = ParamOf (Feature, OutlineFeatY) - Y_DIM_OFFSET;
     ProtoLength (Proto) = ParamOf (Feature, OutlineFeatLength);
-    FillABC(Proto); 
+    FillABC(Proto);
 
     TempProto->ProtoId = Pid;
     SET_BIT (Config->Protos, Pid);
 
-    ConvertProto(Proto, Pid, IClass); 
-    AddProtoToProtoPruner(Proto, Pid, IClass); 
+    ConvertProto(Proto, Pid, IClass);
+    AddProtoToProtoPruner(Proto, Pid, IClass);
 
     Class->TempProtos = push (Class->TempProtos, TempProto);
   }
-  FreeFeatureSet(Features); 
+  FreeFeatureSet(Features);
 
-  AddIntConfig(IClass); 
+  AddIntConfig(IClass);
   ConvertConfig (AllProtosOn, 0, IClass);
 
   if (LearningDebugLevel >= 1) {
@@ -1154,11 +1174,11 @@ int GetAdaptiveFeatures(TBLOB *Blob,
 
   NumFeatures = NumFeaturesIn (Features);
   if (NumFeatures > UNLIKELY_NUM_FEAT) {
-    FreeFeatureSet(Features); 
+    FreeFeatureSet(Features);
     return (0);
   }
 
-  ComputeIntFeatures(Features, IntFeatures); 
+  ComputeIntFeatures(Features, IntFeatures);
   *FloatFeatures = Features;
 
   return (NumFeatures);
@@ -1261,7 +1281,7 @@ void AdaptToChar(TBLOB *Blob,
     return;
 
   if (UnusedClassIdIn (AdaptedTemplates->Templates, ClassId)) {
-    MakeNewAdaptedClass(Blob, LineStats, ClassId, AdaptedTemplates); 
+    MakeNewAdaptedClass(Blob, LineStats, ClassId, AdaptedTemplates);
   }
   else {
     IClass = ClassForClassId (AdaptedTemplates->Templates, ClassId);
@@ -1273,24 +1293,24 @@ void AdaptToChar(TBLOB *Blob,
     if (NumFeatures <= 0)
       return;
 
-    SetBaseLineMatch(); 
+    SetBaseLineMatch();
     IntegerMatcher (IClass, AllProtosOn, AllConfigsOn,
       NumFeatures, NumFeatures, IntFeatures, 0, 0,
       &IntResult, NO_DEBUG);
 
-    SetAdaptiveThreshold(Threshold); 
+    SetAdaptiveThreshold(Threshold);
 
     if (IntResult.Rating <= Threshold) {
       if (ConfigIsPermanent (Class, IntResult.Config)) {
         if (LearningDebugLevel >= 1)
           cprintf ("Found good match to perm config %d = %4.1f%%.\n",
             IntResult.Config, (1.0 - IntResult.Rating) * 100.0);
-        FreeFeatureSet(FloatFeatures); 
+        FreeFeatureSet(FloatFeatures);
         return;
       }
 
       TempConfig = TempConfigFor (Class, IntResult.Config);
-      IncreaseConfidence(TempConfig); 
+      IncreaseConfidence(TempConfig);
       if (LearningDebugLevel >= 1)
         cprintf ("Increasing reliability of temp config %d to %d.\n",
           IntResult.Config, TempConfig->NumTimesSeen);
@@ -1300,13 +1320,33 @@ void AdaptToChar(TBLOB *Blob,
           Blob, LineStats);
     }
     else {
+      if (LearningDebugLevel >= 1)
+        cprintf ("Found poor match to temp config %d = %4.1f%%.\n",
+          IntResult.Config, (1.0 - IntResult.Rating) * 100.0);
       MakeNewTemporaryConfig(AdaptedTemplates,
                              ClassId,
                              NumFeatures,
                              IntFeatures,
                              FloatFeatures);
+      if (LearningDebugLevel >= 1) {
+        IntegerMatcher (IClass, AllProtosOn, AllConfigsOn,
+          NumFeatures, NumFeatures, IntFeatures, 0, 0,
+          &IntResult, NO_DEBUG);
+        cprintf ("Best match to temp config %d = %4.1f%%.\n",
+          IntResult.Config, (1.0 - IntResult.Rating) * 100.0);
+        if (LearningDebugLevel >= 2) {
+          UINT32 ConfigMask;
+          ConfigMask = 1 << IntResult.Config;
+          ShowMatchDisplay();
+          IntegerMatcher (IClass, AllProtosOn, (BIT_VECTOR)&ConfigMask,
+            NumFeatures, NumFeatures, IntFeatures, 0, 0,
+            &IntResult, 6 | 0x19);
+          UpdateMatchDisplay();
+          GetClassToDebug ("Adapting");
+        }
+      }
     }
-    FreeFeatureSet(FloatFeatures); 
+    FreeFeatureSet(FloatFeatures);
   }
 }                                /* AdaptToChar */
 
@@ -1343,8 +1383,8 @@ void AdaptToPunc(TBLOB *Blob,
   Results.BestClass = NO_CLASS;
   Results.BestConfig = 0;
   InitMatcherRatings (Results.Ratings);
-  CharNormClassifier(Blob, LineStats, PreTrainedTemplates, &Results); 
-  RemoveBadMatches(&Results); 
+  CharNormClassifier(Blob, LineStats, PreTrainedTemplates, &Results);
+  RemoveBadMatches(&Results);
 
   if (Results.NumMatches != 1) {
     if (LearningDebugLevel >= 1) {
@@ -1361,7 +1401,7 @@ void AdaptToPunc(TBLOB *Blob,
   if (LearningDebugLevel >= 1)
     cprintf ("Adapting to punc = %c\n", ClassId);
   #endif
-  AdaptToChar(Blob, LineStats, ClassId, Threshold); 
+  AdaptToChar(Blob, LineStats, ClassId, Threshold);
 
 }                                /* AdaptToPunc */
 
@@ -1480,7 +1520,7 @@ void AmbigClassifier(TBLOB *Blob,
     ClassId = *Ambiguities;
     ClassIndex = IndexForClassId (Templates, ClassId);
 
-    SetCharNormMatch(); 
+    SetCharNormMatch();
     IntegerMatcher (ClassForClassId (Templates, ClassId),
       AllProtosOn, AllConfigsOn,
       IntOutlineLength, NumFeatures, IntFeatures, 0,
@@ -1573,7 +1613,7 @@ char *BaselineClassifier(TBLOB *Blob,
     ClassId = ClassPrunerResults[i].Class;
     ClassIndex = IndexForClassId (Templates->Templates, ClassId);
 
-    SetBaseLineMatch(); 
+    SetBaseLineMatch();
     IntegerMatcher (ClassForClassId (Templates->Templates, ClassId),
       Templates->Class[ClassIndex]->PermProtos,
       Templates->Class[ClassIndex]->PermConfigs,
@@ -1824,7 +1864,7 @@ void CharNormClassifier(TBLOB *Blob,
     ClassId = ClassPrunerResults[i].Class;
     ClassIndex = IndexForClassId (Templates, ClassId);
 
-    SetCharNormMatch(); 
+    SetCharNormMatch();
 
     if (feature_prune_percentile > 0)
                                  //xiaofan
@@ -1941,7 +1981,7 @@ int CompareCurrentRatings(                     //CLASS_ID              *Class1,
 
 
 /*---------------------------------------------------------------------------*/
-LIST ConvertMatchesToChoices(ADAPT_RESULTS *Results) { 
+LIST ConvertMatchesToChoices(ADAPT_RESULTS *Results) {
 /*
  **							Parameters:
  **							Results
@@ -1982,6 +2022,7 @@ LIST ConvertMatchesToChoices(ADAPT_RESULTS *Results) {
 
 
 /*---------------------------------------------------------------------------*/
+#ifndef GRAPHICS_DISABLED
 void DebugAdaptiveClassifier(TBLOB *Blob,
                              LINE_STATS *LineStats,
                              ADAPT_RESULTS *Results) {
@@ -2007,10 +2048,10 @@ void DebugAdaptiveClassifier(TBLOB *Blob,
   BOOL8 AdaptiveOn = TRUE;
   BOOL8 PreTrainedOn = TRUE;
 
-  ShowMatchDisplay(); 
+  ShowMatchDisplay();
   cprintf ("\nDebugging class = %c  (%s) ...\n", LastClass, DebugMode);
-  ShowBestMatchFor(Blob, LineStats, LastClass, AdaptiveOn, PreTrainedOn); 
-  UpdateMatchDisplay(); 
+  ShowBestMatchFor(Blob, LineStats, LastClass, AdaptiveOn, PreTrainedOn);
+  UpdateMatchDisplay();
 
   while ((ClassId = GetClassToDebug (Prompt)) != 0) {
     switch (ClassId) {
@@ -2037,13 +2078,13 @@ void DebugAdaptiveClassifier(TBLOB *Blob,
         break;
     }
 
-    ShowMatchDisplay(); 
+    ShowMatchDisplay();
     cprintf ("\nDebugging class = %c  (%s) ...\n", LastClass, DebugMode);
-    ShowBestMatchFor(Blob, LineStats, LastClass, AdaptiveOn, PreTrainedOn); 
-    UpdateMatchDisplay(); 
+    ShowBestMatchFor(Blob, LineStats, LastClass, AdaptiveOn, PreTrainedOn);
+    UpdateMatchDisplay();
   }
 }                                /* DebugAdaptiveClassifier */
-
+#endif
 
 /*---------------------------------------------------------------------------*/
 void DoAdaptiveMatch(TBLOB *Blob,
@@ -2080,11 +2121,11 @@ void DoAdaptiveMatch(TBLOB *Blob,
   char *Ambiguities;
 
   AdaptiveMatcherCalls++;
-  InitIntFX(); 
+  InitIntFX();
 
   if (AdaptedTemplates->NumPermClasses < MinNumPermClasses
   || tess_cn_matching) {
-    CharNormClassifier(Blob, LineStats, PreTrainedTemplates, Results); 
+    CharNormClassifier(Blob, LineStats, PreTrainedTemplates, Results);
   }
   else {
     Ambiguities = BaselineClassifier (Blob, LineStats,
@@ -2092,7 +2133,7 @@ void DoAdaptiveMatch(TBLOB *Blob,
 
     if (Results->NumMatches > 0 && MarginalMatch (Results->BestRating)
     && !tess_bn_matching) {
-      CharNormClassifier(Blob, LineStats, PreTrainedTemplates, Results); 
+      CharNormClassifier(Blob, LineStats, PreTrainedTemplates, Results);
     }
     else if (Ambiguities && *Ambiguities) {
       AmbigClassifier(Blob,
@@ -2104,7 +2145,7 @@ void DoAdaptiveMatch(TBLOB *Blob,
   }
 
   if (Results->NumMatches == 0)
-    ClassifyAsNoise(Blob, LineStats, Results); 
+    ClassifyAsNoise(Blob, LineStats, Results);
   /**/}   /* DoAdaptiveMatch */
 
   /*---------------------------------------------------------------------------*/
@@ -2207,8 +2248,8 @@ void DoAdaptiveMatch(TBLOB *Blob,
     Results.BestConfig = 0;
     InitMatcherRatings (Results.Ratings);
 
-    CharNormClassifier(Blob, LineStats, PreTrainedTemplates, &Results); 
-    RemoveBadMatches(&Results); 
+    CharNormClassifier(Blob, LineStats, PreTrainedTemplates, &Results);
+    RemoveBadMatches(&Results);
 
     /* save ratings in a global so that CompareCurrentRatings() can see them */
     CurrentRatings = Results.Ratings;
@@ -2278,14 +2319,14 @@ void DoAdaptiveMatch(TBLOB *Blob,
     NumFeatures = NumFeaturesIn (Features);
     *BlobLength = NumFeatures * GetPicoFeatureLength ();
     if (NumFeatures > UNLIKELY_NUM_FEAT) {
-      FreeFeatureSet(Features); 
+      FreeFeatureSet(Features);
       return (0);
     }
 
-    ComputeIntFeatures(Features, IntFeatures); 
-    ClearCharNormArray(Templates, CharNormArray); 
+    ComputeIntFeatures(Features, IntFeatures);
+    ClearCharNormArray(Templates, CharNormArray);
 
-    FreeFeatureSet(Features); 
+    FreeFeatureSet(Features);
     return (NumFeatures);
 
   }                              /* GetBaselineFeatures */
@@ -2339,7 +2380,7 @@ void DoAdaptiveMatch(TBLOB *Blob,
         CNOutlineLength = (int) (BlobLength / GetPicoFeatureLength ());
         ClassIndex = IndexForClassId (PreTrainedTemplates, ClassId);
 
-        SetCharNormMatch(); 
+        SetCharNormMatch();
         IntegerMatcher (ClassForClassId (PreTrainedTemplates, ClassId),
           AllProtosOn, AllConfigsOn,
           CNOutlineLength, NumCNFeatures, CNFeatures, 0,
@@ -2355,7 +2396,7 @@ void DoAdaptiveMatch(TBLOB *Blob,
         BLOutlineLength = (int) (BlobLength / GetPicoFeatureLength ());
         ClassIndex = IndexForClassId (AdaptedTemplates->Templates, ClassId);
 
-        SetBaseLineMatch(); 
+        SetBaseLineMatch();
         IntegerMatcher (ClassForClassId
           (AdaptedTemplates->Templates, ClassId),
           AdaptedTemplates->Class[ClassIndex]->PermProtos,
@@ -2464,7 +2505,7 @@ void DoAdaptiveMatch(TBLOB *Blob,
     for (Src = BaselineFeatures, End = Src + FXInfo.NumBL, Dest = IntFeatures;
       Src < End; *Dest++ = *Src++);
 
-    ClearCharNormArray(Templates, CharNormArray); 
+    ClearCharNormArray(Templates, CharNormArray);
     *BlobLength = FXInfo.Length * ComputeScaleFactor (LineStats);
     return (FXInfo.NumBL);
 
@@ -2537,8 +2578,8 @@ void DoAdaptiveMatch(TBLOB *Blob,
       FXInfo.Length * Scale / LENGTH_COMPRESSION;
     ParamOf (NormFeature, CharNormRx) = FXInfo.Rx * Scale;
     ParamOf (NormFeature, CharNormRy) = FXInfo.Ry * Scale;
-    ComputeIntCharNormArray(NormFeature, Templates, CharNormArray); 
-    FreeFeature(NormFeature); 
+    ComputeIntCharNormArray(NormFeature, Templates, CharNormArray);
+    FreeFeature(NormFeature);
 
     *BlobLength = FXInfo.Length * Scale;
     return (FXInfo.NumCN);
@@ -2546,7 +2587,7 @@ void DoAdaptiveMatch(TBLOB *Blob,
   }                              /* GetIntCharNormFeatures */
 
   /*---------------------------------------------------------------------------*/
-  void InitMatcherRatings(register FLOAT32 *Rating) { 
+  void InitMatcherRatings(register FLOAT32 *Rating) {
   /*
    **							Parameters:
    **							Rating
@@ -2627,9 +2668,10 @@ void DoAdaptiveMatch(TBLOB *Blob,
     NumOldProtos = FindGoodProtos (IClass, AllProtosOn, AllConfigsOff,
       BlobLength, NumFeatures, Features,
       OldProtos, debug_level);
+    NumOldProtos = 0;
 
     MaskSize = WordsInVectorOfSize (MAX_NUM_PROTOS);
-    zero_all_bits(TempProtoMask, MaskSize); 
+    zero_all_bits(TempProtoMask, MaskSize);
     for (i = 0; i < NumOldProtos; i++)
       SET_BIT (TempProtoMask, OldProtos[i]);
 
@@ -2643,7 +2685,7 @@ void DoAdaptiveMatch(TBLOB *Blob,
       return;
 
     ConfigId = AddIntConfig (IClass);
-    ConvertConfig(TempProtoMask, ConfigId, IClass); 
+    ConvertConfig(TempProtoMask, ConfigId, IClass);
     Config = NewTempConfig (MaxProtoId);
     TempConfigFor (Class, ConfigId) = Config;
     copy_all_bits (TempProtoMask, Config->Protos, Config->ProtoVectorSize);
@@ -2741,13 +2783,13 @@ void DoAdaptiveMatch(TBLOB *Blob,
       ProtoAngle (Proto) = A1;
       ProtoX (Proto) = (X1 + X2) / 2.0;
       ProtoY (Proto) = (Y1 + Y2) / 2.0 - Y_DIM_OFFSET;
-      FillABC(Proto); 
+      FillABC(Proto);
 
       TempProto->ProtoId = Pid;
-      SET_BIT(TempProtoMask, Pid); 
+      SET_BIT(TempProtoMask, Pid);
 
-      ConvertProto(Proto, Pid, IClass); 
-      AddProtoToProtoPruner(Proto, Pid, IClass); 
+      ConvertProto(Proto, Pid, IClass);
+      AddProtoToProtoPruner(Proto, Pid, IClass);
 
       Class->TempProtos = push (Class->TempProtos, TempProto);
     }
@@ -2788,7 +2830,7 @@ void DoAdaptiveMatch(TBLOB *Blob,
     Class = Templates->Class[ClassIndex];
     Config = TempConfigFor (Class, ConfigId);
 
-    MakeConfigPermanent(Class, ConfigId); 
+    MakeConfigPermanent(Class, ConfigId);
     if (Class->NumPermConfigs == 0)
       Templates->NumPermClasses++;
     Class->NumPermConfigs++;
@@ -2798,7 +2840,7 @@ void DoAdaptiveMatch(TBLOB *Blob,
     ProtoKey.ConfigId = ConfigId;
     Class->TempProtos = delete_d (Class->TempProtos, &ProtoKey,
       MakeTempProtoPerm);
-    FreeTempConfig(Config); 
+    FreeTempConfig(Config);
 
     Ambigs = GetAmbiguities (Blob, LineStats, ClassId);
     PermConfigFor (Class, ConfigId) = Ambigs;
@@ -2847,14 +2889,14 @@ void DoAdaptiveMatch(TBLOB *Blob,
     MakeProtoPermanent (Class, TempProto->ProtoId);
     AddProtoToClassPruner (&(TempProto->Proto), ProtoKey->ClassId,
       ProtoKey->Templates->Templates);
-    FreeTempProto(TempProto); 
+    FreeTempProto(TempProto);
 
     return (TRUE);
 
   }                              /* MakeTempProtoPerm */
 
   /*---------------------------------------------------------------------------*/
-  int NumBlobsIn(TWERD *Word) { 
+  int NumBlobsIn(TWERD *Word) {
   /*
    **							Parameters:
    **							Word
@@ -2879,7 +2921,7 @@ void DoAdaptiveMatch(TBLOB *Blob,
   }                              /* NumBlobsIn */
 
   /*---------------------------------------------------------------------------*/
-  int NumOutlinesInBlob(TBLOB *Blob) { 
+  int NumOutlinesInBlob(TBLOB *Blob) {
   /*
    **							Parameters:
    **							Blob
@@ -2905,7 +2947,7 @@ void DoAdaptiveMatch(TBLOB *Blob,
   }                              /* NumOutlinesInBlob */
 
   /*---------------------------------------------------------------------------*/
-  void PrintAdaptiveMatchResults(FILE *File, ADAPT_RESULTS *Results) { 
+  void PrintAdaptiveMatchResults(FILE *File, ADAPT_RESULTS *Results) {
   /*
    **							Parameters:
    **							File
@@ -2933,7 +2975,7 @@ void DoAdaptiveMatch(TBLOB *Blob,
   }                              /* PrintAdaptiveMatchResults */
 
   /*---------------------------------------------------------------------------*/
-  void RemoveBadMatches(ADAPT_RESULTS *Results) { 
+  void RemoveBadMatches(ADAPT_RESULTS *Results) {
   /*
    **							Parameters:
    **							Results
@@ -2984,7 +3026,7 @@ void DoAdaptiveMatch(TBLOB *Blob,
   }                              /* RemoveBadMatches */
 
   /*----------------------------------------------------------------------------------*/
-  void RemoveExtraPuncs(ADAPT_RESULTS *Results) { 
+  void RemoveExtraPuncs(ADAPT_RESULTS *Results) {
   /*
    **							Parameters:
    **							Results
@@ -3032,7 +3074,7 @@ void DoAdaptiveMatch(TBLOB *Blob,
   }                              /* RemoveExtraPuncs */
 
   /*---------------------------------------------------------------------------*/
-  void SetAdaptiveThreshold(FLOAT32 Threshold) { 
+  void SetAdaptiveThreshold(FLOAT32 Threshold) {
   /*
    **							Parameters:
    **							Threshold
@@ -3102,6 +3144,9 @@ void DoAdaptiveMatch(TBLOB *Blob,
     CLASS_INDEX ClassIndex;
     FLOAT32 BlobLength;
     UINT32 ConfigMask;
+    static int next_config = -1;
+
+    if (PreTrainedOn) next_config = -1;
 
     CNResult.Rating = BLResult.Rating = 2.0;
 
@@ -3124,14 +3169,14 @@ void DoAdaptiveMatch(TBLOB *Blob,
         CNOutlineLength = (int) (BlobLength / GetPicoFeatureLength ());
         ClassIndex = IndexForClassId (PreTrainedTemplates, ClassId);
 
-        SetCharNormMatch(); 
+        SetCharNormMatch();
         IntegerMatcher (ClassForClassId (PreTrainedTemplates, ClassId),
           AllProtosOn, AllConfigsOn,
           CNOutlineLength, NumCNFeatures, CNFeatures, 0,
           CNAdjust[ClassIndex], &CNResult, NO_DEBUG);
 
-        cprintf ("Best built-in template match is config %2d (%4.1f)\n",
-          CNResult.Config, CNResult.Rating * 100.0);
+        cprintf ("Best built-in template match is config %2d (%4.1f) (cn=%d)\n",
+          CNResult.Config, CNResult.Rating * 100.0, CNAdjust[ClassIndex]);
       }
     }
 
@@ -3150,11 +3195,12 @@ void DoAdaptiveMatch(TBLOB *Blob,
         ClassIndex =
           IndexForClassId (AdaptedTemplates->Templates, ClassId);
 
-        SetBaseLineMatch(); 
+        SetBaseLineMatch();
         IntegerMatcher (ClassForClassId
           (AdaptedTemplates->Templates, ClassId),
-          AdaptedTemplates->Class[ClassIndex]->PermProtos,
-          AdaptedTemplates->Class[ClassIndex]->PermConfigs,
+                        AllProtosOn, AllConfigsOn,
+//          AdaptedTemplates->Class[ClassIndex]->PermProtos,
+//          AdaptedTemplates->Class[ClassIndex]->PermConfigs,
           BLOutlineLength, NumBLFeatures, BLFeatures, 0,
           BLAdjust[ClassIndex], &BLResult, NO_DEBUG);
 
@@ -3168,22 +3214,31 @@ void DoAdaptiveMatch(TBLOB *Blob,
     cprintf ("\n");
     if (BLResult.Rating < CNResult.Rating) {
       ClassIndex = IndexForClassId (AdaptedTemplates->Templates, ClassId);
-      ConfigMask = 1 << BLResult.Config;
+      if (next_config < 0) {
+        ConfigMask = 1 << BLResult.Config;
+        next_config = 0;
+      } else {
+        ConfigMask = 1 << next_config;
+        ++next_config;
+      }
       NormMethod = baseline;
 
-      SetBaseLineMatch(); 
+      SetBaseLineMatch();
       IntegerMatcher (ClassForClassId (AdaptedTemplates->Templates, ClassId),
-        AdaptedTemplates->Class[ClassIndex]->PermProtos,
+                      AllProtosOn,
+//        AdaptedTemplates->Class[ClassIndex]->PermProtos,
         (BIT_VECTOR) & ConfigMask,
         BLOutlineLength, NumBLFeatures, BLFeatures, 0,
         BLAdjust[ClassIndex], &BLResult, MatchDebugFlags);
+      cprintf ("Adaptive template match for config %2d is %4.1f\n",
+        BLResult.Config, BLResult.Rating * 100.0);
     }
     else {
       ClassIndex = IndexForClassId (PreTrainedTemplates, ClassId);
       ConfigMask = 1 << CNResult.Config;
       NormMethod = character;
 
-      SetCharNormMatch(); 
+      SetCharNormMatch();
                                  //xiaofan
       IntegerMatcher (ClassForClassId (PreTrainedTemplates, ClassId), AllProtosOn, (BIT_VECTOR) & ConfigMask,
         CNOutlineLength, NumCNFeatures, CNFeatures, 0,
