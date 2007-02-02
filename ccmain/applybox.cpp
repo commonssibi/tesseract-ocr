@@ -36,6 +36,7 @@ what measures we are interested in.
 #include                   "fixxht.h"
 #include          "control.h"
 #include          "tessbox.h"
+#include          "globals.h"
 #include          "secname.h"
 
 #define SECURE_NAMES
@@ -83,8 +84,7 @@ EXTERN double_VAR (applybox_error_band, 0.15, "Err band as fract of xht");
  *
  *************************************************************************/
 
-void apply_boxes(                        //re segement
-                 BLOCK_LIST *block_list  //real blocks
+void apply_boxes(BLOCK_LIST *block_list    //real blocks
                 ) {
   INT16 boxfile_lineno = 0;
   INT16 boxfile_charno = 0;
@@ -111,9 +111,18 @@ void apply_boxes(                        //re segement
   for (i = 0; i < 128; i++)
     tgt_char_counts[i] = 0;
 
+  FILE* box_file;
+  STRING filename = imagefile;
+  filename += ".box";
+  if (!(box_file = fopen (filename.string(), "r"))) {
+    CANTOPENFILE.error ("read_next_box", EXIT,
+      "Cant open box file %s %d",
+      filename.string(), errno);
+  }
+
   ch[1] = '\0';
-  clear_any_old_text(block_list); 
-  while (read_next_box (&box, &ch[0])) {
+  clear_any_old_text(block_list);
+  while (read_next_box (box_file, &box, &ch[0])) {
     box_count++;
     tgt_char_counts[ch[0]]++;
     row = find_row_of_box (block_list, box, block_id, row_id);
@@ -165,7 +174,7 @@ void apply_boxes(                        //re segement
 void clear_any_old_text(                        //remove correct text
                         BLOCK_LIST *block_list  //real blocks
                        ) {
-  BLOCK_IT block_it(block_list); 
+  BLOCK_IT block_it(block_list);
   ROW_IT row_it;
   WERD_IT word_it;
 
@@ -183,28 +192,18 @@ void clear_any_old_text(                        //remove correct text
 }
 
 
-BOOL8 read_next_box(  //
+BOOL8 read_next_box(FILE* box_file,  //
                     BOX *box,
                     char *ch) {
   char buff[256];                //boxfile read buffer
   char *buffptr = buff;
   STRING box_filename;
-  static FILE *box_file = NULL;
   static INT16 line = 0;
   INT32 x_min;
   INT32 y_min;
   INT32 x_max;
   INT32 y_max;
   INT32 count = 0;
-
-  if (!box_file) {
-    box_filename = imagebasename + ".box";
-    if (!(box_file = fopen (box_filename.string (), "r"))) {
-      CANTOPENFILE.error ("read_next_box", EXIT,
-        "Cant open box file %s %d",
-        box_filename.string (), errno);
-    }
-  }
 
   while (!feof (box_file)) {
     fgets (buff, sizeof (buff) - 1, box_file);
@@ -236,7 +235,7 @@ ROW *find_row_of_box(                         //
                      BOX box,                 //from boxfile
                      INT16 &block_id,
                      INT16 &row_id_to_process) {
-  BLOCK_IT block_it(block_list); 
+  BLOCK_IT block_it(block_list);
   BLOCK *block;
   ROW_IT row_it;
   ROW *row;
@@ -289,7 +288,7 @@ ROW *find_row_of_box(                         //
                   outline_it.forward ()) {
                     outline = outline_it.data ();
                     if (goutline_bounding_box
-                    (outline, polyg).overlap (box)) {
+                    (outline, polyg).major_overlap (box)) {
                       if ((row_to_process == NULL) ||
                       (row_to_process == row)) {
                         row_to_process = row;
@@ -352,7 +351,7 @@ INT16 resegment_box(  //
           !outline_it.cycled_list (); outline_it.forward ()) {
             outline = outline_it.data ();
             if (goutline_bounding_box (outline, polyg).
-            overlap (box)) {
+            major_overlap (box)) {
               if (strlen (word->text ()) > 0) {
                 if (error_count == 0) {
                   error_count = 1;
@@ -496,7 +495,7 @@ void tidy_up(                         //
              char &min_char,
              INT16 &min_samples,
              INT16 &final_labelled_blob_count) {
-  BLOCK_IT block_it(block_list); 
+  BLOCK_IT block_it(block_list);
   ROW_IT row_it;
   ROW *row;
   WERD_IT word_it;
@@ -677,8 +676,8 @@ void report_failed_box(INT16 boxfile_lineno,
 }
 
 
-void apply_box_training(BLOCK_LIST *block_list) { 
-  BLOCK_IT block_it(block_list); 
+void apply_box_training(BLOCK_LIST *block_list) {
+  BLOCK_IT block_it(block_list);
   ROW_IT row_it;
   ROW *row;
   WERD_IT word_it;
@@ -729,8 +728,8 @@ void apply_box_training(BLOCK_LIST *block_list) {
 }
 
 
-void apply_box_testing(BLOCK_LIST *block_list) { 
-  BLOCK_IT block_it(block_list); 
+void apply_box_testing(BLOCK_LIST *block_list) {
+  BLOCK_IT block_it(block_list);
   ROW_IT row_it;
   ROW *row;
   INT16 row_count = 0;

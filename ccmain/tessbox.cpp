@@ -51,7 +51,7 @@ WERD_CHOICE *tess_segment_pass1(                           //recog one word
     if (word->flag (W_REP_CHAR))
       permute_only_top = 1;
   }
-  set_pass1(); 
+  set_pass1();
   //      tprintf("pass1 chop on=%d, seg=%d, onlytop=%d",chop_enable,enable_assoc,permute_only_top);
   result = recog_word (word, denorm, matcher, NULL, NULL, FALSE,
     raw_choice, blob_choices, outword);
@@ -90,7 +90,7 @@ WERD_CHOICE *tess_segment_pass2(                           //recog one word
     if (word->flag (W_REP_CHAR))
       permute_only_top = 1;
   }
-  set_pass2(); 
+  set_pass2();
   result = recog_word (word, denorm, matcher, NULL, NULL, FALSE,
     raw_choice, blob_choices, outword);
   if (word->flag (W_DONT_CHOP)) {
@@ -121,7 +121,7 @@ WERD_CHOICE *correct_segment_pass2(                           //recog one word
                                    BLOB_CHOICE_LIST_CLIST *blob_choices,
                                    WERD *&outword             //bln word output
                                   ) {
-  set_pass2(); 
+  set_pass2();
   return recog_word (word, denorm, matcher, NULL, tester, TRUE,
     raw_choice, blob_choices, outword);
 }
@@ -144,7 +144,7 @@ WERD_CHOICE *test_segment_pass2(                           //recog one word
                                 BLOB_CHOICE_LIST_CLIST *blob_choices,
                                 WERD *&outword             //bln word output
                                ) {
-  set_pass2(); 
+  set_pass2();
   return recog_word (word, denorm, matcher, tester, NULL, TRUE,
     raw_choice, blob_choices, outword);
 }
@@ -191,7 +191,7 @@ BOOL8 tess_adaptable_word(                           //test adaptability
   tessword = make_tess_word (word, NULL);
   result = AdaptableWord (tessword, word_choice->string ().string (),
     raw_choice->string ().string ());
-  delete_word(tessword); 
+  delete_word(tessword);
   return result != 0;
 }
 
@@ -220,12 +220,12 @@ void tess_cn_matcher(                           //call tess
                                  //convert blob
   tessblob = make_tess_blob (blob, TRUE);
                                  //make dummy row
-  make_tess_row(denorm, &tessrow); 
+  make_tess_row(denorm, &tessrow);
                                  //classify
   result = AdaptiveClassifier (tessblob, NULL, &tessrow);
-  free_blob(tessblob); 
+  free_blob(tessblob);
                                  //make our format
-  convert_choice_list(result, ratings); 
+  convert_choice_list(result, ratings);
 }
 
 
@@ -253,12 +253,12 @@ void tess_bn_matcher(                           //call tess
                                  //convert blob
   tessblob = make_tess_blob (blob, TRUE);
                                  //make dummy row
-  make_tess_row(denorm, &tessrow); 
+  make_tess_row(denorm, &tessrow);
                                  //classify
   result = AdaptiveClassifier (tessblob, NULL, &tessrow);
-  free_blob(tessblob); 
+  free_blob(tessblob);
                                  //make our format
-  convert_choice_list(result, ratings); 
+  convert_choice_list(result, ratings);
 }
 
 
@@ -285,12 +285,12 @@ void tess_default_matcher(                           //call tess
                                  //convert blob
   tessblob = make_tess_blob (blob, TRUE);
                                  //make dummy row
-  make_tess_row(denorm, &tessrow); 
+  make_tess_row(denorm, &tessrow);
                                  //classify
   result = AdaptiveClassifier (tessblob, NULL, &tessrow);
-  free_blob(tessblob); 
+  free_blob(tessblob);
                                  //make our format
-  convert_choice_list(result, ratings); 
+  convert_choice_list(result, ratings);
 }
 
 
@@ -312,16 +312,16 @@ void tess_training_tester(                           //call tess
   TEXTROW tessrow;               //dummy row
 
   if (correct) {
-    NormMethod = 1;              //Force char norm spc 30/11/93
+    NormMethod = character;              //Force char norm spc 30/11/93
     tess_bn_matching = FALSE;    //turn it off
     tess_cn_matching = FALSE;
                                  //convert blob
     tessblob = make_tess_blob (blob, TRUE);
                                  //make dummy row
-    make_tess_row(denorm, &tessrow); 
+    make_tess_row(denorm, &tessrow);
                                  //learn it
-    LearnBlob(tessblob, &tessrow, text, count); 
-    free_blob(tessblob); 
+    LearnBlob(tessblob, &tessrow, text, count);
+    free_blob(tessblob);
   }
 }
 
@@ -343,10 +343,10 @@ void tess_adapter(                         //adapt to word
   static TEXTROW tessrow;        //dummy row
 
                                  //make dummy row
-  make_tess_row(denorm, &tessrow); 
+  make_tess_row(denorm, &tessrow);
                                  //make a word
   tessword = make_tess_word (word, &tessrow);
-  AdaptToWord(tessword, &tessrow, string, raw_string, rejmap); 
+  AdaptToWord(tessword, &tessrow, string, raw_string, rejmap);
   //adapt to it
   delete_word(tessword);  //free it
 }
@@ -366,5 +366,5 @@ void tess_add_doc_word(                          //test acceptability
   choice.rating = word_choice->rating ();
   choice.certainty = word_choice->certainty ();
   choice.string = (char *) word_choice->string ().string ();
-  add_document_word(&choice); 
+  add_document_word(&choice);
 }

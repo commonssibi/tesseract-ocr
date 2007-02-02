@@ -30,13 +30,12 @@ extern INT_VAR_H (applybox_debug, 0, "Debug level");
 extern STRING_VAR_H (applybox_test_exclusions, "|",
 "Chars ignored for testing");
 extern double_VAR_H (applybox_error_band, 0.15, "Err band as fract of xht");
-void apply_boxes(                        //re segement
-                 BLOCK_LIST *block_list  //real blocks
+void apply_boxes(BLOCK_LIST *block_list    //real blocks
                 );
 void clear_any_old_text(                        //remove correct text
                         BLOCK_LIST *block_list  //real blocks
                        );
-BOOL8 read_next_box(  //
+BOOL8 read_next_box(FILE* box_file,  //
                     BOX *box,
                     char *ch);
 ROW *find_row_of_box(                         //
@@ -67,6 +66,6 @@ void report_failed_box(INT16 boxfile_lineno,
                        BOX box,
                        char *box_ch,
                        const char *err_msg);
-void apply_box_training(BLOCK_LIST *block_list); 
-void apply_box_testing(BLOCK_LIST *block_list); 
+void apply_box_training(BLOCK_LIST *block_list);
+void apply_box_testing(BLOCK_LIST *block_list);
 #endif
