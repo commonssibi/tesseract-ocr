@@ -26,7 +26,7 @@
               I n c l u d e s
 ----------------------------------------------------------------------*/
 #include "dawg.h"
-#include "util.h"
+#include "cutil.h"
 #include "callcpp.h"
 #include "context.h"
 #include "strngs.h"
@@ -72,13 +72,13 @@ EDGE_REF edge_char_of(EDGE_ARRAY dawg,
  * Count the number of edges in this node in the DAWG. This includes
  * both forward and back links.
  **********************************************************************/
-INT32 edges_in_node(EDGE_ARRAY dawg, NODE_REF node) { 
+INT32 edges_in_node(EDGE_ARRAY dawg, NODE_REF node) {
   EDGE_REF   edge = node;
 
   if (edge_occupied (dawg, edge)) {
-    edge_loop(dawg, edge); 
+    edge_loop(dawg, edge);
     if (edge_occupied (dawg, edge) && backward_edge (dawg, edge)) {
-      edge_loop(dawg, edge); 
+      edge_loop(dawg, edge);
       return (edge - node);
     }
     else {
@@ -180,7 +180,7 @@ INT32 letter_is_okay(EDGE_ARRAY dawg,
  *
  * Count and return the number of forward edges for this node.
  **********************************************************************/
-INT32 num_forward_edges(EDGE_ARRAY dawg, NODE_REF node) { 
+INT32 num_forward_edges(EDGE_ARRAY dawg, NODE_REF node) {
   EDGE_REF   edge = node;
   INT32        num  = 0;
 
@@ -199,7 +199,7 @@ INT32 num_forward_edges(EDGE_ARRAY dawg, NODE_REF node) {
  *
  * Print the contents of one of the nodes in the DAWG.
  **********************************************************************/
-void print_dawg_node(EDGE_ARRAY dawg, NODE_REF node) { 
+void print_dawg_node(EDGE_ARRAY dawg, NODE_REF node) {
   EDGE_REF   edge = node;
   const char       *forward_string  = "FORWARD";
   const char       *backward_string = "       ";
@@ -258,7 +258,7 @@ void print_dawg_node(EDGE_ARRAY dawg, NODE_REF node) {
   else {
     cprintf ("%5d : no edges in this node\n", node);
   }
-  new_line(); 
+  new_line();
 }
 
 
@@ -267,7 +267,7 @@ void print_dawg_node(EDGE_ARRAY dawg, NODE_REF node) {
  *
  * Write the DAWG out to a file
  **********************************************************************/
-void read_squished_dawg(char *filename, EDGE_ARRAY dawg, INT32 max_num_edges) { 
+void read_squished_dawg(char *filename, EDGE_ARRAY dawg, INT32 max_num_edges) {
   FILE       *file;
   EDGE_REF   edge;
   INT32      num_edges;
@@ -275,19 +275,33 @@ void read_squished_dawg(char *filename, EDGE_ARRAY dawg, INT32 max_num_edges) {
 
   if (debug) print_string ("read_debug");
 
-  clear_all_edges(dawg, edge, max_num_edges); 
+  clear_all_edges(dawg, edge, max_num_edges);
 
   #ifdef __UNIX__
   file = open_file (filename, "r");
   #else
   file = open_file (filename, "rb");
   #endif
-  fread (&num_edges,  sizeof (int),      1, file);
-  if (__NATIVE__==INTEL)
-    reverse32(&num_edges); 
+  fseek(file, 0, SEEK_END);
+  long fsize = ftell(file);
+  rewind(file);
+  fread (&num_edges,  sizeof (int), 1, file);
+  // Auto-detect relative endianness of file and OS as future DAWG
+  // files may be little-endian.
+  long diff1 = sizeof(EDGE_RECORD)*num_edges + sizeof(int) - fsize;
+  reverse32(&num_edges);
+  long diff2 = sizeof(EDGE_RECORD)*num_edges + sizeof(int) - fsize;
+  reverse32(&num_edges);
+  // One of diff1 and diff2 should now be 0, but find the smallest
+  // just in case.
+  if (diff1 < 0) diff1 = -diff1;
+  if (diff2 < 0) diff2 = -diff2;
+  bool swap = diff2 < diff1;
+  if (swap)
+    reverse32(&num_edges);
   fread (&dawg[0], sizeof (EDGE_RECORD), num_edges, file);
-  fclose(file); 
-  if (__NATIVE__==INTEL)
+  fclose(file);
+  if (swap)
     for (edge=0;edge<num_edges;edge++)
       reverse32(&dawg[edge]);
 
@@ -303,7 +317,7 @@ void read_squished_dawg(char *filename, EDGE_ARRAY dawg, INT32 max_num_edges) {
  * string of trailing puntuation.  TRUE is returned if everything is
  * OK.
  **********************************************************************/
-INT32 verify_trailing_punct(EDGE_ARRAY dawg, char *word, INT32 char_index) { 
+INT32 verify_trailing_punct(EDGE_ARRAY dawg, char *word, INT32 char_index) {
   char       last_char;
   char       *first_char;
 
@@ -329,7 +343,7 @@ INT32 verify_trailing_punct(EDGE_ARRAY dawg, char *word, INT32 char_index) {
  *
  * Test to see if the word can be found in the DAWG.
  **********************************************************************/
-INT32 word_in_dawg(EDGE_ARRAY dawg, const char *string) { 
+INT32 word_in_dawg(EDGE_ARRAY dawg, const char *string) {
   NODE_REF   node = 0;
   INT32        i;
   INT32         length;
@@ -339,8 +353,8 @@ INT32 word_in_dawg(EDGE_ARRAY dawg, const char *string) {
     return FALSE;
   for (i=0; i<length; i++) {
     if (debug) {
-      print_dawg_node(dawg, node); 
-      new_line(); 
+      print_dawg_node(dawg, node);
+      new_line();
     }
 
     if (! letter_is_okay (dawg, &node, i,'\0', string, (string[i+1]==0))) {
