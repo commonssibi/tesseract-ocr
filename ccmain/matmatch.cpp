@@ -262,10 +262,12 @@ float match1(  /* returns match score */
     }
   }
 
+#ifndef GRAPHICS_DISABLED
   if (tessedit_display_mm && !tessedit_mm_use_prototypes) {
     tprintf ("Match score %f\n", 1.0 - sum / (x_size * y_size));
     display_images(image_w, image_n, &match_image); 
   }
+#endif
 
   if (tessedit_mm_debug)
     tprintf ("Match score %f\n", 1.0 - sum / (x_size * y_size));
@@ -281,6 +283,7 @@ float match1(  /* returns match score */
  *
  *************************************************************************/
 
+#ifndef GRAPHICS_DISABLED
 void display_images(IMAGE *image_w, IMAGE *image_n, IMAGE *match_image) { 
   WINDOW w_im_window;
   WINDOW n_im_window;
@@ -398,3 +401,4 @@ WINDOW display_image(IMAGE *image,
 
   return im_window;
 }
+#endif

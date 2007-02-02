@@ -21,8 +21,9 @@
 #include          "tessvars.h"
 #ifdef __UNIX__
 #include          <assert.h>
-#include                    <errno.h>
+#include          <errno.h>
 #endif
+#include          "scanutils.h"
 #include          <ctype.h>
 #include          <string.h>
 //#include                                      "tessbox.h"
@@ -816,20 +817,12 @@ BOOL8 word_contains_non_1_digit(const char *word) {
 
 BOOL8 test_ambig_word(  //test for ambiguity
                       WERD_RES *word) {
-  char temp_word[80];
   BOOL8 ambig = FALSE;
 
   if ((word->best_choice->permuter () == SYSTEM_DAWG_PERM) ||
     (word->best_choice->permuter () == FREQ_DAWG_PERM) ||
   (word->best_choice->permuter () == USER_DAWG_PERM)) {
-    strcpy (temp_word, word->best_choice->string ().string ());
-    ambig =
-      ambig_word (word->best_choice->string ().string (), temp_word, 0);
-    #ifndef SECURE_NAMES
-    if (ambig && tessedit_rejection_debug)
-      tprintf ("\nDICTIONARY AMBIGUITY \"%s\"->\"%s\"\n",
-        word->best_choice->string ().string (), temp_word);
-    #endif
+    ambig = !NoDangerousAmbig(word->best_choice->string().string(), NULL);
   }
   return ambig;
 }
@@ -922,7 +915,7 @@ const char *char_ambiguities(char c) {
   return NULL;
 }
 
-
+#ifndef EMBEDDED
 void test_ambigs(const char *word) {
   char orig_word[80];
   char temp_word[80];
@@ -945,7 +938,7 @@ void test_ambigs(const char *word) {
     }
   }
 }
-
+#endif
 
 /*************************************************************************
  * nn_recover_rejects()
@@ -1010,7 +1003,9 @@ void nn_match_word(  //Match a word
   PIXROW_IT pixrow_it;
   IMAGELINE *imlines;            //lines of the image
   BOX pix_box;                   //box of imlines extent
+#ifndef GRAPHICS_DISABLED
   WINDOW win = NULL;
+#endif
   IMAGE clip_image;
   IMAGE scaled_image;
   float baseline_pos;
@@ -1085,10 +1080,12 @@ void nn_match_word(  //Match a word
     Get the image of the word and the pix positions of each char
   */
   char_clip_word(&copy_outword, page_image, pixrow_list, imlines, pix_box);
+#ifndef GRAPHICS_DISABLED
   if (show_char_clipping) {
     win = display_clip_image (&copy_outword, page_image,
       pixrow_list, pix_box);
   }
+#endif
   pixrow_it.set_to_list (pixrow_list);
   pixrow_it.move_to_first ();
   for (pixrow_it.mark_cycle_pt (), i = 0;
@@ -1125,9 +1122,10 @@ void nn_match_word(  //Match a word
                                  //un-reject char
         word->reject_map[i].setrej_nn_accept ();
     }
-
+#ifndef GRAPHICS_DISABLED
     if (show_char_clipping)
       display_images(clip_image, scaled_image);
+#endif
     clip_image.destroy ();
     scaled_image.destroy ();
   }
@@ -1135,9 +1133,11 @@ void nn_match_word(  //Match a word
   delete[]imlines;               // Free array of imlines
   delete pixrow_list;
 
+#ifndef GRAPHICS_DISABLED
   if (show_char_clipping) {
     destroy_window(win);
   }
+#endif
 }
 
 
