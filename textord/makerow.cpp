@@ -36,6 +36,7 @@
 
 #define EXTERN
 
+EXTERN BOOL_VAR (textord_heavy_nr, FALSE, "Vigorously remove noise");
 EXTERN BOOL_VAR (textord_show_initial_rows, FALSE,
 "Display row accumulation");
 EXTERN BOOL_VAR (textord_show_parallel_rows, FALSE,
@@ -143,7 +144,7 @@ float make_rows(                             //make rows
   make_initial_textrows (page_tr, block_it.data (), FCOORD (1.0f, 0.0f),
       !(BOOL8) textord_test_landscape);
                                  //compute globally
-  compute_page_skew(port_blocks, port_m, port_err); 
+  compute_page_skew(port_blocks, port_m, port_err);
   //      compute_page_skew(land_blocks,land_m,land_err);                 //compute globally
   //      tprintf("Portrait skew gradient=%g, error=%g.\n",
   //              port_m,port_err);
@@ -179,18 +180,22 @@ void make_initial_textrows(                  //find lines
                            FCOORD rotation,  //for drawing
                            BOOL8 testing_on  //correct orientation
                           ) {
-  COLOUR colour;                 //of row
   TO_ROW_IT row_it = block->get_rows ();
+
+#ifndef GRAPHICS_DISABLED
+  COLOUR colour;                 //of row
 
   if (textord_show_initial_rows && testing_on) {
     if (to_win == NO_WINDOW)
-      create_to_win(page_tr); 
+      create_to_win(page_tr);
   }
+#endif
                                  //guess skew
   assign_blobs_to_rows (block, NULL, 0, TRUE, TRUE, textord_show_initial_rows && testing_on);
   row_it.move_to_first ();
   for (row_it.mark_cycle_pt (); !row_it.cycled_list (); row_it.forward ())
     fit_lms_line (row_it.data ());
+#ifndef GRAPHICS_DISABLED
   if (textord_show_initial_rows && testing_on) {
     colour = RED;
     for (row_it.mark_cycle_pt (); !row_it.cycled_list (); row_it.forward ()) {
@@ -200,6 +205,7 @@ void make_initial_textrows(                  //find lines
         colour = RED;
     }
   }
+#endif
 }
 
 
@@ -317,10 +323,146 @@ void compute_page_skew(                        //get average gradient
   row_index = choose_nth_item ((INT32) (row_count * textord_skew_ile),
     errors, row_count);
   page_err = errors[row_index];
-  free_mem(gradients); 
-  free_mem(errors); 
+  free_mem(gradients);
+  free_mem(errors);
 }
 
+const double kNoiseSize = 0.5;  // Fraction of xheight.
+const int kMinSize = 8;  // Min pixels to be xheight.
+
+// Return true if the dot looks like it is part of the i.
+// Doesn't work for any other diacritical.
+static bool dot_of_i(BLOBNBOX* dot, BLOBNBOX* i, TO_ROW* row) {
+  const BOX& ibox = i->bounding_box();
+  const BOX& dotbox = dot->bounding_box();
+
+  // Must overlap horizontally by enough and be high enough.
+  int overlap = MIN(dotbox.right(), ibox.right()) -
+                MAX(dotbox.left(), ibox.left());
+  if (ibox.height() <= 2 * dotbox.height() ||
+      (overlap * 2 < ibox.width() && overlap < dotbox.width()))
+    return false;
+
+  // If the i is tall and thin then it is good.
+  if (ibox.height() > ibox.width() * 2)
+    return true;  // The i or ! must be tall and thin.
+
+  // It might still be tall and thin, but it might be joined to something.
+  // So search the outline for a piece of large height close to the edges
+  // of the dot.
+  const double kHeightFraction = 0.6;
+  double target_height = MIN(dotbox.bottom(), ibox.top());
+  target_height -= row->line_m()*dotbox.left() + row->line_c();
+  target_height *= kHeightFraction;
+  int left_min = dotbox.left() - dotbox.width();
+  int middle = (dotbox.left() + dotbox.right())/2;
+  int right_max = dotbox.right() + dotbox.width();
+  int left_miny = 0;
+  int left_maxy = 0;
+  int right_miny = 0;
+  int right_maxy = 0;
+  bool found_left = false;
+  bool found_right = false;
+  bool in_left = false;
+  bool in_right = false;
+  C_BLOB* blob = i->cblob();
+  C_OUTLINE_IT o_it = blob->out_list();
+  for (o_it.mark_cycle_pt(); !o_it.cycled_list(); o_it.forward()) {
+    C_OUTLINE* outline = o_it.data();
+    int length = outline->pathlength();
+    ICOORD pos = outline->start_pos();
+    for (int step = 0; step < length; pos += outline->step(step++)) {
+      int x = pos.x();
+      int y = pos.y();
+      if (x >= left_min && x < middle && !found_left) {
+        // We are in the left part so find min and max y.
+        if (in_left) {
+          if (y > left_maxy) left_maxy = y;
+          if (y < left_miny) left_miny = y;
+        } else {
+          left_maxy = left_miny = y;
+          in_left = true;
+        }
+      } else if (in_left) {
+        // We just left the left so look for size.
+        if (left_maxy - left_miny > target_height) {
+          if (found_right)
+            return true;
+          found_left = true;
+        }
+        in_left = false;
+      }
+      if (x <= right_max && x > middle && !found_right) {
+        // We are in the right part so find min and max y.
+        if (in_right) {
+          if (y > right_maxy) right_maxy = y;
+          if (y < right_miny) right_miny = y;
+        } else {
+          right_maxy = right_miny = y;
+          in_right = true;
+        }
+      } else if (in_right) {
+        // We just left the right so look for size.
+        if (right_maxy - right_miny > target_height) {
+          if (found_left)
+            return true;
+          found_right = true;
+        }
+        in_right = false;
+      }
+    }
+  }
+  return false;
+}
+
+static void vigorous_noise_removal(TO_BLOCK* block) {
+  TO_ROW_IT row_it = block->get_rows ();
+  for (row_it.mark_cycle_pt (); !row_it.cycled_list (); row_it.forward ()) {
+    TO_ROW* row = row_it.data();
+    BLOBNBOX_IT b_it = row->blob_list();
+    // Estimate the xheight on the row.
+    int max_height = 0;
+    for (b_it.mark_cycle_pt(); !b_it.cycled_list(); b_it.forward()) {
+      BLOBNBOX* blob = b_it.data();
+      if (blob->bounding_box().height() > max_height)
+        max_height = blob->bounding_box().height();
+    }
+    STATS hstats(0, max_height + 1);
+    for (b_it.mark_cycle_pt(); !b_it.cycled_list(); b_it.forward()) {
+      BLOBNBOX* blob = b_it.data();
+      int height = blob->bounding_box().height();
+      if (height >= kMinSize)
+        hstats.add(blob->bounding_box().height(), 1);
+    }
+    float xheight = hstats.median();
+    // Delete small objects.
+    BLOBNBOX* prev = NULL;
+    for (b_it.mark_cycle_pt(); !b_it.cycled_list(); b_it.forward()) {
+      BLOBNBOX* blob = b_it.data();
+      const BOX& box = blob->bounding_box();
+      if (box.height() < kNoiseSize * xheight) {
+        // Small so delete unless it looks like an i dot.
+        if (prev != NULL) {
+          if (dot_of_i(blob, prev, row))
+            continue;  // Looks OK.
+        }
+        if (!b_it.at_last()) {
+          BLOBNBOX* next = b_it.data_relative(1);
+          if (dot_of_i(blob, next, row))
+            continue;  // Looks OK.
+        }
+        // It might be noise so get rid of it.
+        if (blob->blob() != NULL)
+          delete blob->blob();
+        if (blob->cblob() != NULL)
+          delete blob->cblob();
+        delete b_it.extract();
+      } else {
+        prev = blob;
+      }
+    }
+  }
+}
 
 /**********************************************************************
  * cleanup_rows
@@ -340,10 +482,12 @@ void cleanup_rows(                   //find lines
   BLOBNBOX_IT blob_it = &block->blobs;
   TO_ROW_IT row_it = block->get_rows ();
 
+#ifndef GRAPHICS_DISABLED
   if (textord_show_parallel_rows && testing_on) {
     if (to_win == NO_WINDOW)
-      create_to_win(page_tr); 
+      create_to_win(page_tr);
   }
+#endif
                                  //get row coords
   fit_parallel_rows(block,
                     gradient,
@@ -355,7 +499,7 @@ void cleanup_rows(                   //find lines
                           rotation,
                           block_edge,
                           textord_show_parallel_rows &&testing_on);
-  expand_rows(page_tr, block, gradient, rotation, block_edge, testing_on); 
+  expand_rows(page_tr, block, gradient, rotation, block_edge, testing_on);
   blob_it.set_to_list (&block->blobs);
   row_it.set_to_list (block->get_rows ());
   for (row_it.mark_cycle_pt (); !row_it.cycled_list (); row_it.forward ())
@@ -376,15 +520,21 @@ void cleanup_rows(                   //find lines
   row_it.set_to_list (block->get_rows ());
   for (row_it.mark_cycle_pt (); !row_it.cycled_list (); row_it.forward ())
     row_it.data ()->blob_list ()->sort (blob_x_order);
-  fit_parallel_rows(block, gradient, rotation, block_edge, FALSE); 
-  separate_underlines(block, gradient, rotation, testing_on); 
-  pre_associate_blobs(page_tr, block, rotation, testing_on); 
+  fit_parallel_rows(block, gradient, rotation, block_edge, FALSE);
+  if (textord_heavy_nr) {
+    vigorous_noise_removal(block);
+  }
+  separate_underlines(block, gradient, rotation, testing_on);
+  pre_associate_blobs(page_tr, block, rotation, testing_on);
 
+#ifndef GRAPHICS_DISABLED
   if (textord_show_final_rows && testing_on) {
     if (to_win == NO_WINDOW)
-      create_to_win(page_tr); 
+      create_to_win(page_tr);
   }
-  fit_parallel_rows(block, gradient, rotation, block_edge, FALSE); 
+#endif
+
+  fit_parallel_rows(block, gradient, rotation, block_edge, FALSE);
   //              textord_show_final_rows && testing_on);
   make_spline_rows(block,
                    gradient,
@@ -392,10 +542,11 @@ void cleanup_rows(                   //find lines
                    block_edge,
                    textord_show_final_rows &&testing_on);
   if (!textord_old_xheight || !textord_old_baselines)
-    compute_block_xheight(block, gradient); 
+    compute_block_xheight(block, gradient);
   if (textord_restore_underlines)
                                  //fix underlines
-    restore_underlined_blobs(block); 
+    restore_underlined_blobs(block);
+#ifndef GRAPHICS_DISABLED
   if (textord_show_final_rows && testing_on) {
     plot_blob_list (to_win, &block->blobs, MAGENTA, WHITE);
     //show discarded blobs
@@ -404,8 +555,9 @@ void cleanup_rows(                   //find lines
   if (textord_show_final_rows && testing_on && block->blobs.length () > 0)
     tprintf ("%d blobs discarded as noise\n", block->blobs.length ());
   if (textord_show_final_rows && testing_on) {
-    draw_meanlines(block, gradient, block_edge, WHITE, rotation); 
+    draw_meanlines(block, gradient, block_edge, WHITE, rotation);
   }
+#endif
 }
 
 
@@ -458,7 +610,7 @@ void delete_non_dropout_rows(                   //find lines
   if (deltas == NULL || occupation == NULL)
     MEMORY_OUT.error ("compute_line_spacing", ABORT, NULL);
 
-  compute_line_occupation(block, gradient, min_y, max_y, occupation, deltas); 
+  compute_line_occupation(block, gradient, min_y, max_y, occupation, deltas);
   compute_occupation_threshold ((INT32)
     ceil (block->line_spacing *
     (textord_merge_desc +
@@ -467,18 +619,22 @@ void delete_non_dropout_rows(                   //find lines
     (textord_merge_x +
     textord_merge_asc)),
     max_y - min_y + 1, occupation, deltas);
+#ifndef GRAPHICS_DISABLED
   if (testing_on) {
-    draw_occupation(xleft, ybottom, min_y, max_y, occupation, deltas); 
+    draw_occupation(xleft, ybottom, min_y, max_y, occupation, deltas);
   }
-  compute_dropout_distances(occupation, deltas, line_count); 
+#endif
+  compute_dropout_distances(occupation, deltas, line_count);
   for (row_it.mark_cycle_pt (); !row_it.cycled_list (); row_it.forward ()) {
     row = row_it.data ();
     line_index = (INT32) floor (row->intercept ());
     distance = deltas[line_index - min_y];
     if (find_best_dropout_row (row, distance, block->line_spacing / 2,
     line_index, &row_it, testing_on)) {
+#ifndef GRAPHICS_DISABLED
       if (testing_on)
-        plot_parallel_row(row, gradient, block_edge, WHITE, rotation); 
+        plot_parallel_row(row, gradient, block_edge, WHITE, rotation);
+#endif
       blob_it.add_list_after (row_it.data ()->blob_list ());
       delete row_it.extract ();  //too far away
     }
@@ -487,8 +643,8 @@ void delete_non_dropout_rows(                   //find lines
     blob_it.add_list_after (row_it.data ()->blob_list ());
   }
 
-  free_mem(deltas); 
-  free_mem(occupation); 
+  free_mem(deltas);
+  free_mem(occupation);
 }
 
 
@@ -828,15 +984,18 @@ void expand_rows(                   //find lines
   BLOBNBOX_IT blob_it = &block->blobs;
   TO_ROW_IT row_it = block->get_rows ();
 
+#ifndef GRAPHICS_DISABLED
   if (textord_show_expanded_rows && testing_on) {
     if (to_win == NO_WINDOW)
-      create_to_win(page_tr); 
+      create_to_win(page_tr);
   }
+#endif
+
   adjust_row_limits(block);  //shift min,max.
   if (textord_new_initial_xheight) {
     if (block->get_rows ()->length () == 0)
       return;
-    compute_row_stats(block, textord_show_expanded_rows &&testing_on); 
+    compute_row_stats(block, textord_show_expanded_rows &&testing_on);
   }
   assign_blobs_to_rows (block, &gradient, 4, TRUE, FALSE, FALSE);
   //get real membership
@@ -848,7 +1007,7 @@ void expand_rows(                   //find lines
                     block_edge,
                     textord_show_expanded_rows &&testing_on);
   if (!textord_new_initial_xheight)
-    compute_row_stats(block, textord_show_expanded_rows &&testing_on); 
+    compute_row_stats(block, textord_show_expanded_rows &&testing_on);
   row_it.move_to_last ();
   do {
     row = row_it.data ();
@@ -868,12 +1027,14 @@ void expand_rows(                   //find lines
         if (test_row->max_y () > y_bottom) {
           if (test_row->min_y () > y_bottom) {
             row_it.forward ();
+#ifndef GRAPHICS_DISABLED
             if (textord_show_expanded_rows && testing_on)
               plot_parallel_row(test_row,
                                 gradient,
                                 block_edge,
                                 WHITE,
                                 rotation);
+#endif
             blob_it.set_to_list (row->blob_list ());
             blob_it.add_list_after (test_row->blob_list ());
                                  //swallow complete row
@@ -900,12 +1061,14 @@ void expand_rows(                   //find lines
           if (test_row->max_y () < y_top) {
             row_it.backward ();
             blob_it.set_to_list (row->blob_list ());
+#ifndef GRAPHICS_DISABLED
             if (textord_show_expanded_rows && testing_on)
               plot_parallel_row(test_row,
                                 gradient,
                                 block_edge,
                                 WHITE,
                                 rotation);
+#endif
             blob_it.add_list_after (test_row->blob_list ());
                                  //swallow complete row
             delete row_it.extract ();
@@ -1044,7 +1207,7 @@ void compute_row_stats(                  //find lines
   if (testing_on)
     tprintf ("\nEstimate line size=%g, spacing=%g, offset=%g\n",
       block->line_size, block->line_spacing, block->baseline_offset);
-  free_mem(rows); 
+  free_mem(rows);
 }
 
 
@@ -1186,7 +1349,7 @@ float median_block_xheight(                  //find lines
   blob_count = blob_index;
   blob_index = choose_nth_item (blob_count / 2, heights, blob_count);
   result = heights[blob_index];
-  free_mem(heights); 
+  free_mem(heights);
   return result;
 }
 
@@ -1571,7 +1734,9 @@ void pre_associate_blobs(                  //make rough chars
                          FCOORD rotation,  //inverse landscape
                          BOOL8 testing_on  //correct orientation
                         ) {
+#ifndef GRAPHICS_DISABLED
   COLOUR colour;                 //of boxes
+#endif
   INT16 overlap;                 //of adjacent boxes
   BLOBNBOX *blob;                //current blob
   BLOBNBOX *nextblob;            //next in list
@@ -1582,7 +1747,10 @@ void pre_associate_blobs(                  //make rough chars
   BLOBNBOX_IT start_it;          //iterator
   TO_ROW_IT row_it = block->get_rows ();
 
+#ifndef GRAPHICS_DISABLED
   colour = RED;
+#endif
+
   blob_rotation = FCOORD (rotation.x (), -rotation.y ());
   for (row_it.mark_cycle_pt (); !row_it.cycled_list (); row_it.forward ()) {
                                  //get blobs
@@ -1629,11 +1797,12 @@ void pre_associate_blobs(                  //make rough chars
         textord_chop_width);
       //attempt chop
     }
+#ifndef GRAPHICS_DISABLED
     if (testing_on && textord_show_final_blobs) {
       if (to_win == NO_WINDOW)
-        create_to_win(page_tr); 
-      perimeter_color_index(to_win, colour); 
-      interior_style(to_win, INT_HOLLOW, TRUE); 
+        create_to_win(page_tr);
+      perimeter_color_index(to_win, colour);
+      interior_style(to_win, INT_HOLLOW, TRUE);
       for (blob_it.mark_cycle_pt (); !blob_it.cycled_list ();
       blob_it.forward ()) {
         blob = blob_it.data ();
@@ -1648,6 +1817,7 @@ void pre_associate_blobs(                  //make rough chars
       if (colour > MAGENTA)
         colour = RED;
     }
+#endif
   }
 }
 
@@ -1665,7 +1835,9 @@ void fit_parallel_rows(                   //find lines
                        INT32 block_edge,  //edge of block
                        BOOL8 testing_on   //correct orientation
                       ) {
+#ifndef GRAPHICS_DISABLED
   COLOUR colour;                 //of row
+#endif
   TO_ROW_IT row_it = block->get_rows ();
 
   row_it.move_to_first ();
@@ -1675,6 +1847,7 @@ void fit_parallel_rows(                   //find lines
     else
       fit_parallel_lms (gradient, row_it.data ());
   }
+#ifndef GRAPHICS_DISABLED
   if (testing_on) {
     colour = RED;
     for (row_it.mark_cycle_pt (); !row_it.cycled_list (); row_it.forward ()) {
@@ -1685,6 +1858,7 @@ void fit_parallel_rows(                   //find lines
         colour = RED;
     }
   }
+#endif
   row_it.sort (row_y_order);     //may have gone out of order
 }
 
@@ -1740,7 +1914,9 @@ void make_spline_rows(                   //find lines
                       INT32 block_edge,  //edge of block
                       BOOL8 testing_on   //correct orientation
                      ) {
-  COLOUR colour;                 //of row
+#ifndef GRAPHICS_DISABLED
+  COLOUR colour;       //of row
+#endif
   TO_ROW_IT row_it = block->get_rows ();
 
   row_it.move_to_first ();
@@ -1751,6 +1927,7 @@ void make_spline_rows(                   //find lines
       make_baseline_spline (row_it.data (), block);
   }
   if (textord_old_baselines) {
+#ifndef GRAPHICS_DISABLED
     if (testing_on) {
       colour = RED;
       for (row_it.mark_cycle_pt (); !row_it.cycled_list ();
@@ -1761,8 +1938,10 @@ void make_spline_rows(                   //find lines
           colour = RED;
       }
     }
-    make_old_baselines(block, testing_on); 
+#endif
+    make_old_baselines(block, testing_on);
   }
+#ifndef GRAPHICS_DISABLED
   if (testing_on) {
     colour = RED;
     for (row_it.mark_cycle_pt (); !row_it.cycled_list (); row_it.forward ()) {
@@ -1772,6 +1951,7 @@ void make_spline_rows(                   //find lines
         colour = RED;
     }
   }
+#endif
 }
 
 
@@ -1841,8 +2021,8 @@ void make_baseline_spline(                 //sort function
     coeffs[2] = row->line_c ();
   }
   row->baseline = QSPLINE (segments, xstarts, coeffs);
-  free_mem(coeffs); 
-  free_mem(xstarts); 
+  free_mem(coeffs);
+  free_mem(xstarts);
 }
 
 
@@ -1994,7 +2174,7 @@ INT32 xstarts[]                  //coords of segments
       blobcount, box.left (), box.bottom (), segments, blobs_per_segment);
   segment = 1;
   for (index2 = 0; index2 < blobs_per_segment / 2; index2++)
-    box_next_pre_chopped(&new_it); 
+    box_next_pre_chopped(&new_it);
   index1 = 0;
   blobindex = index2;
   do {
@@ -2079,8 +2259,10 @@ void assign_blobs_to_rows(                      //find lines
     block->block->bounding_box ().top ()) / 2.0f;
   if (gradient != NULL)
     g_length = sqrt (1 + *gradient * *gradient);
+#ifndef GRAPHICS_DISABLED
   if (drawing_skew)
     move2d (to_win, block->block->bounding_box ().left (), ycoord);
+#endif
   testpt = ICOORD (textord_test_x, textord_test_y);
   blob_it.sort (blob_x_order);
   smooth_factor = 1.0;
@@ -2110,8 +2292,10 @@ void assign_blobs_to_rows(                      //find lines
     last_x = blob->bounding_box ().left ();
     top = blob->bounding_box ().top () - block_skew;
     bottom = blob->bounding_box ().bottom () - block_skew;
+#ifndef GRAPHICS_DISABLED
     if (drawing_skew)
       draw2d (to_win, blob->bounding_box ().left (), ycoord + block_skew);
+#endif
     if (!row_it.empty ()) {
       for (row_it.move_to_first ();
         !row_it.at_last () && row_it.data ()->min_y () > top;

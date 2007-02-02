@@ -162,8 +162,10 @@ void to_spacing(                       //set spacing
             block_index, row_index, row->pitch_decision,
             row->fixed_pitch);
       }
+#ifndef GRAPHICS_DISABLED
       if (textord_show_initial_words)
         plot_word_decisions (to_win, (INT16) row->fixed_pitch, row);
+#endif
       row_index++;
     }
     delete gapmap;
@@ -480,7 +482,7 @@ void row_spacing_stats(                                 //estimate for block
   }
 
   if (tosp_improve_thresh && !suspected_table)
-    improve_row_threshold(row, &all_gap_stats); 
+    improve_row_threshold(row, &all_gap_stats);
 
   /* Now lets try to be careful not to do anything silly with tables when we
   are ignoring big gaps*/
@@ -830,7 +832,7 @@ BOOL8 isolated_row_stats(TO_ROW *row,
 }
 
 
-INT16 stats_count_under(STATS *stats, INT16 threshold) { 
+INT16 stats_count_under(STATS *stats, INT16 threshold) {
   INT16 index;
   INT16 total = 0;
 
@@ -856,7 +858,7 @@ INT16 stats_count_under(STATS *stats, INT16 threshold) {
  *          fuzzy limit calculation as at present.
  *************************************************************************/
 
-void improve_row_threshold(TO_ROW *row, STATS *all_gap_stats) { 
+void improve_row_threshold(TO_ROW *row, STATS *all_gap_stats) {
   float sp = row->space_size;
   float kn = row->kern_size;
   INT16 reqd_zero_width = 0;
@@ -1331,9 +1333,11 @@ BOOL8 make_a_word_break(               //decide on word break
     (within_xht_current_gap > row->max_nonspace)) {
       space = TRUE;
       fuzzy_non = TRUE;
+#ifndef GRAPHICS_DISABLED
       mark_gap (blob_box, 20,
         prev_gap, prev_blob_box.width (),
         current_gap, next_blob_box.width (), next_gap);
+#endif
     }
     else if (tosp_use_xht_gaps &&
       (real_current_gap <= row->space_threshold) &&
@@ -1343,17 +1347,21 @@ BOOL8 make_a_word_break(               //decide on word break
         fuzzy_sp = TRUE;
       else
         fuzzy_non = TRUE;
+#ifndef GRAPHICS_DISABLED
       mark_gap (blob_box, 21,
         prev_gap, prev_blob_box.width (),
         current_gap, next_blob_box.width (), next_gap);
+#endif
     }
     else if (tosp_use_xht_gaps &&
       (real_current_gap < row->min_space) &&
     (within_xht_current_gap >= row->min_space)) {
       space = TRUE;
+#ifndef GRAPHICS_DISABLED
       mark_gap (blob_box, 22,
         prev_gap, prev_blob_box.width (),
         current_gap, next_blob_box.width (), next_gap);
+#endif
     }
     /* Now continue with normal heuristics */
     else if ((current_gap < row->min_space) &&
@@ -1381,9 +1389,11 @@ BOOL8 make_a_word_break(               //decide on word break
         }
         else
           space = FALSE;
+#ifndef GRAPHICS_DISABLED
         mark_gap (blob_box, 1,
           prev_gap, prev_blob_box.width (),
           current_gap, next_blob_box.width (), next_gap);
+#endif
       }
       /* If current gap not much bigger than the previous kern the other side of a
       narrow blob then this gap is a kern as well */
@@ -1400,9 +1410,11 @@ BOOL8 make_a_word_break(               //decide on word break
         }
         else
           space = FALSE;
+#ifndef GRAPHICS_DISABLED
         mark_gap (blob_box, 2,
           prev_gap, prev_blob_box.width (),
           current_gap, next_blob_box.width (), next_gap);
+#endif
       }
       else if ((next_blob_box.width () > 0) &&
         narrow_blob (row, next_blob_box) &&
@@ -1417,9 +1429,11 @@ BOOL8 make_a_word_break(               //decide on word break
         }
         else
           space = FALSE;
+#ifndef GRAPHICS_DISABLED
         mark_gap (blob_box, 3,
           prev_gap, prev_blob_box.width (),
           current_gap, next_blob_box.width (), next_gap);
+#endif
       }
       else if ((next_blob_box.width () > 0) &&
         narrow_blob (row, next_blob_box) &&
@@ -1434,18 +1448,22 @@ BOOL8 make_a_word_break(               //decide on word break
         }
         else
           space = FALSE;
+#ifndef GRAPHICS_DISABLED
         mark_gap (blob_box, 4,
           prev_gap, prev_blob_box.width (),
           current_gap, next_blob_box.width (), next_gap);
+#endif
       }
       else if ((((next_blob_box.width () > 0) &&
         narrow_blob (row, next_blob_box)) ||
         ((prev_blob_box.width () > 0) &&
       narrow_blob (row, prev_blob_box)))) {
         fuzzy_sp = TRUE;
+#ifndef GRAPHICS_DISABLED
         mark_gap (blob_box, 6,
           prev_gap, prev_blob_box.width (),
           current_gap, next_blob_box.width (), next_gap);
+#endif
       }
     }
     else if ((current_gap > row->max_nonspace) &&
@@ -1477,9 +1495,11 @@ BOOL8 make_a_word_break(               //decide on word break
           fuzzy_sp = TRUE;
         else
           fuzzy_non = TRUE;
+#ifndef GRAPHICS_DISABLED
         mark_gap (blob_box, 7,
           prev_gap, prev_blob_box.width (),
           current_gap, next_blob_box.width (), next_gap);
+#endif
       }
       else if ((prev_blob_box.width () > 0) &&
         (next_blob_box.width () > 0) &&
@@ -1491,9 +1511,11 @@ BOOL8 make_a_word_break(               //decide on word break
       suspected_punct_blob (row, next_blob_box))) {
         space = TRUE;
         fuzzy_non = TRUE;
+#ifndef GRAPHICS_DISABLED
         mark_gap (blob_box, 8,
           prev_gap, prev_blob_box.width (),
           current_gap, next_blob_box.width (), next_gap);
+#endif
       }
       else if ((tosp_kern_gap_factor3 > 0) &&
         (prev_blob_box.width () > 0) &&
@@ -1505,9 +1527,11 @@ BOOL8 make_a_word_break(               //decide on word break
       !suspected_punct_blob (row, next_blob_box)))) {
         space = TRUE;
         fuzzy_non = TRUE;
+#ifndef GRAPHICS_DISABLED
         mark_gap (blob_box, 9,
           prev_gap, prev_blob_box.width (),
           current_gap, next_blob_box.width (), next_gap);
+#endif
       }
     }
     prev_gap_was_a_space = space && !(fuzzy_non);
@@ -1516,7 +1540,7 @@ BOOL8 make_a_word_break(               //decide on word break
 }
 
 
-BOOL8 narrow_blob(TO_ROW *row, BOX blob_box) { 
+BOOL8 narrow_blob(TO_ROW *row, BOX blob_box) {
   BOOL8 result;
 
   result = ((blob_box.width () <= tosp_narrow_fraction * row->xheight) ||
@@ -1526,7 +1550,7 @@ BOOL8 narrow_blob(TO_ROW *row, BOX blob_box) {
 }
 
 
-BOOL8 wide_blob(TO_ROW *row, BOX blob_box) { 
+BOOL8 wide_blob(TO_ROW *row, BOX blob_box) {
   BOOL8 result;
 
   if (tosp_wide_fraction > 0) {
@@ -1543,7 +1567,7 @@ BOOL8 wide_blob(TO_ROW *row, BOX blob_box) {
 }
 
 
-BOOL8 suspected_punct_blob(TO_ROW *row, BOX box) { 
+BOOL8 suspected_punct_blob(TO_ROW *row, BOX box) {
   BOOL8 result;
   float baseline;
   float blob_x_centre;
@@ -1586,6 +1610,7 @@ void peek_at_next_gap(  //A COPY FOR PEEKING
 }
 
 
+#ifndef GRAPHICS_DISABLED
 void mark_gap(             //Debug stuff
               BOX blob,    //blob following gap
               INT16 rule,  // heuristic id
@@ -1639,12 +1664,12 @@ void mark_gap(             //Debug stuff
       col = BLACK;
   }
   if (textord_show_initial_words) {
-    fill_color_index(to_win, col); 
-    perimeter_color_index(to_win, col); 
+    fill_color_index(to_win, col);
+    perimeter_color_index(to_win, col);
     if (rule < 20)
-      interior_style(to_win, INT_SOLID, FALSE); 
+      interior_style(to_win, INT_SOLID, FALSE);
     else
-      interior_style(to_win, INT_HOLLOW, TRUE); 
+      interior_style(to_win, INT_HOLLOW, TRUE);
                                  //x radius
     ellipse (to_win, current_gap / 2.0f,
       blob.height () / 2.0f,     //y radius
@@ -1660,9 +1685,10 @@ void mark_gap(             //Debug stuff
       prev_gap, prev_blob_width, current_gap,
       next_blob_width, next_gap);
 }
+#endif
 
 
-float find_mean_blob_spacing(WERD *word) { 
+float find_mean_blob_spacing(WERD *word) {
   PBLOB_IT blob_it;
   C_BLOB_IT cblob_it;
   BOX blob_box;
@@ -1778,9 +1804,9 @@ BOX reduced_box_next(                 //get bounding box
     if (blob->blob () == NULL && blob->cblob () == NULL)
                                  //was pre-chopped
       full_box += blob->bounding_box ();
-    if (blob->joined_to_prev ()) {
+    else if (blob->joined_to_prev ()) {
       reduced_box +=
-        reduced_box_for_blob(blob, row, &new_left_above_xht); 
+        reduced_box_for_blob(blob, row, &new_left_above_xht);
       left_above_xht = MIN (left_above_xht, new_left_above_xht);
     }
   }
@@ -1790,8 +1816,10 @@ BOX reduced_box_next(                 //get bounding box
   if ((reduced_box.width () > 0) &&
     ((reduced_box.left () + tosp_near_lh_edge * reduced_box.width ())
   < left_above_xht) && (reduced_box.height () > 0.7 * row->xheight)) {
+#ifndef GRAPHICS_DISABLED
     if (textord_show_initial_words)
       reduced_box.plot (to_win, INT_HOLLOW, TRUE, YELLOW, YELLOW);
+#endif
   }
   else
     reduced_box = full_box;
@@ -1821,7 +1849,7 @@ BOX reduced_box_next(                 //get bounding box
  * find_blob_limits finds the y min and max within a specified x band
  *************************************************************************/
 
-BOX reduced_box_for_blob(BLOBNBOX *blob, TO_ROW *row, INT16 *left_above_xht) { 
+BOX reduced_box_for_blob(BLOBNBOX *blob, TO_ROW *row, INT16 *left_above_xht) {
   float baseline;
   float blob_x_centre;
   float left_limit;

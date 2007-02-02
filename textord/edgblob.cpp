@@ -231,7 +231,9 @@ void OL_BUCKETS::extract_children(                     //recursive count
  **********************************************************************/
 
 void extract_edges(                 //find blobs
+#ifndef GRAPHICS_DISABLED
                    WINDOW window,   //window for output
+#endif
                    IMAGE *image,    //image to scan
                    IMAGE *t_image,  //thresholded image
                    ICOORD page_tr,  //corner of page
@@ -243,7 +245,11 @@ void extract_edges(                 //find blobs
                                  //iterator
   C_OUTLINE_IT out_it = &outlines;
 
+#ifndef GRAPHICS_DISABLED
   get_outlines (window, image, t_image, page_tr, (PDBLK *) block, &out_it);
+#else
+  get_outlines (image, t_image, page_tr, (PDBLK *) block, &out_it);
+#endif
                                  //block box
   block->bounding_box (bleft, tright);
                                  //make blobs

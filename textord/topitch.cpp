@@ -37,6 +37,7 @@
 
 #define EXTERN
 
+EXTERN BOOL_VAR (textord_all_prop, FALSE, "All doc is proportial text");
 EXTERN BOOL_VAR (textord_debug_pitch_test, FALSE,
 "Debug on fixed pitch test");
 EXTERN BOOL_VAR (textord_disable_pitch_test, FALSE,
@@ -83,17 +84,19 @@ void compute_fixed_pitch(                             //determine pitch
   int block_index;               //block number
   int row_index;                 //row number
 
+#ifndef GRAPHICS_DISABLED
   if (textord_show_initial_words && testing_on) {
     if (to_win == NO_WINDOW)
-      create_to_win(page_tr); 
+      create_to_win(page_tr);
   }
+#endif
 
   block_it.set_to_list (port_blocks);
   block_index = 1;
   for (block_it.mark_cycle_pt (); !block_it.cycled_list ();
   block_it.forward ()) {
     block = block_it.data ();
-    compute_block_pitch(block, rotation, block_index, testing_on); 
+    compute_block_pitch(block, rotation, block_index, testing_on);
     block_index++;
   }
 
@@ -103,7 +106,7 @@ void compute_fixed_pitch(                             //determine pitch
     block_it.forward ()) {
       block = block_it.data ();
       if (!try_block_fixed (block, block_index))
-        try_rows_fixed(block, block_index, testing_on); 
+        try_rows_fixed(block, block_index, testing_on);
       block_index++;
     }
   }
@@ -116,20 +119,22 @@ void compute_fixed_pitch(                             //determine pitch
     row_index = 1;
     for (row_it.mark_cycle_pt (); !row_it.cycled_list (); row_it.forward ()) {
       row = row_it.data ();
-      fix_row_pitch(row, block, port_blocks, row_index, block_index); 
+      fix_row_pitch(row, block, port_blocks, row_index, block_index);
       row_index++;
     }
     if (testing_on
       && (textord_debug_pitch_test && block->block->text_region () != NULL
     || textord_blocksall_fixed || textord_blocksall_prop)) {
       tprintf ("Corr:");
-      print_block_counts(block, block_index); 
+      print_block_counts(block, block_index);
     }
     block_index++;
   }
+#ifndef GRAPHICS_DISABLED
   if (textord_show_initial_words && testing_on) {
-    overlap_picture_ops(TRUE); 
+    overlap_picture_ops(TRUE);
   }
+#endif
 }
 
 
@@ -356,9 +361,11 @@ void compute_block_pitch(                    //process each block
   if (!block->get_rows ()->empty ()) {
     ASSERT_HOST (block->xheight > 0);
     if (textord_repeat_extraction)
-      find_repeated_chars(block, textord_show_initial_words &&testing_on); 
+      find_repeated_chars(block, textord_show_initial_words &&testing_on);
+#ifndef GRAPHICS_DISABLED
     if (textord_show_initial_words && testing_on)
-      overlap_picture_ops(TRUE); 
+      overlap_picture_ops(TRUE);
+#endif
     compute_rows_pitch(block,
                        block_index,
                        textord_debug_pitch_test &&testing_on);
@@ -515,9 +522,11 @@ BOOL8 try_doc_fixed(                             //determine pitch
 
   row_it.set_to_list (block_it.data ()->get_rows ());
   row = row_it.data ();
+#ifndef GRAPHICS_DISABLED
   if (textord_show_page_cuts && to_win != NO_WINDOW)
     projection.plot (to_win, projection_left,
       row->intercept (), 1.0f, -1.0f, CORAL);
+#endif
   final_pitch = pitches.ile (0.5);
   pitch = (INT16) final_pitch;
   pitch_sd =
@@ -532,6 +541,7 @@ BOOL8 try_doc_fixed(                             //determine pitch
       pitch_sd / total_row_count, pitch_sd / pitch,
       pitch_sd / total_row_count / pitch);
 
+#ifndef GRAPHICS_DISABLED
   if (textord_show_page_cuts && to_win != NO_WINDOW) {
     master_cells = &row->char_cells;
     for (block_it.mark_cycle_pt (); !block_it.cycled_list ();
@@ -543,10 +553,11 @@ BOOL8 try_doc_fixed(                             //determine pitch
         row = row_it.data ();
         row_y = row->baseline.y (master_x);
         row_shift = shift_factor * (master_y - row_y);
-        plot_row_cells(to_win, GOLDENROD, row, row_shift, master_cells); 
+        plot_row_cells(to_win, GOLDENROD, row, row_shift, master_cells);
       }
     }
   }
+#endif
   row->char_cells.clear ();
   return FALSE;
 }
@@ -617,7 +628,7 @@ BOOL8 try_rows_fixed(                    //find line stats
     && (textord_debug_pitch_test
   || textord_blocksall_prop || textord_blocksall_fixed)) {
     tprintf ("Initially:");
-    print_block_counts(block, block_index); 
+    print_block_counts(block, block_index);
   }
   if (def_fixed > def_prop * textord_words_veto_power)
     block->pitch_decision = PITCH_DEF_FIXED;
@@ -1022,36 +1033,42 @@ BOOL8 fixed_pitch_row(                   //find lines
   non_space = row->fp_nonsp;
   if (non_space > row->fixed_pitch)
     non_space = row->fixed_pitch;
-  pitch_sd = tune_row_pitch (row, &row->projection, row->projection_left,
-    row->projection_right,
-    (row->fixed_pitch + non_space * 3) / 4,
-    row->fixed_pitch, sp_sd, mid_cuts,
-    &row->char_cells,
-    block_index == textord_debug_block);
-  if (pitch_sd < textord_words_pitchsd_threshold * row->fixed_pitch
-    && ((pitsync_linear_version & 3) < 3
-    || (pitsync_linear_version & 3) >= 3 && (row->used_dm_model
-    || sp_sd > 20
-    || pitch_sd == 0
-  && sp_sd > 10))) {
-    if (pitch_sd < textord_words_def_fixed * row->fixed_pitch
-      && !row->all_caps
-      && ((pitsync_linear_version & 3) < 3 || sp_sd > 20))
-      row->pitch_decision = PITCH_DEF_FIXED;
+  if (textord_all_prop) {
+    // Set the decision to definitely proportional.
+    pitch_sd = textord_words_def_prop * row->fixed_pitch;
+    row->pitch_decision = PITCH_DEF_PROP;
+  } else {
+    pitch_sd = tune_row_pitch (row, &row->projection, row->projection_left,
+                               row->projection_right,
+                               (row->fixed_pitch + non_space * 3) / 4,
+                               row->fixed_pitch, sp_sd, mid_cuts,
+                               &row->char_cells,
+                               block_index == textord_debug_block);
+    if (pitch_sd < textord_words_pitchsd_threshold * row->fixed_pitch
+      && ((pitsync_linear_version & 3) < 3
+      || (pitsync_linear_version & 3) >= 3 && (row->used_dm_model
+      || sp_sd > 20
+      || pitch_sd == 0
+    && sp_sd > 10))) {
+      if (pitch_sd < textord_words_def_fixed * row->fixed_pitch
+        && !row->all_caps
+        && ((pitsync_linear_version & 3) < 3 || sp_sd > 20))
+        row->pitch_decision = PITCH_DEF_FIXED;
+      else
+        row->pitch_decision = PITCH_MAYBE_FIXED;
+    }
+    else if ((pitsync_linear_version & 3) < 3
+      || sp_sd > 20
+      || mid_cuts > 0
+      || pitch_sd >= textord_words_pitchsd_threshold * row->fixed_pitch) {
+      if (pitch_sd < textord_words_def_prop * row->fixed_pitch)
+        row->pitch_decision = PITCH_MAYBE_PROP;
+      else
+        row->pitch_decision = PITCH_DEF_PROP;
+    }
     else
-      row->pitch_decision = PITCH_MAYBE_FIXED;
+      row->pitch_decision = PITCH_DUNNO;
   }
-  else if ((pitsync_linear_version & 3) < 3
-    || sp_sd > 20
-    || mid_cuts > 0
-  || pitch_sd >= textord_words_pitchsd_threshold * row->fixed_pitch) {
-    if (pitch_sd < textord_words_def_prop * row->fixed_pitch)
-      row->pitch_decision = PITCH_MAYBE_PROP;
-    else
-      row->pitch_decision = PITCH_DEF_PROP;
-  }
-  else
-    row->pitch_decision = PITCH_DUNNO;
 
   if (textord_debug_pitch_metric) {
     res_string = "??";
@@ -1458,18 +1475,20 @@ float compute_pitch_sd(                            //find fp cells
   prev_right = -1;
   if (blob_it.empty ())
     return space_size * 10;
+#ifndef GRAPHICS_DISABLED
   if (testing_on && to_win > 0) {
     blob_box = blob_it.data ()->bounding_box ();
     projection->plot (to_win, projection_left,
       row->intercept (), 1.0f, -1.0f, CORAL);
   }
+#endif
   start_it = blob_it;
   blob_count = 0;
   blob_box = box_next (&blob_it);//first blob
   blob_it.mark_cycle_pt ();
   do {
     for (; blob_count > 0; blob_count--)
-      box_next(&start_it); 
+      box_next(&start_it);
     do {
       prev_box = blob_box;
       blob_count++;
@@ -1505,8 +1524,10 @@ float compute_pitch_sd(                            //find fp cells
       }
       tprintf ("\n");
     }
+#ifndef GRAPHICS_DISABLED
     if (textord_show_fixed_cuts && blob_count > 0 && to_win > 0)
-      plot_fp_cells2(to_win, GOLDENROD, row, &seg_list); 
+      plot_fp_cells2(to_win, GOLDENROD, row, &seg_list);
+#endif
     seg_it.set_to_list (&seg_list);
     if (prev_right >= 0) {
       sp_var = seg_it.data ()->position () - prev_right;
@@ -1593,10 +1614,12 @@ float compute_pitch_sd2(                            //find fp cells
     occupation = 0;
     return initial_pitch * 10;
   }
+#ifndef GRAPHICS_DISABLED
   if (testing_on && to_win > 0) {
     projection->plot (to_win, projection_left,
       row->intercept (), 1.0f, -1.0f, CORAL);
   }
+#endif
   blob_count = 0;
   blob_it.mark_cycle_pt ();
   do {
@@ -1627,8 +1650,10 @@ float compute_pitch_sd2(                            //find fp cells
     }
     tprintf ("\n");
   }
+#ifndef GRAPHICS_DISABLED
   if (textord_show_fixed_cuts && blob_count > 0 && to_win > 0)
-    plot_fp_cells2(to_win, GOLDENROD, row, &seg_list); 
+    plot_fp_cells2(to_win, GOLDENROD, row, &seg_list);
+#endif
   seg_it.set_to_list (&seg_list);
   for (seg_it.mark_cycle_pt (); !seg_it.cycled_list (); seg_it.forward ()) {
     segpos = seg_it.data ()->position ();
@@ -1697,7 +1722,7 @@ void print_pitch_sd(                        //find fp cells
   blob_it.mark_cycle_pt ();
   do {
     for (; blob_count > 0; blob_count--)
-      box_next(&start_it); 
+      box_next(&start_it);
     do {
       prev_box = blob_box;
       blob_count++;
@@ -1751,8 +1776,10 @@ void print_pitch_sd(                        //find fp cells
     word_sync /= occupation;
   word_sync = sqrt (word_sync);
 
+#ifndef GRAPHICS_DISABLED
   if (textord_show_row_cuts && to_win != NO_WINDOW)
-    plot_fp_cells2(to_win, CORAL, row, &seg_list); 
+    plot_fp_cells2(to_win, CORAL, row, &seg_list);
+#endif
   seg_list.clear ();
   if (word_sync < textord_words_pitchsd_threshold * initial_pitch) {
     if (word_sync < textord_words_def_fixed * initial_pitch
@@ -1900,7 +1927,7 @@ void find_repeated_chars(                  //search for equal chars
               pblob2 =
                 new PBLOB (nextblob->cblob (), row->xheight);
               rating =
-                compare_blobs(pblob1, real_row, pblob2, real_row); 
+                compare_blobs(pblob1, real_row, pblob2, real_row);
               delete pblob2;
             }
             if (rating < textord_repeat_rating) {
@@ -1929,6 +1956,7 @@ void find_repeated_chars(                  //search for equal chars
             word =
               make_real_word (&box_it, blobcount, bol, FALSE, FALSE,
               1);
+#ifndef GRAPHICS_DISABLED
             if (testing_on) {
               word_box = word->bounding_box ();
               tprintf
@@ -1936,12 +1964,13 @@ void find_repeated_chars(                  //search for equal chars
                 blobcount, matched_blobcount, word_box.left (),
                 word_box.bottom (), word_box.right (),
                 word_box.top ());
-              perimeter_color_index(to_win, RED); 
-              interior_style(to_win, INT_HOLLOW, TRUE); 
+              perimeter_color_index(to_win, RED);
+              interior_style(to_win, INT_HOLLOW, TRUE);
               rectangle (to_win, word_box.left (),
                 word_box.bottom (), word_box.right (),
                 word_box.top ());
             }
+#endif
             word->set_flag (W_REP_CHAR, TRUE);
             word->set_flag (W_DONT_CHOP, TRUE);
             word_it.add_after_then_move (word);
@@ -1966,6 +1995,7 @@ void find_repeated_chars(                  //search for equal chars
  * Plot a block of words as if fixed pitch.
  **********************************************************************/
 
+#ifndef GRAPHICS_DISABLED
 void plot_fp_word(                  //draw block of words
                   TO_BLOCK *block,  //block to draw
                   float pitch,      //pitch to draw with
@@ -1982,3 +2012,4 @@ void plot_fp_word(                  //draw block of words
     plot_word_decisions (to_win, (INT16) pitch, row);
   }
 }
+#endif

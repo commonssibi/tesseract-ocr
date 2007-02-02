@@ -122,9 +122,11 @@ void set_row_spaces(                  //find space sizes
       row->kern_size = row->pr_nonsp;
       //                      }
     }
+#ifndef GRAPHICS_DISABLED
     if (textord_show_initial_words && testing_on) {
       plot_word_decisions (to_win, (INT16) row->fixed_pitch, row);
     }
+#endif
   }
 }
 

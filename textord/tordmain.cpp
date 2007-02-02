@@ -41,6 +41,10 @@
 
 const ERRCODE BLOCKLESS_BLOBS = "Warning:some blobs assigned to no block";
 
+#ifdef GRAPHICS_DISABLED
+ETEXT_DESC *global_monitor = NULL;
+#endif
+
 #define EXTERN
 
 EXTERN BOOL_VAR (textord_show_blobs, FALSE, "Display unsorted blobs");
@@ -82,7 +86,9 @@ EXTERN double_VAR (textord_blshift_xfraction, 9.99,
 "Min size of baseline shift");
 EXTERN STRING_EVAR (tessedit_image_ext, ".tif", "Externsion for image file");
 
+#ifndef EMBEDDED
 EXTERN clock_t previous_cpu;
+#endif
 
 extern BOOL_VAR_H (polygon_tess_approximation, TRUE,
 "Do tess poly instead of grey scale");
@@ -93,43 +99,6 @@ extern BOOL_VAR_H (polygon_tess_approximation, TRUE,
 extern IMAGE page_image;         //must be defined somewhere
 extern BOOL_VAR_H (interactive_mode, TRUE, "Run interactively?");
 extern /*"C" */ ETEXT_DESC *global_monitor;     //progress monitor
-
-/**********************************************************************
- * make_blocks_from_blobs
- *
- * Convert a list of TBLOBS into fully textorded BLOCKs.
- **********************************************************************/
-
-//void                                                          make_blocks_from_blobs(                 //convert & textord
-//TBLOB*                                                        tessblobs,                                                      //tess style input
-//const char*                                           filename,                                                       //blob file
-//ICOORD                                                        page_tr,                                                                //top right
-//BOOL8                                                         do_shift,                                                       //shift tess coords
-//BLOCK_LIST                                            *blocks                                                         //block list
-//)
-//{
-//      TBLOB                                                   *nextblob;                                                      //next in list
-//      PBLOB_LIST                                      blobs;                                                          //list of blobs
-//      PBLOB_IT                                                blob_it=&blobs;                                 //iterator
-//      STRING                                          basename;                                                       //name of image
-//      TO_BLOCK_LIST                           land_blocks,port_blocks;                //different orientations
-
-//      basename=filename;
-//      basename[basename.length()-2]='\0';                                                     //chop extension
-//      read_pd_file(basename,page_tr.x(),page_tr.y(),blocks);
-
-//      while (tessblobs!=NULL)
-//      {
-//              nextblob=tessblobs->next;
-//              blob_it.add_after_then_move(convert_blob(tessblobs,do_shift));
-//              tessblobs=nextblob;
-//      }
-
-//      assign_blobs_to_blocks(&blobs,blocks,&land_blocks,&port_blocks);
-//      filter_blobs(page_tr,&port_blocks,!textord_test_landscape);
-//      filter_blobs(page_tr,&land_blocks,textord_test_landscape);
-//      textord_page(page_tr,blocks,&land_blocks,&port_blocks);
-//}
 
 /**********************************************************************
  * read_and_textord
@@ -160,9 +129,9 @@ void read_and_textord(                       //read .pb file
                                  //find page size
     page_box += block->bounding_box ();
   }
-  fclose(infp); 
+  fclose(infp);
 
-  assign_blobs_to_blocks2(blocks, &land_blocks, &port_blocks); 
+  assign_blobs_to_blocks2(blocks, &land_blocks, &port_blocks);
   filter_blobs (page_box.topright (), &port_blocks, !textord_test_landscape);
   filter_blobs (page_box.topright (), &land_blocks, textord_test_landscape);
   textord_page (page_box.topright (), blocks, &land_blocks, &port_blocks);
@@ -212,35 +181,48 @@ void edges_and_textord(                       //read .pb file
     global_monitor->ocr_alive = TRUE;
 
   if (page_image.get_bpp () > 1) {
-    set_global_loc_code(LOC_ADAPTIVE); 
+    set_global_loc_code(LOC_ADAPTIVE);
     for (block_it.mark_cycle_pt (); !block_it.cycled_list ();
     block_it.forward ()) {
       block = block_it.data ();
       pd_it.add_after_then_move (block);
     }
     //              adaptive_threshold(&page_image,&pd_blocks,&thresh_image);
-    set_global_loc_code(LOC_EDGE_PROG); 
+    set_global_loc_code(LOC_EDGE_PROG);
+#ifndef EMBEDDED
     previous_cpu = clock ();
+#endif
     for (block_it.mark_cycle_pt (); !block_it.cycled_list ();
     block_it.forward ()) {
       block = block_it.data ();
       if (!polygon_tess_approximation)
-        invert_image(&page_image); 
-      extract_edges(NO_WINDOW, &page_image, &thresh_image, page_tr, block); 
+        invert_image(&page_image);
+#ifndef GRAPHICS_DISABLED
+      extract_edges(NO_WINDOW, &page_image, &thresh_image, page_tr, block);
+#else
+      extract_edges(&page_image, &thresh_image, page_tr, block);
+#endif
       page_box += block->bounding_box ();
     }
     page_image = thresh_image;   //everyone else gets it
   }
   else {
-    set_global_loc_code(LOC_EDGE_PROG); 
+    set_global_loc_code(LOC_EDGE_PROG);
     if (!page_image.white_high ())
-      invert_image(&page_image); 
+      invert_image(&page_image);
 
+#ifndef EMBEDDED
     previous_cpu = clock ();
+#endif
+
     for (block_it.mark_cycle_pt (); !block_it.cycled_list ();
     block_it.forward ()) {
       block = block_it.data ();
-      extract_edges(NO_WINDOW, &page_image, &page_image, page_tr, block); 
+#ifndef GRAPHICS_DISABLED
+      extract_edges(NO_WINDOW, &page_image, &page_image, page_tr, block);
+#else
+      extract_edges(&page_image, &page_image, page_tr, block);
+#endif
       page_box += block->bounding_box ();
     }
   }
@@ -249,94 +231,18 @@ void edges_and_textord(                       //read .pb file
     global_monitor->progress = 10;
   }
 
-  assign_blobs_to_blocks2(blocks, &land_blocks, &port_blocks); 
+  assign_blobs_to_blocks2(blocks, &land_blocks, &port_blocks);
   if (global_monitor != NULL)
     global_monitor->ocr_alive = TRUE;
   filter_blobs (page_box.topright (), &land_blocks, textord_test_landscape);
+#ifndef EMBEDDED
   previous_cpu = clock ();
+#endif
   filter_blobs (page_box.topright (), &port_blocks, !textord_test_landscape);
   if (global_monitor != NULL)
     global_monitor->ocr_alive = TRUE;
   textord_page (page_box.topright (), blocks, &land_blocks, &port_blocks);
 }
-
-
-/**********************************************************************
- * assign_blobs_to_blocks
- *
- * Make a list of TO_BLOCKs for portrait and landscape orientation.
- **********************************************************************/
-
-void assign_blobs_to_blocks(                             //split into groups
-                            PBLOB_LIST *blobs,           //blobs to distribute
-                            BLOCK_LIST *blocks,          //block list
-                            TO_BLOCK_LIST *land_blocks,  //rotated for landscape
-                            TO_BLOCK_LIST *port_blocks   //output list
-                           ) {
-  ICOORD pt;                     //centre of blob
-  BOX box;                       //of blob
-  BLOCK *block;                  //current block
-  BLOCK_IT block_it;             //block iterator
-  BLOBNBOX *newblob;             //created blob
-  PBLOB *blob;                   //current blob
-  PBLOB_IT blob_it = blobs;      //iterator
-  BLOBNBOX_IT port_box_it;       //iterator
-  BLOBNBOX_IT land_box_it;       //iterator
-                                 //destination iterator
-  TO_BLOCK_IT port_block_it = port_blocks;
-  TO_BLOCK *port_block;          //created block
-                                 //destination iterator
-  TO_BLOCK_IT land_block_it = land_blocks;
-  TO_BLOCK *land_block;          //created block
-  FCOORD rotation (0.0f, 1.0f);  //for landscape
-
-  block_it.set_to_list (blocks);
-  for (block_it.mark_cycle_pt (); !block_it.cycled_list ();
-  block_it.forward ()) {
-    block = block_it.data ();
-    blob_it.set_to_list (blobs);
-                                 //make one
-    port_block = new TO_BLOCK (block);
-                                 //make one
-    land_block = new TO_BLOCK (block);
-    port_box_it.set_to_list (&port_block->blobs);
-    land_box_it.set_to_list (&land_block->blobs);
-    for (blob_it.mark_cycle_pt (); !blob_it.cycled_list ();
-    blob_it.forward ()) {
-      blob = blob_it.data ();
-      box = blob->bounding_box ();
-                                 //centre of box
-      pt = (box.botleft () + box.topright ()) / 2;
-                                 //box in block
-      if (port_block->block->contains (pt)) {
-                                 //convert blob
-        newblob = new BLOBNBOX (blob);
-        port_box_it.add_after_then_move (newblob);
-        //add to list
-                                 //convert blob
-        newblob = new BLOBNBOX (blob);
-                                 //un-landscape it
-        newblob->rotate_box (rotation);
-        land_box_it.add_after_then_move (newblob);
-        //add to list
-        blob_it.extract ();      //take off list
-      }
-    }
-    port_block_it.add_after_then_move (port_block);
-    land_block_it.add_after_then_move (land_block);
-  }
-
-  if (blobs->length () > 0) {
-    if (textord_show_blobs) {
-      for (blob_it.mark_cycle_pt (); !blob_it.cycled_list ();
-        blob_it.forward ())
-      blob_it.data ()->plot (to_win, RED, RED);
-      printf ("Warning:some blobs assigned to no block, count="
-        INT32FORMAT "\n", blobs->length ());
-    }
-  }
-}
-
 
 /**********************************************************************
  * assign_blobs_to_blocks2
@@ -355,14 +261,9 @@ void assign_blobs_to_blocks2(                             //split into groups
   BLOCK_IT block_it = blocks;
   C_BLOB_IT blob_it;             //iterator
   BLOBNBOX_IT port_box_it;       //iterator
-  BLOBNBOX_IT land_box_it;       //iterator
                                  //destination iterator
   TO_BLOCK_IT port_block_it = port_blocks;
   TO_BLOCK *port_block;          //created block
-                                 //destination iterator
-  TO_BLOCK_IT land_block_it = land_blocks;
-  TO_BLOCK *land_block;          //created block
-  FCOORD rotation (0.0f, 1.0f);  //for landscape
 
   for (block_it.mark_cycle_pt (); !block_it.cycled_list ();
   block_it.forward ()) {
@@ -371,9 +272,7 @@ void assign_blobs_to_blocks2(                             //split into groups
                                  //make one
     port_block = new TO_BLOCK (block);
                                  //make one
-    land_block = new TO_BLOCK (block);
     port_box_it.set_to_list (&port_block->blobs);
-    land_box_it.set_to_list (&land_block->blobs);
     for (blob_it.mark_cycle_pt (); !blob_it.cycled_list ();
     blob_it.forward ()) {
       blob = blob_it.extract ();
@@ -382,14 +281,8 @@ void assign_blobs_to_blocks2(                             //split into groups
                                  //add to list
       port_box_it.add_after_then_move (newblob);
                                  //convert blob
-      newblob = new BLOBNBOX (blob);
-                                 //un-landscape it
-      newblob->rotate_box (rotation);
-                                 //add to list
-      land_box_it.add_after_then_move (newblob);
     }
     port_block_it.add_after_then_move (port_block);
-    land_block_it.add_after_then_move (land_block);
   }
 }
 
@@ -421,9 +314,10 @@ void filter_blobs(                        //split into groups
       textord_merge_asc) / textord_merge_x;
     block->line_size *= textord_min_linesize;
     block->max_blob_size = block->line_size * textord_excess_blobsize;
+#ifndef GRAPHICS_DISABLED
     if (textord_show_blobs && testing_on) {
       if (to_win == NO_WINDOW)
-        create_to_win(page_tr); 
+        create_to_win(page_tr);
       plot_blob_list (to_win, &block->noise_blobs, CORAL, BLUE);
       plot_blob_list (to_win, &block->small_blobs, GOLDENROD, YELLOW);
       plot_blob_list (to_win, &block->large_blobs, DARK_GREEN, YELLOW);
@@ -431,12 +325,13 @@ void filter_blobs(                        //split into groups
     }
     if (textord_show_boxes && testing_on) {
       if (to_win == NO_WINDOW)
-        create_to_win(page_tr); 
+        create_to_win(page_tr);
       plot_box_list (to_win, &block->noise_blobs, WHITE);
       plot_box_list (to_win, &block->small_blobs, WHITE);
       plot_box_list (to_win, &block->large_blobs, WHITE);
       plot_box_list (to_win, &block->blobs, WHITE);
     }
+#endif
   }
 }
 
@@ -577,20 +472,22 @@ void textord_page(                             //make rows & words
                  ) {
   float gradient;                //global skew
 
-  set_global_loc_code(LOC_TEXT_ORD_ROWS); 
+  set_global_loc_code(LOC_TEXT_ORD_ROWS);
   gradient = make_rows (page_tr, blocks, land_blocks, port_blocks);
   if (global_monitor != NULL) {
     global_monitor->ocr_alive = TRUE;
     global_monitor->progress = 20;
   }
-  set_global_loc_code(LOC_TEXT_ORD_WORDS); 
-  make_words(page_tr, gradient, blocks, land_blocks, port_blocks); 
+  set_global_loc_code(LOC_TEXT_ORD_WORDS);
+  make_words(page_tr, gradient, blocks, land_blocks, port_blocks);
   if (global_monitor != NULL) {
     global_monitor->ocr_alive = TRUE;
     global_monitor->progress = 30;
   }
   cleanup_blocks(blocks);  //remove empties
-  close_to_win(); 
+#ifndef GRAPHICS_DISABLED
+  close_to_win();
+#endif
   if (textord_exit_after && !interactive_mode)
     exit (0);
 }
@@ -682,7 +579,7 @@ BOOL8 clean_noise_from_row(          //remove empties
           blob_size =
             blob_box.width () >
             blob_box.height ()? blob_box.width () : blob_box.
-            height(); 
+            height();
           if (blob_size < textord_noise_sizelimit * row->x_height ())
             dot_count++;         //count smal outlines
           if (!outline->child ()->empty ()
@@ -793,7 +690,7 @@ void clean_noise_from_words(          //remove empties
           blob_size =
             blob_box.width () >
             blob_box.height ()? blob_box.width () : blob_box.
-            height(); 
+            height();
           if (blob_size < textord_noise_sizelimit * row->x_height ())
             dot_count++;         //count smal outlines
           if (!outline->child ()->empty ()
@@ -854,7 +751,7 @@ void clean_noise_from_words(          //remove empties
     }
     word_index++;
   }
-  free_mem(word_dud); 
+  free_mem(word_dud);
 }
 
 
@@ -969,8 +866,8 @@ void tweak_row_baseline(          //remove empties
   }
                                  //turn to spline
   row->baseline = QSPLINE (dest_index, xstarts, coeffs);
-  free_mem(xstarts); 
-  free_mem(coeffs); 
+  free_mem(xstarts);
+  free_mem(coeffs);
 }
 
 

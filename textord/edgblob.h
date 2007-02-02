@@ -71,7 +71,9 @@ class OL_BUCKETS
 };
 
 void extract_edges(                 //find blobs
+#ifndef GRAPHICS_DISABLED
                    WINDOW window,   //window for output
+#endif
                    IMAGE *image,    //image to scan
                    IMAGE *t_image,  //thresholded image
                    ICOORD page_tr,  //corner of page
