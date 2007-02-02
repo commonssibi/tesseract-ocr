@@ -20,16 +20,16 @@ MaxNormScaleX				0.325
 MinNormScaleY				0.0
 MaxNormScaleY				0.325
 
-BuiltInTemplatesFile		data/inttemp
-BuiltInCutoffsFile		data/pffmtable
+BuiltInTemplatesFile		tessdata/inttemp
+BuiltInCutoffsFile		tessdata/pffmtable
 
 EnableLearning				0
 SaveAdaptedTemplates		0
-UsePreAdaptedTemplates	1
+UsePreAdaptedTemplates	0
 ReliableConfigThreshold	2
 MinNumPermClasses			3
 
-EnableStopper				1
+#EnableStopper				1
 GoodAdaptiveMatch			0.125
 GreatAdaptiveMatch		0.0
 
@@ -51,20 +51,21 @@ EnableNewAdaptRules		1
 #
 ################################################################################
 
-hidden_edges            1
+#hidden_edges            1
 
 save_doc_words          1
 doc_dict_enable         1
 ClassPrunerThreshold			229
 ClassPrunerMultiplier		15
-IntegerMatcherMultiplier	7
 IntThetaFudge					128
 CPCutoffStrength				0.15
 EvidenceTableBits				9
 IntEvidenceTruncBits			14
 SEExponentialMultiplier		0
 SimilarityCenter				0.0075
-selection_mode          1
+#################################################
+# Adaptive Matcher Using 2 Passes
+#################################################
 
 display_splits          0
 display_all_words       1

@@ -10,8 +10,6 @@ CertaintyScale          20.0
 
 #EnableMatcher				0
 #CurrentFx					2
-EnableMicroFeatures      1
-EnableCharNormFeatures   1
 MinSlope                 0.414213562
 MaxSlope                 2.414213562
 #ExtremityMode            1
@@ -63,7 +61,6 @@ save_doc_words          1
 doc_dict_enable         1
 ClassPrunerThreshold			229
 ClassPrunerMultiplier		15
-IntegerMatcherMultiplier	7
 IntThetaFudge					128
 CPCutoffStrength				0.15
 EvidenceTableBits				9
