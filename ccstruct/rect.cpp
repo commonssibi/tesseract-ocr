@@ -131,6 +131,7 @@ BOX BOX::bounding_union(  //box enclosing both
  *
  **********************************************************************/
 
+#ifndef GRAPHICS_DISABLED
 void BOX::plot(                      //paint box
                WINDOW fd,            //where to paint
                INT16 style,          //display style
@@ -143,6 +144,7 @@ void BOX::plot(                      //paint box
   perimeter_color_index(fd, border_colour); 
   plot(fd); 
 }
+#endif
 
 
 /**********************************************************************

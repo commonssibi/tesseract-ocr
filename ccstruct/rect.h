@@ -22,6 +22,7 @@
 
 #include          <math.h>
 #include          "points.h"
+#include          "ndminx.h"
 #include          "grphics.h"
 #include          "tprintf.h"
 
@@ -59,7 +60,7 @@ class DLLSYM BOX                 //bounding box
     }
 
                                  //access function
-    const ICOORD &botleft() const { 
+    const ICOORD &botleft() const {
       return bot_left;
     }
 
@@ -72,7 +73,7 @@ class DLLSYM BOX                 //bounding box
     }
 
                                  //access function
-    const ICOORD &topright() const { 
+    const ICOORD &topright() const {
       return top_right;
     }
 
@@ -172,6 +173,9 @@ class DLLSYM BOX                 //bounding box
     BOOL8 overlap(  //do boxes overlap
                   const BOX &box) const;
 
+    BOOL8 major_overlap(  // Do boxes overlap more than half.
+                        const BOX &box) const;
+
     BOX intersection(  //shared area box
                      const BOX &box) const;
 
@@ -183,6 +187,7 @@ class DLLSYM BOX                 //bounding box
         left (), bottom (), right (), top ());
     }
 
+#ifndef GRAPHICS_DISABLED
     void plot(                    //use current settings
               WINDOW fd) const {  //where to paint
       rectangle (fd, bot_left.x (), bot_left.y (), top_right.x (),
@@ -195,6 +200,7 @@ class DLLSYM BOX                 //bounding box
               INT16 edged,                  //show border?
               COLOUR fill_colour,           //colour for inside
               COLOUR border_colour) const;  //colour for border
+#endif
 
     friend DLLSYM BOX & operator+= (BOX &, const BOX &);
     //in place union
@@ -229,7 +235,7 @@ inline BOX::BOX(                 //construtor
  *
  **********************************************************************/
 
-inline BOOL8 BOX::contains(const FCOORD pt) const { 
+inline BOOL8 BOX::contains(const FCOORD pt) const {
   return ((pt.x () >= bot_left.x ()) &&
     (pt.x () <= top_right.x ()) &&
     (pt.y () >= bot_left.y ()) && (pt.y () <= top_right.y ()));
@@ -241,7 +247,7 @@ inline BOOL8 BOX::contains(const FCOORD pt) const {
  *
  **********************************************************************/
 
-inline BOOL8 BOX::contains(const BOX &box) const { 
+inline BOOL8 BOX::contains(const BOX &box) const {
   return (contains (box.bot_left) && contains (box.top_right));
 }
 
@@ -257,5 +263,25 @@ inline BOOL8 BOX::overlap(  //do boxes overlap
     (box.top_right.x () >= bot_left.x ()) &&
     (box.bot_left.y () <= top_right.y ()) &&
     (box.top_right.y () >= bot_left.y ()));
+}
+
+/**********************************************************************
+ * BOX::major_overlap()  Do two boxes overlap by at least half of the smallest?
+ *
+ **********************************************************************/
+
+inline BOOL8 BOX::major_overlap(  // Do boxes overlap more that half.
+                                const BOX &box) const {
+  int overlap = MIN(box.top_right.x(), top_right.x());
+  overlap -= MAX(box.bot_left.x(), bot_left.x());
+  overlap += overlap;
+  if (overlap < MIN(box.width(), width()))
+    return false;
+  overlap = MIN(box.top_right.y(), top_right.y());
+  overlap -= MAX(box.bot_left.y(), bot_left.y());
+  overlap += overlap;
+  if (overlap < MIN(box.height(), height()))
+    return false;
+  return true;
 }
 #endif
