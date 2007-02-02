@@ -34,6 +34,7 @@
 #include          "reject.h"
 #include          "control.h"
 #include          "adaptions.h"
+#include          "stopper.h"
 #include          "charsample.h"
 #include          "matmatch.h"
 #include          "secname.h"
@@ -92,7 +93,7 @@ BOOL8 word_adaptable(  //should we adapt?
                      WERD_RES *word,
                      UINT16 mode) {
   BOOL8 status = FALSE;
-  BITS16 flags(mode); 
+  BITS16 flags(mode);
 
   enum MODES
   {
@@ -134,7 +135,9 @@ BOOL8 word_adaptable(  //should we adapt?
     (strchr (word->best_choice->string ().string (), ' ') != NULL))
     return FALSE;
 
-  if (flags.bit (CHECK_AMBIG_WERD) && test_ambig_word (word))
+//  if (flags.bit (CHECK_AMBIG_WERD) && test_ambig_word (word))
+  if (flags.bit (CHECK_AMBIG_WERD) &&
+      !NoDangerousAmbig(word->best_choice->string().string(), NULL))
     return FALSE;
 
   return status;
@@ -146,7 +149,7 @@ void collect_ems_for_adaption(WERD_RES *word,
                               CHAR_SAMPLES_LIST *char_clusters,
                               CHAR_SAMPLE_LIST *chars_waiting) {
   PBLOB_LIST *blobs = word->outword->blob_list ();
-  PBLOB_IT blob_it(blobs); 
+  PBLOB_IT blob_it(blobs);
   INT16 i;
   CHAR_SAMPLE *sample;
   PIXROW_LIST *pixrow_list;
@@ -200,7 +203,7 @@ void collect_ems_for_adaption(WERD_RES *word,
       copy_outword = *(word->outword);
 
     copy_outword.baseline_denormalise (&word->denorm);
-    char_clip_word(&copy_outword, page_image, pixrow_list, imlines, pix_box); 
+    char_clip_word(&copy_outword, page_image, pixrow_list, imlines, pix_box);
     pixrow_it.set_to_list (pixrow_list);
     pixrow_it.move_to_first ();
 
@@ -241,7 +244,7 @@ void collect_ems_for_adaption(WERD_RES *word,
             &word->denorm,
             word->best_choice->string ()[i]);
 
-        cluster_sample(sample, char_clusters, chars_waiting); 
+        cluster_sample(sample, char_clusters, chars_waiting);
 
         if (word->best_choice->string ()[i] == 'r')
           i++;                   // Skip next character
@@ -257,7 +260,7 @@ void collect_characters_for_adaption(WERD_RES *word,
                                      CHAR_SAMPLES_LIST *char_clusters,
                                      CHAR_SAMPLE_LIST *chars_waiting) {
   PBLOB_LIST *blobs = word->outword->blob_list ();
-  PBLOB_IT blob_it(blobs); 
+  PBLOB_IT blob_it(blobs);
   INT16 i;
   CHAR_SAMPLE *sample;
   PIXROW_LIST *pixrow_list;
@@ -282,7 +285,7 @@ void collect_characters_for_adaption(WERD_RES *word,
     /* Collect information about good matches */
     copy_outword = *(word->outword);
     copy_outword.baseline_denormalise (&word->denorm);
-    char_clip_word(&copy_outword, page_image, pixrow_list, imlines, pix_box); 
+    char_clip_word(&copy_outword, page_image, pixrow_list, imlines, pix_box);
     pixrow_it.set_to_list (pixrow_list);
     pixrow_it.move_to_first ();
 
@@ -315,7 +318,7 @@ void collect_characters_for_adaption(WERD_RES *word,
           #endif
           continue;
         }
-        cluster_sample(sample, char_clusters, chars_waiting); 
+        cluster_sample(sample, char_clusters, chars_waiting);
       }
     }
     delete[]imlines;             // Free array of imlines
@@ -354,7 +357,7 @@ void cluster_sample(CHAR_SAMPLE *sample,
     if (best_score < tessedit_cluster_t1) {
       if (best_score > tessedit_cluster_t3 || tessedit_mm_use_prototypes) {
         best_cluster->add_sample (sample);
-        check_wait_list(chars_waiting, sample, best_cluster); 
+        check_wait_list(chars_waiting, sample, best_cluster);
         #ifndef SECURE_NAMES
         if (tessedit_cluster_debug)
           tprintf ("Sample added to an existing cluster\n");
@@ -449,7 +452,7 @@ void complete_clustering(CHAR_SAMPLES_LIST *char_clusters,
     sample = cw_it.extract ();
     best_cluster = new CHAR_SAMPLES (sample);
     c_it.add_to_end (best_cluster);
-    check_wait_list(chars_waiting, sample, best_cluster); 
+    check_wait_list(chars_waiting, sample, best_cluster);
   }
 
   for (c_it.mark_cycle_pt (); !c_it.cycled_list (); c_it.forward ()) {
@@ -466,8 +469,12 @@ void complete_clustering(CHAR_SAMPLES_LIST *char_clusters,
   if (tessedit_cluster_debug)
     tprintf ("Clustering completed, %d samples in all\n", total_sample_count);
   #endif
+
+#ifndef GRAPHICS_DISABLED
   if (tessedit_demo_adaption)
-    display_cluster_prototypes(char_clusters); 
+    display_cluster_prototypes(char_clusters);
+#endif
+
 }
 
 
@@ -475,7 +482,7 @@ void adapt_to_good_ems(WERD_RES *word,
                        CHAR_SAMPLES_LIST *char_clusters,
                        CHAR_SAMPLE_LIST *chars_waiting) {
   PBLOB_LIST *blobs = word->outword->blob_list ();
-  PBLOB_IT blob_it(blobs); 
+  PBLOB_IT blob_it(blobs);
   INT16 i;
   CHAR_SAMPLE *sample;
   CHAR_SAMPLES_IT c_it = char_clusters;
@@ -496,7 +503,11 @@ void adapt_to_good_ems(WERD_RES *word,
   PIXROW *pixrow = NULL;
 
   static INT32 word_number = 0;
+
+#ifndef GRAPHICS_DISABLED
   WINDOW demo_win = NULL;
+#endif
+
   INT32 resolution = page_image.get_res ();
 
   if (word->word->bounding_box ().height () > resolution / 3)
@@ -510,9 +521,9 @@ void adapt_to_good_ems(WERD_RES *word,
     return;
 
   if (tessedit_reject_ems)
-    reject_all_ems(word); 
+    reject_all_ems(word);
   else if (tessedit_reject_suspect_ems)
-    reject_suspect_ems(word); 
+    reject_suspect_ems(word);
   else {
     if (char_clusters->length () == 0) {
       #ifndef SECURE_NAMES
@@ -523,8 +534,8 @@ void adapt_to_good_ems(WERD_RES *word,
     }
 
     if (!cw_it.empty ()) {
-      complete_clustering(char_clusters, chars_waiting); 
-      print_em_stats(char_clusters, chars_waiting); 
+      complete_clustering(char_clusters, chars_waiting);
+      print_em_stats(char_clusters, chars_waiting);
     }
 
     if ((!word_adaptable (word, tessedit_em_adaption_mode) ||
@@ -560,7 +571,7 @@ void adapt_to_good_ems(WERD_RES *word,
 
       copy_outword.baseline_denormalise (&word->denorm);
       copy_blob_it.set_to_list (copy_outword.blob_list ());
-      char_clip_word(&copy_outword, page_image, pixrow_list, imlines, pix_box); 
+      char_clip_word(&copy_outword, page_image, pixrow_list, imlines, pix_box);
       pixrow_it.set_to_list (pixrow_list);
       pixrow_it.move_to_first ();
 
@@ -683,11 +694,13 @@ void adapt_to_good_ems(WERD_RES *word,
               tessedit_demo_file.string ()) != 0
               || word_number == tessedit_demo_word1
             || word_number == tessedit_demo_word2) {
+#ifndef GRAPHICS_DISABLED
               demo_win =
                 display_clip_image(&copy_outword,
                                    page_image,
                                    pixrow_list,
                                    pix_box);
+#endif
               demo_word = word_number;
               best_cluster->match_score (sample);
               demo_word = 0;
@@ -708,7 +721,7 @@ void adapt_to_good_samples(WERD_RES *word,
                            CHAR_SAMPLES_LIST *char_clusters,
                            CHAR_SAMPLE_LIST *chars_waiting) {
   PBLOB_LIST *blobs = word->outword->blob_list ();
-  PBLOB_IT blob_it(blobs); 
+  PBLOB_IT blob_it(blobs);
   INT16 i;
   CHAR_SAMPLE *sample;
   CHAR_SAMPLES_IT c_it = char_clusters;
@@ -728,7 +741,11 @@ void adapt_to_good_samples(WERD_RES *word,
   PIXROW *pixrow = NULL;
 
   static INT32 word_number = 0;
+
+#ifndef GRAPHICS_DISABLED
   WINDOW demo_win = NULL;
+#endif
+
   INT32 resolution = page_image.get_res ();
 
   word_number++;
@@ -748,8 +765,8 @@ void adapt_to_good_samples(WERD_RES *word,
   }
 
   if (!cw_it.empty ()) {
-    complete_clustering(char_clusters, chars_waiting); 
-    print_em_stats(char_clusters, chars_waiting); 
+    complete_clustering(char_clusters, chars_waiting);
+    print_em_stats(char_clusters, chars_waiting);
   }
 
   if ((!word_adaptable (word, tessedit_cluster_adaption_mode)
@@ -764,7 +781,7 @@ void adapt_to_good_samples(WERD_RES *word,
     copy_outword = *(word->outword);
     copy_outword.baseline_denormalise (&word->denorm);
     copy_blob_it.set_to_list (copy_outword.blob_list ());
-    char_clip_word(&copy_outword, page_image, pixrow_list, imlines, pix_box); 
+    char_clip_word(&copy_outword, page_image, pixrow_list, imlines, pix_box);
     pixrow_it.set_to_list (pixrow_list);
     pixrow_it.move_to_first ();
 
@@ -867,11 +884,13 @@ void adapt_to_good_samples(WERD_RES *word,
             tessedit_demo_file.string ()) != 0
             || word_number == tessedit_demo_word1
           || word_number == tessedit_demo_word2) {
+#ifndef GRAPHICS_DISABLED
             demo_win =
               display_clip_image(&copy_outword,
                                  page_image,
                                  pixrow_list,
                                  pix_box);
+#endif
             demo_word = word_number;
             best_cluster->match_score (sample);
             demo_word = 0;
@@ -915,7 +934,6 @@ CHAR_SAMPLE *clip_sample(              //lines of the image
                          BOX pix_box,  //box of imlines extent
                          BOOL8 white_on_black,
                          char c) {
-  IMAGE *image = new (IMAGE);
   BOX b_box = pixrow->bounding_box ();
   float baseline_pos = 0;
   INT32 resolution = page_image.get_res ();
@@ -931,10 +949,12 @@ CHAR_SAMPLE *clip_sample(              //lines of the image
       return NULL;
     }
 
+    IMAGE *image = new (IMAGE);
     if (image->create (b_box.width (), b_box.height (), 1) == -1) {
       tprintf ("clip sample: create image failed (%d x %d)\n",
         b_box.width (), b_box.height ());
 
+      delete image;
       return NULL;
     }
 
@@ -950,7 +970,8 @@ CHAR_SAMPLE *clip_sample(              //lines of the image
 }
 
 
-void display_cluster_prototypes(CHAR_SAMPLES_LIST *char_clusters) { 
+#ifndef GRAPHICS_DISABLED
+void display_cluster_prototypes(CHAR_SAMPLES_LIST *char_clusters) {
   INT16 proto_number = 0;
   CHAR_SAMPLES_IT c_it = char_clusters;
   char title[WINDOWNAMESIZE];
@@ -969,13 +990,13 @@ void display_cluster_prototypes(CHAR_SAMPLES_LIST *char_clusters) {
     }
   }
 }
-
+#endif
 
 // *********************************************************************
 // Simplistic routines to test the effect of rejecting ems and fullstops
 // *********************************************************************
 
-void reject_all_ems(WERD_RES *word) { 
+void reject_all_ems(WERD_RES *word) {
   INT16 i;
 
   for (i = 0; word->best_choice->string ()[i] != '\0'; i++) {
@@ -986,7 +1007,7 @@ void reject_all_ems(WERD_RES *word) {
 }
 
 
-void reject_all_fullstops(WERD_RES *word) { 
+void reject_all_fullstops(WERD_RES *word) {
   INT16 i;
 
   for (i = 0; word->best_choice->string ()[i] != '\0'; i++) {
@@ -997,7 +1018,7 @@ void reject_all_fullstops(WERD_RES *word) {
 }
 
 
-void reject_suspect_ems(WERD_RES *word) { 
+void reject_suspect_ems(WERD_RES *word) {
   INT16 i;
 
   if (!word_adaptable (word, tessedit_cluster_adaption_mode))
@@ -1009,7 +1030,7 @@ void reject_suspect_ems(WERD_RES *word) {
 }
 
 
-void reject_suspect_fullstops(WERD_RES *word) { 
+void reject_suspect_fullstops(WERD_RES *word) {
   INT16 i;
 
   for (i = 0; word->best_choice->string ()[i] != '\0'; i++) {
@@ -1021,9 +1042,9 @@ void reject_suspect_fullstops(WERD_RES *word) {
 }
 
 
-BOOL8 suspect_em(WERD_RES *word, INT16 index) { 
+BOOL8 suspect_em(WERD_RES *word, INT16 index) {
   PBLOB_LIST *blobs = word->outword->blob_list ();
-  PBLOB_IT blob_it(blobs); 
+  PBLOB_IT blob_it(blobs);
   INT16 j;
 
   for (j = 0; j < index; j++)
@@ -1033,10 +1054,10 @@ BOOL8 suspect_em(WERD_RES *word, INT16 index) {
 }
 
 
-BOOL8 suspect_fullstop(WERD_RES *word, INT16 i) { 
+BOOL8 suspect_fullstop(WERD_RES *word, INT16 i) {
   float aspect_ratio;
   PBLOB_LIST *blobs = word->outword->blob_list ();
-  PBLOB_IT blob_it(blobs); 
+  PBLOB_IT blob_it(blobs);
   INT16 j;
   BOX box;
   INT16 width;

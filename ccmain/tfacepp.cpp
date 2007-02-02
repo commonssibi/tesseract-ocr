@@ -172,7 +172,7 @@ WERD_CHOICE *recog_word_recursive(                           //recog one owrd
                                  //no of blobs
     word_length = outword->blob_list ()->length ();
                                  //convert all ratings
-    convert_choice_lists(tess_ratings, blob_choices); 
+    convert_choice_lists(tess_ratings, blob_choices);
                                  //copy string
     word_string = tess_raw.string;
     while (word_string.length () < word_length)
@@ -212,6 +212,10 @@ WERD_CHOICE *recog_word_recursive(                           //recog one owrd
       word_string += " ";        //pad with blanks
 
     assert (raw_choice != NULL);
+    if (tess_choice.string)
+      strfree(tess_choice.string);
+    if (tess_raw.string)
+      strfree(tess_raw.string);
     return new WERD_CHOICE (word_string.string (),
       tess_choice.rating, tess_choice.certainty,
       tess_choice.permuter);
@@ -289,6 +293,7 @@ WERD_CHOICE *split_and_recog_word(                           //recog one owrd
   //   outword1_len= outword->blob_list()->length();
   //   outword2_len= outword2->blob_list()->length();
   outword->join_on (outword2);   //join words
+  delete outword2;
   //   if ( outword->blob_list()->length() != outword1_len + outword2_len )
   //      tprintf( "Split&Recog: part1len=%d; part2len=%d; combinedlen=%d\n",
   //                                outword1_len, outword2_len, outword->blob_list()->length() );
@@ -370,7 +375,7 @@ void call_tester(                     //call a tester
   if (blob == NULL)
     return;
                                  //make it right type
-  convert_choice_list(result, ratings); 
+  convert_choice_list(result, ratings);
   if (tess_tester != NULL)
     (*tess_tester) (blob, tess_denorm, correct_blob, text, count, &ratings);
   delete blob;                   //don't need that now
@@ -399,7 +404,7 @@ void call_train_tester(                     //call a tester
   if (blob == NULL)
     return;
                                  //make it right type
-  convert_choice_list(result, ratings); 
+  convert_choice_list(result, ratings);
   if (tess_trainer != NULL)
     (*tess_trainer) (blob, tess_denorm, correct_blob, text, count, &ratings);
   delete blob;                   //don't need that now

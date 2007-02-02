@@ -87,14 +87,15 @@ PBLOB *make_ed_blob(                 //construct blob
 
   for (tessol = tessblob->outlines; tessol != NULL; tessol = tessol->next) {
                                  //stick in list
-    register_outline(tessol, &fragments); 
+    register_outline(tessol, &fragments);
   }
   while (!fragments.empty ()) {
     outline = make_ed_outline (&fragments);
-    if (outline == NULL)
-      return NULL;               //couldn't do it
-    out_it.add_after_then_move (outline);
+    if (outline != NULL)
+      out_it.add_after_then_move (outline);
   }
+  if (out_it.empty())
+    return NULL;                 //couldn't do it
   return new PBLOB (&out_list);  //turn to blob
 }
 
@@ -237,7 +238,7 @@ void convert_choice_lists(                                 //convert lists
                                  //make one
       choice = new BLOB_CHOICE_LIST;
                                  //convert blob choices
-      convert_choice_list(result, *choice); 
+      convert_choice_list(result, *choice);
                                  //add to super list
       it.add_after_then_move (choice);
     }
@@ -411,7 +412,7 @@ TESSLINE *make_tess_outlines(                            //make tess outlines
       tessoutline->topleft,
       tessoutline->botright);
     if (tessoutline->loop == NULL) {
-      oldoutline(tessoutline); 
+      oldoutline(tessoutline);
       continue;
     }
     tessoutline->start = tessoutline->loop->pos;
@@ -480,7 +481,7 @@ EDGEPT *make_tess_edgepts(                          //make tess edgepts
       br.y = tessedgept->pos.y;
     if (head != NULL && tessedgept->pos.x == tail->pos.x
     && tessedgept->pos.y == tail->pos.y) {
-      oldedgept(tessedgept); 
+      oldedgept(tessedgept);
     }
     else {
       for (index = 0; index < EDGEPTFLAGS; index++)
@@ -503,7 +504,7 @@ EDGEPT *make_tess_edgepts(                          //make tess edgepts
   tail->vec.x = head->pos.x - tail->pos.x;
   tail->vec.y = head->pos.y - tail->pos.y;
   if (head == tail) {
-    oldedgept(head); 
+    oldedgept(head);
     return NULL;                 //empty
   }
   return head;

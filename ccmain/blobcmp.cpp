@@ -28,9 +28,6 @@
 #include "tessvars.h"
 
 #define CMP_CLASS       'x'
-static BIT_VECTOR AllProtosOn = NULL;
-static BIT_VECTOR AllConfigsOn = NULL;
-//extern int                                    testedit_match_debug;
 
 /**********************************************************************
  * compare_tess_blobs
@@ -48,31 +45,32 @@ float compare_tess_blobs(TBLOB *blob1,
   FEATURE_SET float_features;
   INT_RESULT_STRUCT int_result;  /*output */
 
-  if (AllProtosOn == NULL) {
-    AllProtosOn = NewBitVector (MAX_NUM_PROTOS);
-    AllConfigsOn = NewBitVector (MAX_NUM_CONFIGS);
-    set_all_bits (AllProtosOn, WordsInVectorOfSize (MAX_NUM_PROTOS));
-    set_all_bits (AllConfigsOn, WordsInVectorOfSize (MAX_NUM_CONFIGS));
-  }
+  BIT_VECTOR AllProtosOn = NewBitVector (MAX_NUM_PROTOS);
+  BIT_VECTOR AllConfigsOn = NewBitVector (MAX_NUM_CONFIGS);
+  set_all_bits (AllProtosOn, WordsInVectorOfSize (MAX_NUM_PROTOS));
+  set_all_bits (AllConfigsOn, WordsInVectorOfSize (MAX_NUM_CONFIGS));
+
   EnterClassifyMode;
   ad_templates = NewAdaptedTemplates ();
-  GetLineStatsFromRow(row1, &line_stats1); 
+  GetLineStatsFromRow(row1, &line_stats1);
                                  /*copy baseline stuff */
-  GetLineStatsFromRow(row2, &line_stats2); 
-  MakeNewAdaptedClass(blob1, &line_stats1, CMP_CLASS, ad_templates); 
+  GetLineStatsFromRow(row2, &line_stats2);
+  MakeNewAdaptedClass(blob1, &line_stats1, CMP_CLASS, ad_templates);
   fcount = GetAdaptiveFeatures (blob2, &line_stats2,
     int_features, &float_features);
   if (fcount > 0) {
-    SetBaseLineMatch(); 
+    SetBaseLineMatch();
     IntegerMatcher (ClassForClassId (ad_templates->Templates, CMP_CLASS),
       AllProtosOn, AllConfigsOn, fcount, fcount,
       int_features, 0, 0, &int_result, testedit_match_debug);
-    FreeFeatureSet(float_features); 
+    FreeFeatureSet(float_features);
     if (int_result.Rating < 0)
       int_result.Rating = MAX_FLOAT32;
   }
 
-  free_adapted_templates(ad_templates); 
+  free_adapted_templates(ad_templates);
+  FreeBitVector(AllConfigsOn);
+  FreeBitVector(AllProtosOn);
 
   return fcount > 0 ? int_result.Rating * fcount : MAX_FLOAT32;
 }

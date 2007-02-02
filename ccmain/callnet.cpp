@@ -61,11 +61,11 @@ void callnet(  /* Apply image to net */
   int next_max_out_i = 0;
   float max_out = -9;
   float next_max_out = -9;
-
+  
   nmatch_set_input(input_vector);
   nmatch_propagate_forward();
   output_vector = nmatch_get_output ();
-
+  
   /* Now find top two choices */
 
   for (i = 0; i < OUTPUT_NODES; i++) {
