@@ -106,7 +106,7 @@ BOOL8 display_blocks = FALSE;
 BOOL8 display_baselines = FALSE;
 BOOL8 viewing_source = TRUE;
 
-BLOCK_LIST source_block_list;    //image blocks
+BLOCK_LIST *source_block_list = NULL;    //image blocks
 BLOCK_LIST target_block_list;    //target blocks
 BLOCK_LIST *other_block_list = &target_block_list;
 
@@ -122,7 +122,7 @@ BOOL8 *other_image_changed = &target_changed;
 EXTERN WINDOW image_win = NO_WINDOW;
 EXTERN COMMAND_WINDOW *command_window;
 
-EXTERN BLOCK_LIST *current_block_list = &source_block_list;
+EXTERN BLOCK_LIST *current_block_list = NULL;
 EXTERN BOOL8 *current_image_changed = &source_changed;
 EXTERN void (*show_pt_handler) (GRAPHICS_EVENT *) = NULL;
 
@@ -498,9 +498,9 @@ void do_new_source(            //serialise
   fclose(infp);
   sprintf (msg_str, "Reading file " "%s" "...", name);
   command_window->msg (msg_str);
-  source_block_list.clear ();
+  source_block_list->clear ();
                                  //appends to SOURCE
-  pgeditor_read_file(name_str, &source_block_list);
+  pgeditor_read_file(name_str, source_block_list);
   source_changed = FALSE;
   command_window->msg ("Doing automatic Tidy Target...");
   viewing_source = FALSE;        //Force viewing source
@@ -568,7 +568,7 @@ const BOX do_tidy_cmd() {  //tidy
   BOX tidy_box;                  //Just the tidy area
   BOX source_box;                //source file area
 
-  source_box = block_list_bounding_box (&source_block_list);
+  source_box = block_list_bounding_box (source_block_list);
   //find src area
 
   if (!target_block_list.empty ()) {
@@ -599,7 +599,7 @@ void do_view_cmd() {
   viewing_source = !viewing_source;
   clear_view_surface(image_win);
   if (viewing_source) {
-    current_block_list = &source_block_list;
+    current_block_list = source_block_list;
     current_image_changed = &source_changed;
     other_block_list = &target_block_list;
     other_image_changed = &target_changed;
@@ -612,7 +612,7 @@ void do_view_cmd() {
   else {
     current_block_list = &target_block_list;
     current_image_changed = &target_changed;
-    other_block_list = &source_block_list;
+    other_block_list = source_block_list;
     other_image_changed = &source_changed;
     do_re_display(&word_display);
 
@@ -716,17 +716,19 @@ void smd_cmd() {
  *
  **********************************************************************/
 
-void pgeditor_main() {
+void pgeditor_main(BLOCK_LIST *blocks) {
   GRAPHICS_EVENT event;
   INT32 cmd_event = 0;
   char new_value[MAX_CHARS + 1];
   BOOL8 exit = FALSE;
 
+  source_block_list = blocks;
+  current_block_list = blocks;
   if (current_block_list->empty ())
-    EMPTYBLOCKLIST.error ("pgeditor_main", EXIT, NULL);
+    return;
 
   command_window = new COMMAND_WINDOW ("WordEditorCmd", build_menu ());
-  build_image_window (block_list_bounding_box (&source_block_list));
+  build_image_window (block_list_bounding_box (source_block_list));
   do_re_display(&word_display);
   word_display_mode.turn_on_bit (DF_BOX);
 
