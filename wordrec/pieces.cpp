@@ -295,12 +295,14 @@ CHOICES classify_piece(TBLOB *pieces,
     this_state, best_state, pass, blob_index);
 
   break_pieces(blob, seams, start, end); 
+#ifndef GRAPHICS_DISABLED
   if (display_segmentations > 2) {
     chunk_groups = bin_to_chunks (&current_state, array_count (seams));
     display_segmentation(pieces, chunk_groups); 
     window_wait(segm_window); 
     memfree(chunk_groups); 
   }
+#endif
 
   return (choices);
 }

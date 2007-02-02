@@ -125,6 +125,7 @@ void form_two_blobs(TBLOB *blob, TBLOB *other_blob, INT32 location) {
 
   correct_blob_order(blob, other_blob); 
 
+#ifndef GRAPHICS_DISABLED
   if (chop_debug) {
     display_blob(blob, Red); 
     #ifdef __UNIX__
@@ -132,6 +133,7 @@ void form_two_blobs(TBLOB *blob, TBLOB *other_blob, INT32 location) {
     #endif
     display_blob(other_blob, Cyan); 
   }
+#endif
 }
 
 

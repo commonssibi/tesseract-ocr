@@ -38,6 +38,7 @@
 #include "speckle.h"
 #include "stopper.h"
 
+#ifndef GRAPHICS_DISABLED
 /*---------------------------------------------------------------------
               V a r i a b l e s
 ----------------------------------------------------------------------*/
@@ -45,6 +46,7 @@ int handle_menu_16();
 int handle_menu_17(); 
 int handle_menu_18(); 
 int handle_menu_19(); 
+#endif
 
 /*----------------------------------------------------------------------
               F u n c t i o n s
@@ -81,6 +83,7 @@ void init_dj_debug() {
   if (first_time) {
     first_time = 0;
     /* Set up the interrupts */
+    #ifndef GRAPHICS_DISABLED
     #ifndef SECURE_NAMES
     AddSignalMenuItem (SIGINT, 16, "Int Matcher Menu      ...",
       handle_menu_16);
@@ -90,6 +93,7 @@ void init_dj_debug() {
       handle_menu_18);
     AddSignalMenuItem (SIGINT, 19, "Word Spacing          ...",
       handle_menu_19);
+    #endif
     #endif
     InitAdaptiveClassifierVars(); 
     InitMFOutlineVars(); 
@@ -107,6 +111,8 @@ void init_dj_debug() {
  *
  * Initialize the traps for handling the debug stuff.
  **********************************************************************/
+#ifndef GRAPHICS_DISABLED
 handle_menu (16, handle_menu_16)
 handle_menu (17, handle_menu_17)
 handle_menu (18, handle_menu_18) handle_menu (19, handle_menu_19)
+#endif

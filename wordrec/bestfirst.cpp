@@ -92,7 +92,9 @@ void best_first_search(CHUNKS_RECORD *chunks_record,
   the_search = new_search (chunks_record, num_joints,
     best_choice, raw_choice, state);
 
+#ifndef GRAPHICS_DISABLED
   save_best_state(chunks_record); 
+#endif
   start_recording(); 
 
   guided_state = *state;
@@ -271,11 +273,13 @@ INT16 evaluate_state(CHUNKS_RECORD *chunks_record,
     array_free(char_choices); 
   }
 
+#ifndef GRAPHICS_DISABLED
   if (display_segmentations) {
     display_segmentation (chunks_record->chunks, chunk_groups);
     if (display_segmentations > 1)
       window_wait(segm_window); 
   }
+#endif
 
   if (rating_limit != class_probability (the_search->best_choice)) {
     the_search->before_best = the_search->num_states;
@@ -449,10 +453,12 @@ STATE *pop_queue(HEAP *queue) {
   HEAPENTRY entry;
 
   if (GetTopOfHeap (queue, &entry) == OK) {
+#ifndef GRAPHICS_DISABLED
     if (display_segmentations) {
       cprintf ("eval state: %8.3f ", entry.Key);
       print_state ("", (STATE *) entry.Data, num_joints);
     }
+#endif
     return ((STATE *) entry.Data);
   }
   else {

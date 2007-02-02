@@ -44,6 +44,7 @@
 /*----------------------------------------------------------------------
               V a r i a b l e s
 ----------------------------------------------------------------------*/
+#ifndef GRAPHICS_DISABLED
 int handle_menu_3(); 
 int handle_menu_4(); 
 int handle_menu_5(); 
@@ -51,6 +52,7 @@ int handle_menu_6();
 int handle_menu_7(); 
 int handle_menu_8(); 
 int handle_menu_9(); 
+#endif
 
 /*----------------------------------------------------------------------
               F u n c t i o n s
@@ -66,6 +68,7 @@ void init_ms_debug() {
   if (first_time) {
     first_time = 0;
     /* Set up the interrupts */
+    #ifndef GRAPHICS_DISABLED
     #ifndef SECURE_NAMES
     AddSignalMenuItem (SIGINT, 3, "Chopper", handle_menu_3);
     AddSignalMenuItem (SIGINT, 4, "Text Order", handle_menu_4);
@@ -75,13 +78,17 @@ void init_ms_debug() {
     AddSignalMenuItem (SIGINT, 8, "Context", handle_menu_8);
     AddSignalMenuItem (SIGINT, 9, "Joiner", handle_menu_9);
     #endif
+
     init_plotseg(); 
+    init_render_vars(); 
+    #endif
+    
     init_baseline(); 
     init_bestfirst_vars(); 
     init_splitter_vars(); 
     init_associate_vars(); 
     init_chop(); 
-    init_render_vars(); 
+    
     init_textord_vars(); 
     init_permute(); 
   }
@@ -93,9 +100,11 @@ void init_ms_debug() {
  *
  * Initialize the traps for handling the splitter debug stuff.
  **********************************************************************/
+#ifndef GRAPHICS_DISABLED
 handle_menu (3, handle_menu_3)
 handle_menu (4, handle_menu_4)
 handle_menu (5, handle_menu_5)
 handle_menu (6, handle_menu_6)
 handle_menu (7, handle_menu_7)
 handle_menu (8, handle_menu_8) handle_menu (9, handle_menu_9)
+#endif

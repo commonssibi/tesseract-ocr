@@ -95,9 +95,10 @@ CHOICES classify_blob(TBLOB *pblob,
   if (blob_skip)
     return (NIL);
 
+#ifndef GRAPHICS_DISABLED
   if (display_all_blobs)
     display_blob(blob, color); 
-
+#endif
   rating = get_match (blob);
   if (rating == NIL) {
     if (pass) {
@@ -121,11 +122,13 @@ CHOICES classify_blob(TBLOB *pblob,
     put_match(blob, rating); 
   }
 
+#ifndef GRAPHICS_DISABLED
   if (display_ratings && string)
     print_choices(string, rating); 
 
   if (blob_pause)
     window_wait(blob_window); 
+#endif
 
   return (rating);
 }
