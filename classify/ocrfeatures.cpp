@@ -23,12 +23,13 @@
 #include "callcpp.h"
 #include "danerror.h"
 #include "freelist.h"
+#include "scanutils.h"
 
 /**----------------------------------------------------------------------------
               Public Code
 ----------------------------------------------------------------------------**/
 /*---------------------------------------------------------------------------*/
-BOOL8 AddFeature(FEATURE_SET FeatureSet, FEATURE Feature) { 
+BOOL8 AddFeature(FEATURE_SET FeatureSet, FEATURE Feature) {
 /*
  **	Parameters:
  **		FeatureSet	set of features to add Feature to
@@ -42,8 +43,10 @@ BOOL8 AddFeature(FEATURE_SET FeatureSet, FEATURE Feature) {
  **	Exceptions: none
  **	History: Tue May 22 17:22:23 1990, DSJ, Created.
  */
-  if (NumFeaturesIn (FeatureSet) >= MaxNumFeaturesIn (FeatureSet))
+  if (NumFeaturesIn (FeatureSet) >= MaxNumFeaturesIn (FeatureSet)) {
+    FreeFeature(Feature);
     return (FALSE);
+  }
 
   FeatureIn (FeatureSet, NumFeaturesIn (FeatureSet)) = Feature;
   NumFeaturesIn (FeatureSet)++;
@@ -53,7 +56,7 @@ BOOL8 AddFeature(FEATURE_SET FeatureSet, FEATURE Feature) {
 
 
 /*---------------------------------------------------------------------------*/
-void DefaultInitFXVars() { 
+void DefaultInitFXVars() {
 /*
  **	Parameters: none
  **	Globals: none
@@ -68,7 +71,7 @@ void DefaultInitFXVars() {
 
 
 /*---------------------------------------------------------------------------*/
-void FreeFeature(FEATURE Feature) { 
+void FreeFeature(FEATURE Feature) {
 /*
  **	Parameters:
  **		Feature		feature to be deallocated.
@@ -88,7 +91,7 @@ void FreeFeature(FEATURE Feature) {
 
 
 /*---------------------------------------------------------------------------*/
-void FreeFeatureSet(FEATURE_SET FeatureSet) { 
+void FreeFeatureSet(FEATURE_SET FeatureSet) {
 /*
  **	Parameters:
  **		FeatureSet	set of features to be freed
@@ -105,13 +108,13 @@ void FreeFeatureSet(FEATURE_SET FeatureSet) {
   if (FeatureSet) {
     for (i = 0; i < NumFeaturesIn (FeatureSet); i++)
       FreeFeature (FeatureIn (FeatureSet, i));
-    memfree(FeatureSet); 
+    memfree(FeatureSet);
   }
 }                                /* FreeFeatureSet */
 
 
 /*---------------------------------------------------------------------------*/
-FEATURE NewFeature(FEATURE_DESC FeatureDesc) { 
+FEATURE NewFeature(FEATURE_DESC FeatureDesc) {
 /*
  **	Parameters:
  **		FeatureDesc	description of feature to be created.
@@ -135,7 +138,7 @@ FEATURE NewFeature(FEATURE_DESC FeatureDesc) {
 
 
 /*---------------------------------------------------------------------------*/
-FEATURE_SET NewFeatureSet(int NumFeatures) { 
+FEATURE_SET NewFeatureSet(int NumFeatures) {
 /*
  **	Parameters:
  **		NumFeatures	maximum # of features to be put in feature set
@@ -158,7 +161,7 @@ FEATURE_SET NewFeatureSet(int NumFeatures) {
 
 
 /*---------------------------------------------------------------------------*/
-FEATURE ReadFeature(FILE *File, FEATURE_DESC FeatureDesc) { 
+FEATURE ReadFeature(FILE *File, FEATURE_DESC FeatureDesc) {
 /*
  **	Parameters:
  **		File		open text file to read feature from
@@ -188,7 +191,7 @@ FEATURE ReadFeature(FILE *File, FEATURE_DESC FeatureDesc) {
 
 
 /*---------------------------------------------------------------------------*/
-FEATURE_SET ReadFeatureSet(FILE *File, FEATURE_DESC FeatureDesc) { 
+FEATURE_SET ReadFeatureSet(FILE *File, FEATURE_DESC FeatureDesc) {
 /*
  **	Parameters:
  **		File		open text file to read new feature set from
@@ -220,7 +223,7 @@ FEATURE_SET ReadFeatureSet(FILE *File, FEATURE_DESC FeatureDesc) {
 
 
 /*---------------------------------------------------------------------------*/
-void WriteFeature(FILE *File, FEATURE Feature) { 
+void WriteFeature(FILE *File, FEATURE Feature) {
 /*
  **	Parameters:
  **		File		open text file to write Feature to
@@ -246,7 +249,7 @@ void WriteFeature(FILE *File, FEATURE Feature) {
 
 
 /*---------------------------------------------------------------------------*/
-void WriteFeatureSet(FILE *File, FEATURE_SET FeatureSet) { 
+void WriteFeatureSet(FILE *File, FEATURE_SET FeatureSet) {
 /*
  **	Parameters:
  **		File		open text file to write FeatureSet to
@@ -271,7 +274,7 @@ void WriteFeatureSet(FILE *File, FEATURE_SET FeatureSet) {
 
 
 /*---------------------------------------------------------------------------*/
-void WriteOldParamDesc(FILE *File, FEATURE_DESC FeatureDesc) { 
+void WriteOldParamDesc(FILE *File, FEATURE_DESC FeatureDesc) {
 /*
  **	Parameters:
  **		File		open text file to write FeatureDesc to

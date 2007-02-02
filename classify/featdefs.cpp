@@ -19,18 +19,71 @@
           Include Files and Type Defines
 ----------------------------------------------------------------------------**/
 #include "featdefs.h"
-#include "mf.h"
-#include "outfeat.h"
-#include "picofeat.h"
-#include "normfeat.h"
 #include "emalloc.h"
 #include "danerror.h"
+#include "scanutils.h"
+#include "variables.h"
+#include "sigmenu.h"
 
 #include <string.h>
 #include <stdio.h>
 
 /* define errors triggered by this module */
 #define ILLEGAL_NUM_SETS  3001
+
+#define PICO_FEATURE_LENGTH 0.05
+#define MAX_OUTLINE_FEATURES  100
+
+/**----------------------------------------------------------------------------
+        Global Data Definitions and Declarations
+----------------------------------------------------------------------------**/
+/* define all of the parameters for the MicroFeature type*/
+StartParamDesc (MicroFeatureParams)
+DefineParam (0, 0, -0.5, 0.5)
+DefineParam (0, 0, -0.25, 0.75)
+DefineParam (0, 0, 0.0, 1.0)
+DefineParam (1, 0, 0.0, 1.0)
+DefineParam (0, 1, -0.5, 0.5)
+DefineParam (0, 1, -0.5, 0.5)
+EndParamDesc
+/* now define the feature type itself (see features.h for info about each
+  parameter).*/
+DefineFeature (MicroFeatureDesc, 5, 1, 4, 50, "Micro", "mf", MicroFeatureParams)
+
+// define all of the parameters for the PicoFeature type
+/* define knob that can be used to adjust pico-feature length */
+FLOAT32 PicoFeatureLength = PICO_FEATURE_LENGTH;
+StartParamDesc (PicoFeatParams)
+DefineParam (0, 0, -0.25, 0.75)
+DefineParam (1, 0, 0.0, 1.0)
+DefineParam (0, 0, -0.5, 0.5)
+EndParamDesc
+/* now define the feature type itself (see features.h for info about each
+  parameter).*/
+DefineFeature (PicoFeatDesc, 2, 1, 1, MAX_UINT8, "Pico", "pf", PicoFeatParams)
+
+/* define all of the parameters for the NormFeat type*/
+StartParamDesc (CharNormParams)
+DefineParam (0, 0, -0.25, 0.75)
+DefineParam (0, 0, 0.0, 1.0)
+DefineParam (0, 0, 0.0, 1.0)
+DefineParam (0, 0, 0.0, 1.0)
+EndParamDesc
+/* now define the feature type itself (see features.h for info about each
+  parameter).*/
+DefineFeature (CharNormDesc, 4, 0, 1, 1, "CharNorm", "cn", CharNormParams)
+
+// define all of the parameters for the OutlineFeature type
+StartParamDesc (OutlineFeatParams)
+DefineParam (0, 0, -0.5, 0.5)
+DefineParam (0, 0, -0.25, 0.75)
+DefineParam (0, 0, 0.0, 1.0)
+DefineParam (1, 0, 0.0, 1.0)
+EndParamDesc
+/* now define the feature type itself (see features.h for info about each
+  parameter).*/
+DefineFeature (OutlineFeatDesc, 3, 1, 1, MAX_OUTLINE_FEATURES, "Outline",
+               "of", OutlineFeatParams)
 
 /**----------------------------------------------------------------------------
         Global Data Definitions and Declarations
@@ -43,20 +96,13 @@ FEATURE_DEFS_STRUCT FeatureDefs = {
       &OutlineFeatDesc,
       &CharNormDesc
   }
-  ,
-  {
-    FALSE,
-      FALSE,
-      FALSE,
-      FALSE
-  }
 };
 
 /**----------------------------------------------------------------------------
               Public Code
 ----------------------------------------------------------------------------**/
 /*---------------------------------------------------------------------------*/
-void FreeCharDescription(CHAR_DESC CharDesc) { 
+void FreeCharDescription(CHAR_DESC CharDesc) {
 /*
  **	Parameters:
  **		CharDesc	character description to be deallocated
@@ -72,13 +118,13 @@ void FreeCharDescription(CHAR_DESC CharDesc) {
   if (CharDesc) {
     for (i = 0; i < NumFeatureSetsIn (CharDesc); i++)
       FreeFeatureSet (FeaturesOfType (CharDesc, i));
-    Efree(CharDesc); 
+    Efree(CharDesc);
   }
 }                                /* FreeCharDescription */
 
 
 /*---------------------------------------------------------------------------*/
-CHAR_DESC NewCharDescription() { 
+CHAR_DESC NewCharDescription() {
 /*
  **	Parameters: none
  **	Globals: none
@@ -103,7 +149,7 @@ CHAR_DESC NewCharDescription() {
 
 
 /*---------------------------------------------------------------------------*/
-void WriteCharDescription(FILE *File, CHAR_DESC CharDesc) { 
+void WriteCharDescription(FILE *File, CHAR_DESC CharDesc) {
 /*
  **	Parameters:
  **		File		open text file to write CharDesc to
@@ -137,7 +183,7 @@ void WriteCharDescription(FILE *File, CHAR_DESC CharDesc) {
 
 
 /*---------------------------------------------------------------------------*/
-CHAR_DESC ReadCharDescription(FILE *File) { 
+CHAR_DESC ReadCharDescription(FILE *File) {
 /*
  **	Parameters:
  **		File	open text file to read character description from
@@ -175,7 +221,7 @@ CHAR_DESC ReadCharDescription(FILE *File) {
 
 
 /*---------------------------------------------------------------------------*/
-int ShortNameToFeatureType(char *ShortName) { 
+int ShortNameToFeatureType(const char *ShortName) {
 /*
  **	Parameters:
  **		ShortName	short name of a feature type

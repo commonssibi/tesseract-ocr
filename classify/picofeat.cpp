@@ -32,7 +32,7 @@
 #include "efio.h"                //Debug
 //#include "christydbg.h"
 
-#define PICO_FEATURE_LENGTH (0.05)
+#define PICO_FEATURE_LENGTH 0.05
 
 /*---------------------------------------------------------------------------
           Private Function Prototypes
@@ -71,18 +71,6 @@ void NormalizePicoX
 /**----------------------------------------------------------------------------
         Global Data Definitions and Declarations
 ----------------------------------------------------------------------------**/
-// define all of the parameters for this feature type
-StartParamDesc (PicoFeatParams)
-DefineParam (0, 0, -0.25, 0.75)
-DefineParam (1, 0, 0.0, 1.0) DefineParam (0, 0, -0.5, 0.5) EndParamDesc
-/* now define the feature type itself (see features.h for info about each
-  parameter).*/
-DefineFeature (PicoFeatDesc, 2, 1, 1, MAX_UINT8, "Pico", "pf", PicoFeatParams, NULL
-/*, NULL,
-                  NULL, NULL */
-, DefaultInitFXVars /*, NULL */ )
-/* define knob that can be used to adjust pico-feature length */
-FLOAT32 PicoFeatureLength = PICO_FEATURE_LENGTH;
 
 /**----------------------------------------------------------------------------
               Public Code
@@ -166,13 +154,13 @@ void InitPicoFXVars() {
  **	Exceptions: none
  **	History: 9/4/90, DSJ, Created.
  */
-  VALUE dummy;
 
-  float_variable (PicoFeatureLength, "PicoFeatureLength",
-    PICO_FEATURE_LENGTH);
-
-}                                /* InitPicoFXVars */
-
+	VALUE dummy;
+	
+	float_variable (PicoFeatureLength, "PicoFeatureLength",
+		PICO_FEATURE_LENGTH);
+	
+}														/* InitPicoFXVars */
 
 /**----------------------------------------------------------------------------
               Private Code

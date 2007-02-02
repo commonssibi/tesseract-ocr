@@ -24,7 +24,7 @@
 #include "ocrfeatures.h"
 
 /* Enumerate the different types of features currently defined. */
-#define NUM_FEATURE_TYPES 4      //6
+#define NUM_FEATURE_TYPES 4
 
 /* define error traps which can be triggered by this module.*/
 #define ILLEGAL_SHORT_NAME  2000
@@ -46,6 +46,7 @@ typedef struct
 {
   UINT32 NumFeatureTypes;
   FEATURE_DESC FeatureDesc[NUM_FEATURE_TYPES];
+  FEATURE_EXT_STRUCT* FeatureExtractors[NUM_FEATURE_TYPES];
   int FeatureEnabled[NUM_FEATURE_TYPES];
 } FEATURE_DEFS_STRUCT;
 typedef FEATURE_DEFS_STRUCT *FEATURE_DEFS;
@@ -55,6 +56,7 @@ typedef FEATURE_DEFS_STRUCT *FEATURE_DEFS;
 ----------------------------------------------------------------------*/
 #define NumFeaturesDefined()  (FeatureDefs.NumFeatureTypes)
 #define DefinitionOf(Type)  (FeatureDefs.FeatureDesc[Type])
+#define ExtractorOf(Type)  (FeatureDefs.FeatureExtractors[Type])
 #define FeatureOn(Type)   (FeatureDefs.FeatureEnabled[Type])
 
 /*----------------------------------------------------------------------
@@ -66,15 +68,15 @@ typedef FEATURE_DEFS_STRUCT *FEATURE_DEFS;
 /*----------------------------------------------------------------------
     Generic functions for manipulating character descriptions
 ----------------------------------------------------------------------*/
-void FreeCharDescription(CHAR_DESC CharDesc); 
+void FreeCharDescription(CHAR_DESC CharDesc);
 
-CHAR_DESC NewCharDescription(); 
+CHAR_DESC NewCharDescription();
 
-void WriteCharDescription(FILE *File, CHAR_DESC CharDesc); 
+void WriteCharDescription(FILE *File, CHAR_DESC CharDesc);
 
-CHAR_DESC ReadCharDescription(FILE *File); 
+CHAR_DESC ReadCharDescription(FILE *File);
 
-int ShortNameToFeatureType(char *ShortName); 
+int ShortNameToFeatureType(const char *ShortName);
 
 /**----------------------------------------------------------------------------
         Global Data Definitions and Declarations

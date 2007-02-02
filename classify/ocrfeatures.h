@@ -24,6 +24,7 @@
 #include "funcdefs.h"
 #include "tessclas.h"
 #include "fxdefs.h"
+
 #include <stdio.h>
 
 #undef Min
@@ -61,30 +62,6 @@ typedef FEATURE (*FEAT_FUNC) ();
 typedef FEATURE_SET (*FX_FUNC) (TBLOB *, LINE_STATS *);
 typedef FLOAT32 (*PENALTY_FUNC) ();
 
-#if 0
-define data structures used to hold the descriptions of each feature
-type (rather than the features themselves).
-Each feature type which is defined must provide the following information.typedef enum
-{ Circular, Linear }
-PARAM_TYPE;
-typedef enum
-{ Yes, No }
-PARAM_CLUSTER;
-
-//&&& this needs to be merged with the PARAM_DESC in kdtree.h
-typedef struct
-{
-  PARAM_TYPE Type;               /* is dimension circular or linear? */
-  PARAM_CLUSTER Cluster;         /* should dim be used during clustering? */
-  FLOAT32 Min;                   /* circular dimension minimum */
-  FLOAT32 Max;                   /* circular dimension maximum */
-  FLOAT32 Range;                 /* Max - Min */
-  FLOAT32 HalfRange;             /* (Max - Min)/2 */
-  FLOAT32 MidRange;              /* (Max + Min)/2 */
-} PARAM_DESC_STRUCT;
-//typedef PARAM_DESC_STRUCT* PARAM_DESC;                                                        /* one of these for each param of a feature */
-#endif
-
 typedef struct
 {
   INT8 Circular;                 /* TRUE if dimension wraps around */
@@ -94,10 +71,7 @@ typedef struct
   FLOAT32 Range;                 /* Max - Min */
   FLOAT32 HalfRange;             /* (Max - Min)/2 */
   FLOAT32 MidRange;              /* (Max + Min)/2 */
-}
-
-
-PARAM_DESC;
+} PARAM_DESC;
 
 typedef struct fds
 {
@@ -109,15 +83,15 @@ typedef struct fds
   char LongName[FEAT_NAME_SIZE]; /* long name for feature */
   char ShortName[FEAT_NAME_SIZE];/* short name for feature */
   PARAM_DESC *ParamDesc;         /* array - one per param */
-  FX_FUNC Extractor;             /* func to extract features */
-  //VOID_FUNC                                     Displayer;                                      /* func to display features */
-  //PENALTY_FUNC                          ComputeExtraPenalty;            /* func for extra penalties */
-  //VOID_FUNC                                     InitExtractor;                          /* func to init extractor */
-  VOID_FUNC InitExtractorVars;   /* func to init fx controls */
-  //INT_FUNC                                      TweekExtractorVars;                     /* func to tune fx controls */
 } FEATURE_DESC_STRUCT;
                                  /* one per feature type */
 typedef FEATURE_DESC_STRUCT *FEATURE_DESC;
+
+typedef struct fxs
+{
+  FX_FUNC Extractor;             /* func to extract features */
+  VOID_FUNC InitExtractorVars;   /* func to init fx controls */
+} FEATURE_EXT_STRUCT;
 
 /*----------------------------------------------------------------------
     Macros for defining the parameters of a new features
@@ -142,10 +116,10 @@ DefineFeature (Name, NumLinear, NumCircular,
       ComputeExtraPenalty,
       InitExtractor, InitExtractorVars, TweekExtractorVars)
 ----------------------------------------------------------------------*/
-#define DefineFeature(Name, NL, NC, Min, Max, LN, SN, PN, E, /*D, CEP, IE,*/ IEV/*, TEV*/)		\
+#define DefineFeature(Name, NL, NC, Min, Max, LN, SN, PN)		\
 FEATURE_DESC_STRUCT Name = {						\
-	((NL) + (NC)), NL, NC, Min, Max, LN, SN, PN, E/*, D,			\
-	CEP, IE*/, IEV/*, TEV*/};
+	((NL) + (NC)), NL, NC, Min, Max, LN, SN, PN};
+#define DefineFeatureExt(Name, E, IEV) FEATURE_EXT_STRUCT Name = {E, IEV};
 
 /*----------------------------------------------------------------------
         Macros for accessing features

@@ -44,6 +44,14 @@ void WriteNFloats (FILE * File, UINT16 N, FLOAT32 Array[]);
 
 void WriteProtoStyle(FILE *File, PROTOSTYLE ProtoStyle); 
 
+void WriteProtoList(
+     FILE	*File,
+     UINT16	N,
+     PARAM_DESC	ParamDesc[],
+     LIST	ProtoList,
+     BOOL8	WriteSigProtos,
+     BOOL8	WriteInsigProtos);
+
 FLOAT32 UniformRandomNumber(FLOAT32 MMin, FLOAT32 MMax); 
 
 //--------------Global Data Definitions and Declarations---------------------

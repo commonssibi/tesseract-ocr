@@ -66,7 +66,9 @@ typedef char *CHAR_FEATURES;
 /*----------------------------------------------------------------------------
           Public Function Prototypes
 -----------------------------------------------------------------------------*/
-void GetLineStatsFromRow(TEXTROW *Row, LINE_STATS *LineStats); 
+void SetupExtractors();
+
+void GetLineStatsFromRow(TEXTROW *Row, LINE_STATS *LineStats);
 
 /*
 #if defined(__STDC__) || defined(__cplusplus)

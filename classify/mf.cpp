@@ -28,25 +28,11 @@
 /**----------------------------------------------------------------------------
         Global Data Definitions and Declarations
 ----------------------------------------------------------------------------**/
-/* define all of the parameters for this feature type*/
-StartParamDesc (MicroFeatureParams)
-DefineParam (0, 0, -0.5, 0.5)
-DefineParam (0, 0, -0.25, 0.75)
-DefineParam (0, 0, 0.0, 1.0)
-DefineParam (1, 0, 0.0, 1.0)
-DefineParam (0, 1, -0.5, 0.5) DefineParam (0, 1, -0.5, 0.5) EndParamDesc
-/* now define the feature type itself (see features.h for info about each
-  parameter).*/
-DefineFeature (MicroFeatureDesc, 5, 1, 4, 50, "Micro", "mf", MicroFeatureParams, ExtractMicros
-/*, NULL,
-                  NULL, NULL */
-, InitMicroFXVars /*, NULL */ )
-/* variables used to control the way extra penalties are accessed.*/
 /**----------------------------------------------------------------------------
               Private Code
 ----------------------------------------------------------------------------**/
 /*---------------------------------------------------------------------------*/
-FEATURE_SET ExtractMicros(TBLOB *Blob, LINE_STATS *LineStats) { 
+FEATURE_SET ExtractMicros(TBLOB *Blob, LINE_STATS *LineStats) {
 /*
  **	Parameters:
  **		Blob		blob to extract micro-features from
@@ -70,25 +56,31 @@ FEATURE_SET ExtractMicros(TBLOB *Blob, LINE_STATS *LineStats) {
   FeatureSet = NewFeatureSet (NumFeatures);
 
   Features = OldFeatures;
-  iterate(Features) { 
+  iterate(Features) {
     OldFeature = (MICROFEATURE) first (Features);
     Feature = NewFeature (&MicroFeatureDesc);
     ParamOf (Feature, MFDirection) = OrientationOf (OldFeature);
     ParamOf (Feature, MFXPosition) = CenterX (OldFeature);
     ParamOf (Feature, MFYPosition) = CenterY (OldFeature);
     ParamOf (Feature, MFLength) = LengthOf (OldFeature);
-    ParamOf (Feature, MFBulge1) = FirstBulgeOf (OldFeature);
-    ParamOf (Feature, MFBulge2) = SecondBulgeOf (OldFeature);
-    AddFeature(FeatureSet, Feature); 
+
+    // Bulge features should not be used
+    // anymore and are therefore set to 0.
+//     ParamOf (Feature, MFBulge1) = FirstBulgeOf (OldFeature);
+//     ParamOf (Feature, MFBulge2) = SecondBulgeOf (OldFeature);
+    ParamOf (Feature, MFBulge1) = 0.0f;
+    ParamOf (Feature, MFBulge2) = 0.0f;
+
+    AddFeature(FeatureSet, Feature);
   }
-  FreeMicroFeatures(OldFeatures); 
+  FreeMicroFeatures(OldFeatures);
   return (FeatureSet);
 
 }                                /* ExtractMicros */
 
 
 /*---------------------------------------------------------------------------*/
-void InitMicroFXVars() { 
+void InitMicroFXVars() {
 /*
  **	Parameters: none
  **	Globals:
@@ -109,6 +101,6 @@ void InitMicroFXVars() {
      float_variable (ExtraPenaltyOrder, "MFExtraPenaltyOrder",
      EXTRA_PENALTY_ORDER);
    */
-  InitMicroFxVars(); 
+  InitMicroFxVars();
 
 }                                /* InitMicroFXVars */

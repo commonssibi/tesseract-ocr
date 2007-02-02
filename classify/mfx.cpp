@@ -24,6 +24,7 @@
 #include "mfoutline.h"
 #include "clusttool.h"           //NEEDED
 #include "const.h"
+#include "intfx.h"
 #include <math.h>
 
 /* default values for tunable knobs */
@@ -46,16 +47,16 @@
 /*----------------------------------------------------------------------------
           Private Function Prototypes
 -----------------------------------------------------------------------------*/
-void ComputeBulges(MFOUTLINE Start, MFOUTLINE End, MICROFEATURE MicroFeature); 
+void ComputeBulges(MFOUTLINE Start, MFOUTLINE End, MICROFEATURE MicroFeature);
 
-FLOAT32 ComputeOrientation(MFEDGEPT *Start, MFEDGEPT *End); 
+FLOAT32 ComputeOrientation(MFEDGEPT *Start, MFEDGEPT *End);
 
 MICROFEATURES ConvertToMicroFeatures(MFOUTLINE Outline,
                                      MICROFEATURES MicroFeatures);
 
-MICROFEATURE ExtractMicroFeature(MFOUTLINE Start, MFOUTLINE End); 
+MICROFEATURE ExtractMicroFeature(MFOUTLINE Start, MFOUTLINE End);
 
-void SmearBulges(MICROFEATURES MicroFeatures, FLOAT32 XScale, FLOAT32 YScale); 
+void SmearBulges(MICROFEATURES MicroFeatures, FLOAT32 XScale, FLOAT32 YScale);
 
 /*
 #if defined(__STDC__) || defined(__cplusplus)
@@ -102,7 +103,7 @@ static FLOAT32 NoiseSegmentLength;
             Public Code
 ----------------------------------------------------------------------------**/
 /*---------------------------------------------------------------------------*/
-void InitMicroFxVars() { 
+void InitMicroFxVars() {
 /*
  **      Parameters: none
  **      Globals:
@@ -130,7 +131,7 @@ void InitMicroFxVars() {
 
 
 /*---------------------------------------------------------------------------*/
-CHAR_FEATURES BlobMicroFeatures(TBLOB *Blob, LINE_STATS *LineStats) { 
+CHAR_FEATURES BlobMicroFeatures(TBLOB *Blob, LINE_STATS *LineStats) {
 /*
  **      Parameters:
  **              Blob            blob to extract micro-features from
@@ -151,23 +152,36 @@ CHAR_FEATURES BlobMicroFeatures(TBLOB *Blob, LINE_STATS *LineStats) {
   LIST Outlines;
   LIST RemainingOutlines;
   MFOUTLINE Outline;
+  INT_FEATURE_ARRAY blfeatures;
+  INT_FEATURE_ARRAY cnfeatures;
+  INT_FX_RESULT_STRUCT results;
 
   if (Blob != NULL) {
     Outlines = ConvertBlob (Blob);
-
-    NormalizeOutlines(Outlines, LineStats, &XScale, &YScale); 
+//    NormalizeOutlines(Outlines, LineStats, &XScale, &YScale); 
+    ExtractIntFeat(Blob, blfeatures, cnfeatures, &results);
+    XScale = 0.2f / results.Ry;
+    YScale = 0.2f / results.Rx;
 
     RemainingOutlines = Outlines;
     iterate(RemainingOutlines) { 
       Outline = (MFOUTLINE) first (RemainingOutlines);
-      FindDirectionChanges(Outline, MinSlope, MaxSlope); 
-      FilterEdgeNoise(Outline, NoiseSegmentLength); 
-      MarkDirectionChanges(Outline); 
-      SmearExtremities(Outline, XScale, YScale); 
+      CharNormalizeOutline (Outline,
+        results.Xmean, results.Ymean,
+        XScale, YScale);
+    }
+
+    RemainingOutlines = Outlines;
+    iterate(RemainingOutlines) {
+      Outline = (MFOUTLINE) first (RemainingOutlines);
+      FindDirectionChanges(Outline, MinSlope, MaxSlope);
+      FilterEdgeNoise(Outline, NoiseSegmentLength);
+      MarkDirectionChanges(Outline);
+      SmearExtremities(Outline, XScale, YScale);
       MicroFeatures = ConvertToMicroFeatures (Outline, MicroFeatures);
     }
-    SmearBulges(MicroFeatures, XScale, YScale); 
-    FreeOutlines(Outlines); 
+    SmearBulges(MicroFeatures, XScale, YScale);
+    FreeOutlines(Outlines);
   }
   return ((CHAR_FEATURES) MicroFeatures);
 }                                /* BlobMicroFeatures */
@@ -201,7 +215,7 @@ CHAR_FEATURES BlobMicroFeatures(TBLOB *Blob, LINE_STATS *LineStats) {
             Private Code
 ---------------------------------------------------------------------------*/
 /*---------------------------------------------------------------------------*/
-void ComputeBulges(MFOUTLINE Start, MFOUTLINE End, MICROFEATURE MicroFeature) { 
+void ComputeBulges(MFOUTLINE Start, MFOUTLINE End, MICROFEATURE MicroFeature) {
 /*
  **      Parameters:
  **              Start           starting point of micro-feature
@@ -238,44 +252,49 @@ void ComputeBulges(MFOUTLINE Start, MFOUTLINE End, MICROFEATURE MicroFeature) {
   else {
     Origin = PointAt (Start);
 
-    InitMatrix(&Matrix); 
+    InitMatrix(&Matrix);
     RotateMatrix (&Matrix, OrientationOf (MicroFeature) * -2.0 * PI);
     TranslateMatrix (&Matrix, -XPositionOf (Origin), -YPositionOf (Origin));
 
     SegmentEnd = Start;
     FillPoint (CurrentPoint, 0, 0);
     BulgePosition = LengthOf (MicroFeature) / 3;
-    CopyPoint(CurrentPoint, LastPoint); 
+    CopyPoint(CurrentPoint, LastPoint);
     while (Xof (CurrentPoint) < BulgePosition) {
       SegmentStart = SegmentEnd;
       SegmentEnd = NextPointAfter (SegmentStart);
-      CopyPoint(CurrentPoint, LastPoint); 
+      CopyPoint(CurrentPoint, LastPoint);
       MapPoint (&Matrix, PositionOf (PointAt (SegmentEnd)), CurrentPoint);
     }
     FirstBulgeOf (MicroFeature) =
-      XIntersectionOf(LastPoint, CurrentPoint, BulgePosition); 
+      XIntersectionOf(LastPoint, CurrentPoint, BulgePosition);
 
     BulgePosition *= 2;
-    CopyPoint(CurrentPoint, LastPoint); 
+
+    // Prevents from copying the points before computing the bulge if
+    // CurrentPoint will not change. (Which would cause to output nan
+    // for the SecondBulge.)
+    if (Xof (CurrentPoint) < BulgePosition)
+      CopyPoint(CurrentPoint, LastPoint);
     while (Xof (CurrentPoint) < BulgePosition) {
       SegmentStart = SegmentEnd;
       SegmentEnd = NextPointAfter (SegmentStart);
-      CopyPoint(CurrentPoint, LastPoint); 
+      CopyPoint(CurrentPoint, LastPoint);
       MapPoint (&Matrix, PositionOf (PointAt (SegmentEnd)), CurrentPoint);
     }
     SecondBulgeOf (MicroFeature) =
-      XIntersectionOf(LastPoint, CurrentPoint, BulgePosition); 
+      XIntersectionOf(LastPoint, CurrentPoint, BulgePosition);
 
     FirstBulgeOf (MicroFeature) /= BULGENORMALIZER *
-      LengthOf(MicroFeature); 
+      LengthOf(MicroFeature);
     SecondBulgeOf (MicroFeature) /= BULGENORMALIZER *
-      LengthOf(MicroFeature); 
+      LengthOf(MicroFeature);
   }
 }                                /* ComputeBulges */
 
 
 /*---------------------------------------------------------------------------*/
-FLOAT32 ComputeOrientation(MFEDGEPT *Start, MFEDGEPT *End) { 
+FLOAT32 ComputeOrientation(MFEDGEPT *Start, MFEDGEPT *End) {
 /*
  **      Parameters:
  **              Start           starting edge point of micro-feature
@@ -344,7 +363,7 @@ MICROFEATURES ConvertToMicroFeatures(MFOUTLINE Outline,
 
 
 /*---------------------------------------------------------------------------*/
-MICROFEATURE ExtractMicroFeature(MFOUTLINE Start, MFOUTLINE End) { 
+MICROFEATURE ExtractMicroFeature(MFOUTLINE Start, MFOUTLINE End) {
 /*
  **      Parameters:
  **              Start           starting point of micro-feature
@@ -375,13 +394,13 @@ MICROFEATURE ExtractMicroFeature(MFOUTLINE Start, MFOUTLINE End) {
   LengthOf (NewFeature) = DistanceBetween (PositionOf (P1), PositionOf (P2));
   OrientationOf (NewFeature) =
     NormalizedAngleFrom (&(PositionOf (P1)), &(PositionOf (P2)), 1.0);
-  ComputeBulges(Start, End, NewFeature); 
+  ComputeBulges(Start, End, NewFeature);
   return (NewFeature);
 }                                /* ExtractMicroFeature */
 
 
 /*---------------------------------------------------------------------------*/
-void SmearBulges(MICROFEATURES MicroFeatures, FLOAT32 XScale, FLOAT32 YScale) { 
+void SmearBulges(MICROFEATURES MicroFeatures, FLOAT32 XScale, FLOAT32 YScale) {
 /*
  **      Parameters:
  **              MicroFeatures   features to be smeared
@@ -402,7 +421,7 @@ void SmearBulges(MICROFEATURES MicroFeatures, FLOAT32 XScale, FLOAT32 YScale) {
   FLOAT32 Cos, Sin;
   FLOAT32 Scale;
 
-  iterate(MicroFeatures) { 
+  iterate(MicroFeatures) {
     MicroFeature = NextFeatureOf (MicroFeatures);
 
     Cos = fabs (cos (2.0 * PI * OrientationOf (MicroFeature)));

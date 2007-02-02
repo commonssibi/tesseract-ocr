@@ -56,17 +56,6 @@ void NormalizeOutlineX
 /**----------------------------------------------------------------------------
         Global Data Definitions and Declarations
 ----------------------------------------------------------------------------**/
-// define all of the parameters for this feature type
-StartParamDesc (OutlineFeatParams)
-DefineParam (0, 0, -0.5, 0.5)
-DefineParam (0, 0, -0.25, 0.75)
-DefineParam (0, 0, 0.0, 1.0) DefineParam (1, 0, 0.0, 1.0) EndParamDesc
-/* now define the feature type itself (see features.h for info about each
-  parameter).*/
-DefineFeature (OutlineFeatDesc, 3, 1, 1, MAX_OUTLINE_FEATURES, "Outline", "of", OutlineFeatParams, NULL
-/*, NULL,
-                  NULL, NULL */
-, DefaultInitFXVars /*, NULL */ )
 /**----------------------------------------------------------------------------
               Public Code
 ----------------------------------------------------------------------------**/

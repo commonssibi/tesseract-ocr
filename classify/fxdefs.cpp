@@ -16,6 +16,11 @@
  ** limitations under the License.
  ******************************************************************************/
 #include "fxdefs.h"
+#include "featdefs.h"
+#include "mf.h"
+#include "outfeat.h"
+#include "picofeat.h"
+#include "normfeat.h"
 
 /**----------------------------------------------------------------------------
         Global Data Definitions and Declarations
@@ -23,10 +28,29 @@
 /* flag to control learn mode vs. classify mode */
 int ExtractMode;
 
+// Definitions of extractors separated from feature definitions.
+DefineFeatureExt (MicroFeatureExt, ExtractMicros, InitMicroFXVars)
+DefineFeatureExt (PicoFeatExt, NULL, DefaultInitFXVars)
+DefineFeatureExt (CharNormExt, ExtractCharNormFeatures, DefaultInitFXVars)
+DefineFeatureExt (OutlineFeatExt, NULL, DefaultInitFXVars)
+
+FEATURE_EXT_STRUCT* ExtractorDefs[NUM_FEATURE_TYPES] = {
+  &MicroFeatureExt,
+  &PicoFeatExt,
+  &OutlineFeatExt,
+  &CharNormExt
+};
+
+
 /**----------------------------------------------------------------------------
               Public Code
 ----------------------------------------------------------------------------**/
 /*---------------------------------------------------------------------------*/
+void SetupExtractors() {
+  for (int i = 0; i < NUM_FEATURE_TYPES; ++i)
+    ExtractorOf(i) = ExtractorDefs[i];
+}
+
 void GetLineStatsFromRow(TEXTROW *Row, LINE_STATS *LineStats) { 
 /*
  **	Parameters:

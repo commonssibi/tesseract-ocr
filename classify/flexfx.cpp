@@ -30,7 +30,7 @@
               Public Code
 ----------------------------------------------------------------------------**/
 /*---------------------------------------------------------------------------*/
-CHAR_DESC ExtractFlexFeatures(TBLOB *Blob, LINE_STATS *LineStats) { 
+CHAR_DESC ExtractFlexFeatures(TBLOB *Blob, LINE_STATS *LineStats) {
 /*
  **	Parameters:
  **		Blob		blob to extract features from
@@ -47,10 +47,10 @@ CHAR_DESC ExtractFlexFeatures(TBLOB *Blob, LINE_STATS *LineStats) {
 
   CharDesc = NewCharDescription ();
 
-  for (Type = 0; Type < NumFeatureSetsIn (CharDesc); Type++)
-    if (FeatureOn (Type))
-      FeaturesOfType (CharDesc, Type) =
-        ExtractUsing (DefinitionOf (Type)) (Blob, LineStats);
+  for (Type = 0; Type < NumFeatureSetsIn(CharDesc); Type++)
+    if (ExtractorOf(Type) != NULL && ExtractorOf(Type)->Extractor != NULL)
+      FeaturesOfType(CharDesc, Type) =
+        ExtractUsing(ExtractorOf(Type)) (Blob, LineStats);
 
   return (CharDesc);
 
@@ -77,18 +77,10 @@ InitFlexFXVars ()
 #define NamePrefix      "Enable"
 #define NameSuffix      "Features"
 {
-  VALUE dummy;
   int Type;
-  char *VarName;
 
+  SetupExtractors();
   for (Type = 0; Type < NumFeaturesDefined (); Type++) {
-    VarName = (char *) Emalloc (strlen (NamePrefix) +
-      strlen (LongNameOf (DefinitionOf (Type))) +
-      strlen (NameSuffix) + 1);
-    strcpy(VarName, NamePrefix); 
-    strcat (VarName, LongNameOf (DefinitionOf (Type)));
-    strcat(VarName, NameSuffix); 
-    int_variable (FeatureOn (Type), VarName, FALSE);
-    InitFXVarsUsing (DefinitionOf (Type)) ();
+    InitFXVarsUsing (ExtractorOf (Type)) ();
   }
 }                                /* InitFlexFXVars */

@@ -20,6 +20,7 @@
 ----------------------------------------------------------------------------**/
 #include "normfeat.h"
 #include "mfoutline.h"
+#include "intfx.h"
 
 #include "ocrfeatures.h"         //Debug
 #include <stdio.h>               //Debug
@@ -29,17 +30,6 @@
 /**----------------------------------------------------------------------------
         Global Data Definitions and Declarations
 ----------------------------------------------------------------------------**/
-/* define all of the parameters for this feature type*/
-StartParamDesc (CharNormParams)
-DefineParam (0, 0, -0.25, 0.75)
-DefineParam (0, 0, 0.0, 1.0)
-DefineParam (0, 0, 0.0, 1.0) DefineParam (0, 0, 0.0, 1.0) EndParamDesc
-/* now define the feature type itself (see features.h for info about each
-  parameter).*/
-DefineFeature (CharNormDesc, 4, 0, 1, 1, "CharNorm", "cn", CharNormParams, ExtractCharNormFeatures
-/*, NULL,
-                  NULL, NULL */
-, DefaultInitFXVars /*, NULL */ )
 /**----------------------------------------------------------------------------
               Public Code
 ----------------------------------------------------------------------------**/
@@ -82,10 +72,12 @@ FEATURE_SET ExtractCharNormFeatures(TBLOB *Blob, LINE_STATS *LineStats) {
  */
   FEATURE_SET FeatureSet;
   FEATURE Feature;
-  FLOAT32 ScaleFactor;
+  FLOAT32 Scale;
   FLOAT32 Baseline;
   LIST Outlines;
-  OUTLINE_STATS OutlineStats;
+  INT_FEATURE_ARRAY blfeatures;
+  INT_FEATURE_ARRAY cnfeatures;
+  INT_FX_RESULT_STRUCT FXInfo;
 
   /* allocate the feature and feature set - note that there is always one
      and only one char normalization feature for any blob */
@@ -110,16 +102,15 @@ FEATURE_SET ExtractCharNormFeatures(TBLOB *Blob, LINE_STATS *LineStats) {
   WriteOutlines(OFile, Outlines);
   fclose (OFile);
   *--------------------------------------------------------------------*/
-  ComputeOutlineStats(Outlines, &OutlineStats); 
 
-  /* convert outline statistics to normalization features */
-  ScaleFactor = ComputeScaleFactor (LineStats);
-  Baseline = BaselineAt (LineStats, OutlineStats.x);
-  ParamOf (Feature, CharNormY) = (OutlineStats.y - Baseline) * ScaleFactor;
+  ExtractIntFeat(Blob, blfeatures, cnfeatures, &FXInfo);
+  Baseline = BaselineAt (LineStats, FXInfo.Xmean);
+  Scale = ComputeScaleFactor (LineStats);
+  ParamOf (Feature, CharNormY) = (FXInfo.Ymean - Baseline) * Scale;
   ParamOf (Feature, CharNormLength) =
-    OutlineStats.L * ScaleFactor / LENGTH_COMPRESSION;
-  ParamOf (Feature, CharNormRx) = OutlineStats.Rx * ScaleFactor;
-  ParamOf (Feature, CharNormRy) = OutlineStats.Ry * ScaleFactor;
+    FXInfo.Length * Scale / LENGTH_COMPRESSION;
+  ParamOf (Feature, CharNormRx) = FXInfo.Rx * Scale;
+  ParamOf (Feature, CharNormRy) = FXInfo.Ry * Scale;
 
   /*---------Debug--------------------------------------------------*
   File = fopen ("f:/ims/debug/nfFeatSet.logCPP", "r");

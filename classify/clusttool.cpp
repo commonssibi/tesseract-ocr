@@ -21,6 +21,7 @@
 #include "const.h"
 #include "danerror.h"
 #include "emalloc.h"
+#include "scanutils.h"
 #include <stdio.h>
 #include <math.h>
 
@@ -68,7 +69,7 @@ PARAM_DESC *ReadParamDesc(FILE *File, UINT16 N) {
   int i;
   PARAM_DESC *ParamDesc;
   char Token[TOKENSIZE];
-
+  
   ParamDesc = (PARAM_DESC *) Emalloc (N * sizeof (PARAM_DESC));
   for (i = 0; i < N; i++) {
     if (fscanf (File, "%s", Token) != 1)
@@ -79,7 +80,7 @@ PARAM_DESC *ReadParamDesc(FILE *File, UINT16 N) {
     else
       ParamDesc[i].Circular = FALSE;
 
-    if (fscanf (File, "%s", Token) != 1)
+    if (fscanf (File, "%s", Token) != 1) 
       DoError (ILLEGALESSENTIALSPEC,
         "Illegal essential/non-essential spec");
     if (Token[0] == 'e')
@@ -429,6 +430,54 @@ void WriteProtoStyle(FILE *File, PROTOSTYLE ProtoStyle) {
   }
 }                                // WriteProtoStyle
 
+/*---------------------------------------------------------------------------*/
+void WriteProtoList(
+     FILE	*File,
+     UINT16	N,
+     PARAM_DESC	ParamDesc[],
+     LIST	ProtoList,
+     BOOL8	WriteSigProtos,
+     BOOL8	WriteInsigProtos)
+     
+/*
+**	Parameters:
+**		File		open text file to write prototypes to
+**		N		number of dimensions in feature space
+**		ParamDesc	descriptions for each dimension
+**		ProtoList	list of prototypes to be written
+**		WriteSigProtos	TRUE to write out significant prototypes
+**		WriteInsigProtos	TRUE to write out insignificants
+**	Globals:
+**		None
+**	Operation:
+**		This routine writes a textual description of each prototype
+**		in the prototype list to the specified file.  It also
+**		writes a file header which includes the number of dimensions
+**		in feature space and the descriptions for each dimension.
+**	Return:
+**		None
+**	Exceptions:
+**		None
+**	History:
+**		6/12/89, DSJ, Created.
+*/
+
+{
+  PROTOTYPE	*Proto;
+  
+  /* write file header */
+  fprintf(File,"%0d\n",N);
+  WriteParamDesc(File,N,ParamDesc);
+
+  /* write prototypes */
+  iterate(ProtoList)
+    {
+      Proto = (PROTOTYPE *) first ( ProtoList );
+      if (( Proto->Significant && WriteSigProtos )	||
+	  ( ! Proto->Significant && WriteInsigProtos ) )
+	WritePrototype( File, N, Proto );
+    }
+}	/* WriteProtoList */
 
 /** UniformRandomNumber ********************************************************
 Parameters:	MMin	lower range of uniform distribution
