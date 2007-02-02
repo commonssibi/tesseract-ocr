@@ -55,43 +55,44 @@ int AcceptableChoice(CHOICES_LIST Choices,
                      A_CHOICE *RawChoice,
                      DANGERR *fixpt);
 
-int AcceptableResult(A_CHOICE *BestChoice, A_CHOICE *RawChoice); 
+int AcceptableResult(A_CHOICE *BestChoice, A_CHOICE *RawChoice);
 
-int AlternativeChoicesWorseThan(FLOAT32 Threshold); 
+int AlternativeChoicesWorseThan(FLOAT32 Threshold);
 
-int CurrentBestChoiceIs(const char *Word); 
+int CurrentBestChoiceIs(const char *Word);
 
-FLOAT32 CurrentBestChoiceAdjustFactor(); 
+FLOAT32 CurrentBestChoiceAdjustFactor();
 
-int CurrentWordAmbig(); 
+int CurrentWordAmbig();
 
-void DebugWordChoices(); 
+void DebugWordChoices();
 
-void FilterWordChoices(); 
+void FilterWordChoices();
 
 void FindClassifierErrors (FLOAT32 MinRating,
 FLOAT32 MaxRating,
 FLOAT32 RatingMargin, FLOAT32 Thresholds[]);
 
-void InitStopperVars(); 
+void InitStopperVars();
 
-void InitChoiceAccum(); 
+void InitChoiceAccum();
 
 void LogNewRawChoice (A_CHOICE * Choice,
 FLOAT32 AdjustFactor, float Certainties[]);
 
-void LogNewSegmentation(PIECES_STATE BlobWidth); 
+void LogNewSegmentation(PIECES_STATE BlobWidth);
 
-void LogNewSplit(int Blob); 
+void LogNewSplit(int Blob);
 
 void LogNewWordChoice (A_CHOICE * Choice,
 FLOAT32 AdjustFactor, float Certainties[]);
 
-int NoDangerousAmbig(char *Word, DANGERR *fixpt); 
+int NoDangerousAmbig(const char *Word, DANGERR *fixpt);
+void EndDangerousAmbigs();
 
-void SettupStopperPass1(); 
+void SettupStopperPass1();
 
-void SettupStopperPass2(); 
+void SettupStopperPass2();
 
 /**----------------------------------------------------------------------------
         Global Data Definitions and Declarations

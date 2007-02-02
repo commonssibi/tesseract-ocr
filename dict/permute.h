@@ -46,11 +46,12 @@ extern int permute_only_top;
 /*----------------------------------------------------------------------
               F u n c t i o n s
 ----------------------------------------------------------------------*/
-void add_document_word(A_CHOICE *best_choice); 
+void add_document_word(A_CHOICE *best_choice);
 
 void adjust_non_word (A_CHOICE * best_choice, float certainties[]);
 
-void init_permute(); 
+void init_permute();
+void end_permute();
 
 A_CHOICE *permute_all(CHOICES_LIST char_choices,
                       float rating_limit,
@@ -84,7 +85,7 @@ char choose_il1(char first_char,   //first choice
                 char next_char,    //next in word
                 char next_next_char);
 
-A_CHOICE *permute_words(CHOICES_LIST char_choices, float rating_limit); 
+A_CHOICE *permute_words(CHOICES_LIST char_choices, float rating_limit);
 
-int valid_word(const char *string); 
+int valid_word(const char *string);
 #endif

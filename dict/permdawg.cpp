@@ -76,7 +76,7 @@ make_float_var (freq_word, FREQ_WERD, make_freq_word,
  * Assign an adjusted value to a string that is a word.	The value
  * that this word choice has is based on case and punctuation rules.
  **********************************************************************/
-void adjust_word(A_CHOICE *best_choice, float *certainty_array) { 
+void adjust_word(A_CHOICE *best_choice, float *certainty_array) {
   char *this_word;
   int punct_status;
   float adjust_factor;
@@ -118,7 +118,7 @@ void adjust_word(A_CHOICE *best_choice, float *certainty_array) {
 
   class_probability (best_choice) -= RATING_PAD;
 
-  LogNewWordChoice(best_choice, adjust_factor, certainty_array); 
+  LogNewWordChoice(best_choice, adjust_factor, certainty_array);
 
   if (adjust_debug)
     cprintf (" --> %4.2f\n", class_probability (best_choice));
@@ -180,9 +180,9 @@ void append_next_choice(  /*previous option */
       cprintf ("new hyphen choice = %s\n", word);
 
     better_choice = new_choice (word, rating, certainty, -1, permuter);
-    adjust_word(better_choice, certainty_array); 
-    push_on(*result, better_choice); 
-    set_hyphen_word(word, rating, node); 
+    adjust_word(better_choice, certainty_array);
+    push_on(*result, better_choice);
+    set_hyphen_word(word, rating, node);
   }
   /* Look up char in DAWG */
   else if (letter_is_okay (dawg, &node, char_index, prevchar,
@@ -196,7 +196,7 @@ void append_next_choice(  /*previous option */
       better_choice = new_choice (hyphen_tail (word), rating, certainty,
         -1, permuter);
       adjust_word (better_choice, &certainty_array[hyphen_base_size ()]);
-      push_on(*result, better_choice); 
+      push_on(*result, better_choice);
     }
     else {
                                  /* Search the next letter */
@@ -296,7 +296,7 @@ void dawg_permute_and_select(const char *string,
   char_index = 0;
 
   if (!is_last_word () && hyphen_string) {
-    strcpy(word, hyphen_string); 
+    strcpy(word, hyphen_string);
     char_index = strlen (hyphen_string);
     if (system_words)
       dawg_node = hyphen_state;
@@ -306,14 +306,14 @@ void dawg_permute_and_select(const char *string,
     rating_array, certainty_array, is_last_word ());
 
   if (display_ratings && result)
-    print_choices(string, result); 
+    print_choices(string, result);
 
   while (result != NIL) {
     if (best_probability (result) < class_probability (best_choice)) {
       clone_choice (best_choice, first (result));
     }
     free_choice (first (result));
-    pop_off(result); 
+    pop_off(result);
   }
 }
 
@@ -323,26 +323,30 @@ void dawg_permute_and_select(const char *string,
  *
  * Initialize the variables needed by this file.
  **********************************************************************/
-void init_permdawg() { 
+void init_permdawg() {
   char name[1024];
-  make_dawg_debug(); 
-  make_ok_word(); 
-  make_good_word(); 
-  make_freq_word(); 
+  make_dawg_debug();
+  make_ok_word();
+  make_good_word();
+  make_freq_word();
 
   frequent_words = (EDGE_ARRAY) memalloc (sizeof (EDGE_RECORD) *
     MAX_FREQ_EDGES);
-  strcpy(name, demodir); 
+  strcpy(name, demodir);
   strcat (name, "tessdata/freq-dawg");
-  read_squished_dawg(name, frequent_words, MAX_FREQ_EDGES); 
+  read_squished_dawg(name, frequent_words, MAX_FREQ_EDGES);
 }
 
+void end_permdawg() {
+  memfree(frequent_words);
+  frequent_words = NULL;
+}
 
 /**********************************************************************
  * test_freq_words()
  *
  * Tests a word against the frequent word dawg
  **********************************************************************/
-int test_freq_words(const char *word) { 
+int test_freq_words(const char *word) {
   return (word_in_dawg (frequent_words, word));
 }

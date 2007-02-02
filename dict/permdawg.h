@@ -47,7 +47,7 @@ extern float freq_word;
 /*----------------------------------------------------------------------
             Public Function Prototypes
 ----------------------------------------------------------------------*/
-void adjust_word(A_CHOICE *best_choice, float *certainty_array); 
+void adjust_word(A_CHOICE *best_choice, float *certainty_array);
 
                                  /*previous option */
 void append_next_choice(EDGE_ARRAY dawg,
@@ -87,7 +87,8 @@ void dawg_permute_and_select(const char *string,
                              A_CHOICE *best_choice,
                              INT16 system_words);
 
-void init_permdawg(); 
+void init_permdawg();
+void end_permdawg();
 
-int test_freq_words(const char *word); 
+int test_freq_words(const char *word);
 #endif

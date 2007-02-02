@@ -31,6 +31,7 @@
 #include "freelist.h"
 #include "efio.h"
 #include "globals.h"
+#include "scanutils.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -92,40 +93,40 @@ EXPANDED_CHOICE;
 /*---------------------------------------------------------------------------
           Private Function Prototoypes
 ----------------------------------------------------------------------------*/
-void AddNewChunk(VIABLE_CHOICE Choice, int Blob); 
+void AddNewChunk(VIABLE_CHOICE Choice, int Blob);
 
 int AmbigsFound(char *Word,
                 char *CurrentChar,
-                char *Tail,
+                const char *Tail,
                 LIST Ambigs,
                 DANGERR *fixpt);
 
-int ChoiceSameAs(A_CHOICE *Choice, VIABLE_CHOICE ViableChoice); 
+int ChoiceSameAs(A_CHOICE *Choice, VIABLE_CHOICE ViableChoice);
 
 int CmpChoiceRatings(void *arg1,   //VIABLE_CHOICE         Choice1,
                      void *arg2);  //VIABLE_CHOICE         Choice2);
 
-void ExpandChoice(VIABLE_CHOICE Choice, EXPANDED_CHOICE *ExpandedChoice); 
+void ExpandChoice(VIABLE_CHOICE Choice, EXPANDED_CHOICE *ExpandedChoice);
 
-AMBIG_TABLE *FillAmbigTable(); 
+AMBIG_TABLE *FillAmbigTable();
 
 int FreeBadChoice(void *item1,   //VIABLE_CHOICE                 Choice,
                   void *item2);  //EXPANDED_CHOICE                       *BestChoice);
 
-int LengthOfShortestAlphaRun(register char *Word); 
+int LengthOfShortestAlphaRun(register char *Word);
 
 VIABLE_CHOICE NewViableChoice (A_CHOICE * Choice,
 FLOAT32 AdjustFactor, float Certainties[]);
 
-void PrintViableChoice(FILE *File, const char *Label, VIABLE_CHOICE Choice); 
+void PrintViableChoice(FILE *File, const char *Label, VIABLE_CHOICE Choice);
 
 void ReplaceDuplicateChoice (VIABLE_CHOICE OldChoice,
 A_CHOICE * NewChoice,
 FLOAT32 AdjustFactor, float Certainties[]);
 
-int StringSameAs(const char *String, VIABLE_CHOICE ViableChoice); 
+int StringSameAs(const char *String, VIABLE_CHOICE ViableChoice);
 
-int UniformCertainties(CHOICES_LIST Choices, A_CHOICE *BestChoice); 
+int UniformCertainties(CHOICES_LIST Choices, A_CHOICE *BestChoice);
 
 /**----------------------------------------------------------------------------
         Global Data Definitions and Declarations
@@ -249,7 +250,7 @@ int AcceptableChoice(CHOICES_LIST Choices,
 
 
 /*---------------------------------------------------------------------------*/
-int AcceptableResult(A_CHOICE *BestChoice, A_CHOICE *RawChoice) { 
+int AcceptableResult(A_CHOICE *BestChoice, A_CHOICE *RawChoice) {
 /*
  **	Parameters:
  **		BestChoice	best choice for current word
@@ -310,7 +311,7 @@ int AcceptableResult(A_CHOICE *BestChoice, A_CHOICE *RawChoice) {
 
 
 /*---------------------------------------------------------------------------*/
-int AlternativeChoicesWorseThan(FLOAT32 Threshold) { 
+int AlternativeChoicesWorseThan(FLOAT32 Threshold) {
 /*
  **	Parameters:
  **		Threshold	minimum adjust factor for alternative choices
@@ -327,7 +328,7 @@ int AlternativeChoicesWorseThan(FLOAT32 Threshold) {
   VIABLE_CHOICE Choice;
 
   Alternatives = rest (BestChoices);
-  iterate(Alternatives) { 
+  iterate(Alternatives) {
     Choice = (VIABLE_CHOICE) first (Alternatives);
     if (Choice->AdjustFactor <= Threshold)
       return (FALSE);
@@ -339,7 +340,7 @@ int AlternativeChoicesWorseThan(FLOAT32 Threshold) {
 
 
 /*---------------------------------------------------------------------------*/
-int CurrentBestChoiceIs(const char *Word) { 
+int CurrentBestChoiceIs(const char *Word) {
 /*
  **	Parameters:
  **		Word	string to compare to current best choice
@@ -358,7 +359,7 @@ int CurrentBestChoiceIs(const char *Word) {
 
 
 /*---------------------------------------------------------------------------*/
-FLOAT32 CurrentBestChoiceAdjustFactor() { 
+FLOAT32 CurrentBestChoiceAdjustFactor() {
 /*
  **	Parameters: none
  **	Globals:
@@ -381,7 +382,7 @@ FLOAT32 CurrentBestChoiceAdjustFactor() {
 
 
 /*---------------------------------------------------------------------------*/
-int CurrentWordAmbig() { 
+int CurrentWordAmbig() {
 /*
  **	Parameters: none
  **	Globals:
@@ -398,7 +399,7 @@ int CurrentWordAmbig() {
 
 
 /*---------------------------------------------------------------------------*/
-void DebugWordChoices() { 
+void DebugWordChoices() {
 /*
  **	Parameters: none
  **	Globals:
@@ -423,7 +424,7 @@ void DebugWordChoices() {
     Choices = BestChoices;
     if (Choices)
       cprintf ("\nBest Cooked Choices:\n");
-    iterate(Choices) { 
+    iterate(Choices) {
       sprintf (LabelString, "Cooked Choice #%d:  ", i);
       PrintViableChoice (stdout, LabelString,
         (VIABLE_CHOICE) first (Choices));
@@ -434,7 +435,7 @@ void DebugWordChoices() {
 
 
 /*---------------------------------------------------------------------------*/
-void FilterWordChoices() { 
+void FilterWordChoices() {
 /*
  **	Parameters: none
  **	Globals:
@@ -499,7 +500,7 @@ FLOAT32 RatingMargin, FLOAT32 Thresholds[]) {
   assert (BestChoices != NIL);
   assert (BestRawChoice != NULL);
 
-  ExpandChoice(BestRawChoice, &BestRaw); 
+  ExpandChoice(BestRawChoice, &BestRaw);
   Choice = (VIABLE_CHOICE) first (BestChoices);
 
   for (i = 0, Chunk = 0; i < Choice->Length; i++, Thresholds++) {
@@ -528,7 +529,7 @@ FLOAT32 RatingMargin, FLOAT32 Thresholds[]) {
 
 
 /*---------------------------------------------------------------------------*/
-void InitStopperVars() { 
+void InitStopperVars() {
 /*
  **	Parameters: none
  **	Globals: none
@@ -542,19 +543,19 @@ void InitStopperVars() {
   string_variable (DangerousAmbigs, "DangerousAmbigs", DANGEROUS_AMBIGS);
   string_variable (WordToDebug, "WordToDebug", "");
 
-  MakeNonDictCertainty(); 
-  MakeRejectCertaintyOffset(); 
-  MakeSmallWordSize(); 
-  MakeCertaintyPerChar(); 
-  MakeCertaintyVariation(); 
-  MakeStopperDebugLevel(); 
-  MakeAmbigThresholdGain(); 
-  MakeAmbigThresholdOffset(); 
+  MakeNonDictCertainty();
+  MakeRejectCertaintyOffset();
+  MakeSmallWordSize();
+  MakeCertaintyPerChar();
+  MakeCertaintyVariation();
+  MakeStopperDebugLevel();
+  MakeAmbigThresholdGain();
+  MakeAmbigThresholdOffset();
 }                                /* InitStopperVars */
 
 
 /*---------------------------------------------------------------------------*/
-void InitChoiceAccum() { 
+void InitChoiceAccum() {
 /*
  **	Parameters: none
  **	Globals: none
@@ -567,14 +568,14 @@ void InitChoiceAccum() {
   BLOB_WIDTH *BlobWidth, *End;
 
   if (BestRawChoice)
-    memfree(BestRawChoice); 
+    memfree(BestRawChoice);
 
   if (BestChoices)
-    destroy_nodes(BestChoices, memfree); 
+    destroy_nodes(BestChoices, memfree);
 
   BestRawChoice = NULL;
   BestChoices = NIL;
-  EnableChoiceAccum(); 
+  EnableChoiceAccum();
 
   for (BlobWidth = CurrentSegmentation,
     End = CurrentSegmentation + MAX_NUM_CHUNKS;
@@ -606,9 +607,9 @@ LogNewRawChoice (A_CHOICE * Choice, FLOAT32 AdjustFactor, float Certainties[]) {
     BestRawChoice = NewViableChoice (Choice, AdjustFactor, Certainties);
   else if (class_probability (Choice) < BestRawChoice->Rating) {
     if (ChoiceSameAs (Choice, BestRawChoice))
-      ReplaceDuplicateChoice(BestRawChoice, Choice, AdjustFactor, Certainties); 
+      ReplaceDuplicateChoice(BestRawChoice, Choice, AdjustFactor, Certainties);
     else {
-      memfree(BestRawChoice); 
+      memfree(BestRawChoice);
       BestRawChoice = NewViableChoice (Choice, AdjustFactor, Certainties);
     }
   }
@@ -616,7 +617,7 @@ LogNewRawChoice (A_CHOICE * Choice, FLOAT32 AdjustFactor, float Certainties[]) {
 
 
 /*---------------------------------------------------------------------------*/
-void LogNewSegmentation(PIECES_STATE BlobWidth) { 
+void LogNewSegmentation(PIECES_STATE BlobWidth) {
 /*
  **	Parameters:
  **		BlobWidth[]	number of chunks in each blob in segmentation
@@ -639,7 +640,7 @@ void LogNewSegmentation(PIECES_STATE BlobWidth) {
 
 
 /*---------------------------------------------------------------------------*/
-void LogNewSplit(int Blob) { 
+void LogNewSplit(int Blob) {
 /*
  **	Parameters:
  **		Blob	index of blob that was split
@@ -655,11 +656,11 @@ void LogNewSplit(int Blob) {
   LIST Choices;
 
   if (BestRawChoice) {
-    AddNewChunk(BestRawChoice, Blob); 
+    AddNewChunk(BestRawChoice, Blob);
   }
 
   Choices = BestChoices;
-  iterate(Choices) { 
+  iterate(Choices) {
     AddNewChunk ((VIABLE_CHOICE) first (Choices), Blob);
   }
 
@@ -705,7 +706,7 @@ FLOAT32 AdjustFactor, float Certainties[]) {
   /* see if a choice with the same text string has already been found */
   NewChoice = NULL;
   Choices = BestChoices;
-  iterate(Choices) { 
+  iterate(Choices) {
     if (ChoiceSameAs (Choice, (VIABLE_CHOICE) first (Choices)))
       if (class_probability (Choice) < BestRating (Choices))
         NewChoice = (VIABLE_CHOICE) first (Choices);
@@ -714,7 +715,7 @@ FLOAT32 AdjustFactor, float Certainties[]) {
   }
 
   if (NewChoice) {
-    ReplaceDuplicateChoice(NewChoice, Choice, AdjustFactor, Certainties); 
+    ReplaceDuplicateChoice(NewChoice, Choice, AdjustFactor, Certainties);
     BestChoices = delete_d (BestChoices, NewChoice, is_same_node);
   }
   else {
@@ -728,14 +729,16 @@ FLOAT32 AdjustFactor, float Certainties[]) {
     Choices =
       (LIST) nth_cell (BestChoices, tessedit_truncate_wordchoice_log);
     destroy_nodes (rest (Choices), Efree);
-    set_rest(Choices, NIL); 
+    set_rest(Choices, NIL);
   }
 
 }                                /* LogNewWordChoice */
 
 
 /*---------------------------------------------------------------------------*/
-int NoDangerousAmbig(char *Word, DANGERR *fixpt) { 
+static AMBIG_TABLE *AmbigFor = NULL;
+
+int NoDangerousAmbig(const char *Word, DANGERR *fixpt) {
 /*
  **	Parameters:
  **		Word	word to check for dangerous ambiguities
@@ -751,7 +754,6 @@ int NoDangerousAmbig(char *Word, DANGERR *fixpt) {
  **	Exceptions: none
  **	History: Mon May  6 16:28:56 1991, DSJ, Created.
  */
-  static AMBIG_TABLE *AmbigFor = NULL;
 
   char NewWord[MAX_WERD_SIZE];
   char *NextNewChar;
@@ -776,9 +778,18 @@ int NoDangerousAmbig(char *Word, DANGERR *fixpt) {
 
 }                                /* NoDangerousAmbig */
 
+void EndDangerousAmbigs() {
+  if (AmbigFor != NULL) {
+    for (int i = 0; i <= MAX_CLASS_ID; ++i) {
+      destroy_nodes(AmbigFor[i], Efree);
+    }
+    Efree(AmbigFor);
+    AmbigFor = NULL;
+  }
+}
 
 /*---------------------------------------------------------------------------*/
-void SettupStopperPass1() { 
+void SettupStopperPass1() {
 /*
  **	Parameters: none
  **	Globals:
@@ -794,7 +805,7 @@ void SettupStopperPass1() {
 
 
 /*---------------------------------------------------------------------------*/
-void SettupStopperPass2() { 
+void SettupStopperPass2() {
 /*
  **	Parameters: none
  **	Globals:
@@ -813,7 +824,7 @@ void SettupStopperPass2() {
               Private Code
 ----------------------------------------------------------------------------**/
 /*---------------------------------------------------------------------------*/
-void AddNewChunk(VIABLE_CHOICE Choice, int Blob) { 
+void AddNewChunk(VIABLE_CHOICE Choice, int Blob) {
 /*
  **	Parameters:
  **		Choice	choice to add a new chunk to
@@ -845,7 +856,7 @@ void AddNewChunk(VIABLE_CHOICE Choice, int Blob) {
 /*---------------------------------------------------------------------------*/
 int AmbigsFound(char *Word,
                 char *CurrentChar,
-                char *Tail,
+                const char *Tail,
                 LIST Ambigs,
                 DANGERR *fixpt) {
 /*
@@ -868,11 +879,11 @@ int AmbigsFound(char *Word,
  **	History: Thu May  9 10:10:28 1991, DSJ, Created.
  */
   char *AmbigSpec;
-  char *UnmatchedTail;
+  const char *UnmatchedTail;
   int Matches;
   int bad_length;
 
-  iterate(Ambigs) { 
+  iterate(Ambigs) {
     AmbigSpec = (char *) first (Ambigs);
     bad_length = 1;
     UnmatchedTail = Tail;
@@ -890,9 +901,9 @@ int AmbigsFound(char *Word,
     if (Matches) {
       AmbigSpec++;               /* skip over the space */
                                  /* insert replacement string */
-      strcpy(CurrentChar, AmbigSpec); 
+      strcpy(CurrentChar, AmbigSpec);
                                  /* add tail */
-      strcat(Word, UnmatchedTail); 
+      strcat(Word, UnmatchedTail);
       if (valid_word (Word)) {
         if (StopperDebugLevel >= 1)
           cprintf ("Stopper:  Possible ambiguous word = %s\n", Word);
@@ -910,7 +921,7 @@ int AmbigsFound(char *Word,
 
 
 /*---------------------------------------------------------------------------*/
-int ChoiceSameAs(A_CHOICE *Choice, VIABLE_CHOICE ViableChoice) { 
+int ChoiceSameAs(A_CHOICE *Choice, VIABLE_CHOICE ViableChoice) {
 /*
  **	Parameters:
  **		Choice		choice to compare to ViableChoice
@@ -957,7 +968,7 @@ int CmpChoiceRatings(void *arg1,    //VIABLE_CHOICE                 Choice1,
 
 
 /*---------------------------------------------------------------------------*/
-void ExpandChoice(VIABLE_CHOICE Choice, EXPANDED_CHOICE *ExpandedChoice) { 
+void ExpandChoice(VIABLE_CHOICE Choice, EXPANDED_CHOICE *ExpandedChoice) {
 /*
  **	Parameters:
  **		Choice		choice to be expanded
@@ -984,7 +995,7 @@ void ExpandChoice(VIABLE_CHOICE Choice, EXPANDED_CHOICE *ExpandedChoice) {
 
 
 /*---------------------------------------------------------------------------*/
-AMBIG_TABLE *FillAmbigTable() { 
+AMBIG_TABLE *FillAmbigTable() {
 /*
  **	Parameters: none
  **	Globals:
@@ -1013,8 +1024,8 @@ AMBIG_TABLE *FillAmbigTable() {
   char *AmbigSpec;
   int AmbigSize;
 
-  strcpy(name, demodir); 
-  strcat(name, DangerousAmbigs); 
+  strcpy(name, demodir);
+  strcat(name, DangerousAmbigs);
   AmbigFile = Efopen (name, "r");
   NewTable = (AMBIG_TABLE *) Emalloc (sizeof (LIST) * (MAX_CLASS_ID + 1));
 
@@ -1032,11 +1043,11 @@ AMBIG_TABLE *FillAmbigTable() {
 
     strcpy (AmbigSpec, &(TestString[1]));
     strcat (AmbigSpec, " ");
-    strcat(AmbigSpec, ReplacementString); 
+    strcat(AmbigSpec, ReplacementString);
     NewTable[TestString[0]] =
       push_last (NewTable[TestString[0]], AmbigSpec);
   }
-  fclose(AmbigFile); 
+  fclose(AmbigFile);
   return (NewTable);
 
 }                                /* FillAmbigTable */
@@ -1075,7 +1086,7 @@ int FreeBadChoice(void *item1,    //VIABLE_CHOICE                 Choice,
       if (Choice->Blob[i].Class != BestChoice->ChunkClass[Chunk] &&
     Choice->Blob[i].Certainty - BestChoice->ChunkCertainty[Chunk] <
       Threshold) {
-        memfree(Choice); 
+        memfree(Choice);
     return (TRUE);
   }
 
@@ -1085,7 +1096,7 @@ int FreeBadChoice(void *item1,    //VIABLE_CHOICE                 Choice,
 
 
 /*---------------------------------------------------------------------------*/
-int LengthOfShortestAlphaRun(register char *Word) { 
+int LengthOfShortestAlphaRun(register char *Word) {
 /*
  **	Parameters:
  **		Word	word to be tested
@@ -1164,7 +1175,7 @@ NewViableChoice (A_CHOICE * Choice, FLOAT32 AdjustFactor, float Certainties[]) {
 
 
 /*---------------------------------------------------------------------------*/
-void PrintViableChoice(FILE *File, const char *Label, VIABLE_CHOICE Choice) { 
+void PrintViableChoice(FILE *File, const char *Label, VIABLE_CHOICE Choice) {
 /*
  **	Parameters:
  **		File	open text file to print Choice to
@@ -1246,7 +1257,7 @@ FLOAT32 AdjustFactor, float Certainties[]) {
 
 
 /*---------------------------------------------------------------------------*/
-int StringSameAs(const char *String, VIABLE_CHOICE ViableChoice) { 
+int StringSameAs(const char *String, VIABLE_CHOICE ViableChoice) {
 /*
  **	Parameters:
  **		String		string to compare to ViableChoice
@@ -1275,7 +1286,7 @@ int StringSameAs(const char *String, VIABLE_CHOICE ViableChoice) {
 
 
 /*---------------------------------------------------------------------------*/
-int UniformCertainties(CHOICES_LIST Choices, A_CHOICE *BestChoice) { 
+int UniformCertainties(CHOICES_LIST Choices, A_CHOICE *BestChoice) {
 /*
  **	Parameters:
  **		Choices		choices for current segmentation
@@ -1310,7 +1321,7 @@ int UniformCertainties(CHOICES_LIST Choices, A_CHOICE *BestChoice) {
     return (TRUE);
 
   TotalCertainty = TotalCertaintySquared = 0.0;
-  for_each_choice(Choices, i) { 
+  for_each_choice(Choices, i) {
     CharChoices = (CHOICES) array_index (Choices, i);
     Certainty = best_certainty (CharChoices);
     TotalCertainty += Certainty;
