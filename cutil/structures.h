@@ -49,69 +49,17 @@ extern void_void memory_print_functions[NUM_DATA_TYPES];
  * for each new data type.
  **********************************************************************/
 
-#define makestructure(new,old,print,type,nextfree,blocksize,typestring,usecount)                \
-																									\
-static type                *nextfree;                                        \
-static int                 usecount=0;                                       \
-																									\
-																									\
-void print()                                                                 \
+#define makestructure(newfunc,old,print,type,nextfree,blocksize,typestring,usecount)                \
+type *newfunc()                                                                  \
 {                                                                            \
-	cprintf("%6d %s elements in use\n", usecount, typestring);                 \
-}                                                                            \
-																									\
-																									\
-type *new()                                                                  \
-{                                                                            \
-	static   int            first_time = 1;                                   \
-	register int            index;                                            \
-	register type           *element;                                         \
-	type                    *returnelement;				/*return next ptr*/        \
-	char                    *newblock;                                        \
-	extern int              structblockcount;                                 \
-																									\
-	if (first_time)                                                           \
-	memory_print_functions [max_data_types++] = print;                      \
-	first_time = FALSE;                                                       \
-																									\
-	returnelement=nextfree;                                                   \
-	if (nextfree==NULL)                                                       \
-	{                                                                         \
-		if ((sizeof(type) & 7)==0 && sizeof(type)>=16)                         \
-		{                                                                      \
-			newblock=(char *)memalloc_p(sizeof(type)*blocksize+4);              \
-			if (newblock!=NULL)                                                 \
-			{                                                                   \
-				newblock=(char *)(((int)newblock +4) & (-8));                    \
-			}                                                                   \
-			element=(type *)newblock;                                           \
-		}                                                                      \
-		else                                                                   \
-		{                                                                      \
-			element=(type *)memalloc_p(sizeof(type)*blocksize);                 \
-		}                                                                      \
-		structblockcount++;                                                    \
-		if (!element) DoError (0, "Could not allocate block of cells");        \
-		returnelement=element;							/*going to return first*/  \
-		for (index=0;index<blocksize-1;index++)                                \
-		{  ((type**)element)[0]=element+1;				/*make links*/             \
-			element++;                                                          \
-		}                                                                      \
-		((type**)element)[0]=NULL;						/*with end*/         \
-	}                                                                         \
-	nextfree=((type**)returnelement)[0];                                      \
-	usecount++;                                                               \
-	return (returnelement);                                                   \
+	return new type; \
 }                                                                            \
 																									\
 																									\
 																									\
 void old(type* deadelement)                                                       \
 {                                                                            \
-	if (!deadelement) DoError (0, "Deallocated a NULL pointer");             \
-	((type**)deadelement)[0]=nextfree;                                        \
-	nextfree=deadelement;                                                     \
-	usecount--;                                                               \
+	delete deadelement; \
 }                                                                            \
 
 
@@ -122,51 +70,9 @@ void old(type* deadelement)                                                     
  **********************************************************************/
 
 #define newstructure(name,type,nextfree,blocksize,errorstring,usecount)\
-static type                *nextfree;					/*head of freelist*/\
-static int                 usecount=0;					/*no of used objects*/\
-\
 type *name()											/*returns a new type*/\
 {\
-	register int            index;						/*index to block*/\
-	register type           *element;					/*current element*/\
-	type                    *returnelement;				/*return value*/\
-	char                    *newblock;					/*new block of mem*/\
-	extern int              structblockcount;			/*no of memallocs done*/\
-\
-\
-	returnelement=nextfree;\
-	if (nextfree==NULL)\
-	{\
-		if ((sizeof(type) & 7)==0 && sizeof(type)>=16)\
-		{\
-			newblock=(char *)memalloc_p(sizeof(type)*blocksize+4);\
-			if (newblock!=NULL)\
-			{\
-				newblock=(char *)(((int)newblock +4) & (-8));\
-			}\
-			element=(type *)newblock;\
-		}\
-		else\
-		{\
-			element=(type *)memalloc_p(sizeof(type)*blocksize);\
-																																																								/*get more memory*/\
-		}\
-		structblockcount++;\
-		if (element==NULL)\
-		{\
-			cprintf("Error:MEMORY_OUT:%s\n",errorstring);\
-			abort();\
-		}\
-		returnelement=element;							/*going to return first*/\
-		for (index=0;index<blocksize-1;index++)\
-		{  ((type**)element)[0]=element+1;				/*make links*/\
-			element++;\
-		}\
-		((type**)element)[0]=NULL;						/*with end*/\
-	}\
-	nextfree=((type**)returnelement)[0];\
-	usecount++;\
-	return returnelement;\
+	return new type;\
 }
 
 /**********************************************************************
@@ -181,34 +87,26 @@ type *name(type* deadelement)\
 {\
 	type                    *returnelement;				/*return next ptr*/\
 \
-	if (deadelement==NULL)\
-	{\
-		cprintf("No of %ss in use=%d\n",stringtype,usecount);\
-														/**/\
-		return (type *) 0x80000000;\
-	}\
 	returnelement=deadelement->next;					/*return link*/\
-	((type**)deadelement)[0]=nextfree;					/*next free blob*/\
-	nextfree=deadelement;\
-	usecount--;\
+	delete deadelement;  \
 	return returnelement;\
 }
 
 /*----------------------------------------------------------------------
               F u n c t i o n s
 ----------------------------------------------------------------------*/
-extern TBLOB *newblob(); 
-extern TBLOB *oldblob(TBLOB *); 
+extern TBLOB *newblob();
+extern TBLOB *oldblob(TBLOB *);
 
-extern TESSLINE *newoutline(); 
-extern void oldoutline(TESSLINE *); 
+extern TESSLINE *newoutline();
+extern void oldoutline(TESSLINE *);
 
-extern EDGEPT *newedgept(); 
-extern EDGEPT *oldedgept(EDGEPT *); 
+extern EDGEPT *newedgept();
+extern EDGEPT *oldedgept(EDGEPT *);
 
-extern TWERD *newword(); 
-extern void oldword(TWERD *); 
+extern TWERD *newword();
+extern void oldword(TWERD *);
 
-extern LIST new_cell(); 
-extern void free_cell(LIST); 
+extern LIST new_cell();
+extern void free_cell(LIST);
 #endif

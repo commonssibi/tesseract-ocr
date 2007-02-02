@@ -30,7 +30,7 @@ list I/O routines.  For the interface definitions look in the file
 
 #include <stdio.h>
 #include <string.h>
-#include <malloc.h>
+#include <stdlib.h>
 #include "listio.h"
 
 /*---------------------------------------------------------------------------
@@ -42,11 +42,11 @@ list I/O routines.  For the interface definitions look in the file
  *							Read a list of strings from a file.  Return the string list to the
  *							caller.
  *************************************************************************/
-LIST read_list(const char *filename) { 
+LIST read_list(const char *filename) {
   FILE *infile;
   char s[CHARS_PER_LINE];
   LIST list;
-  char *chopAt250(); 
+  char *chopAt250();
 
   if ((infile = open_file (filename, "r")) == NULL)
     return (NIL);
@@ -63,6 +63,6 @@ LIST read_list(const char *filename) {
     }
   }
 
-  fclose(infile); 
+  fclose(infile);
   return (reverse_d (list));
 }

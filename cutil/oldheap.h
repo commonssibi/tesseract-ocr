@@ -22,7 +22,7 @@
           Include Files and Type Defines
 ----------------------------------------------------------------------------**/
 #include "general.h"
-#include "util.h"
+#include "cutil.h"
 
 #define HEAPFULL      3000
 
