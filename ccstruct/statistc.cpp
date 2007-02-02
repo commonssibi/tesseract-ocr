@@ -662,6 +662,7 @@ void STATS::short_print(            //print stats table
  * Draw a histogram of the stats table.
  **********************************************************************/
 
+#ifndef GRAPHICS_DISABLED
 void STATS::plot(                //plot stats table
                  WINDOW window,  //to draw in
                  float xorigin,  //bottom left
@@ -687,6 +688,7 @@ void STATS::plot(                //plot stats table
       yorigin + yscale * buckets[index]);
   }
 }
+#endif
 
 
 /**********************************************************************
@@ -695,6 +697,7 @@ void STATS::plot(                //plot stats table
  * Draw a histogram of the stats table. (Line only
  **********************************************************************/
 
+#ifndef GRAPHICS_DISABLED
 void STATS::plotline(                //plot stats table
                      WINDOW window,  //to draw in
                      float xorigin,  //bottom left
@@ -720,6 +723,7 @@ void STATS::plotline(                //plot stats table
       yorigin + yscale * buckets[index]);
   }
 }
+#endif
 
 
 /**********************************************************************

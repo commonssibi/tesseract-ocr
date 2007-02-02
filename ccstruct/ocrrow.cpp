@@ -158,6 +158,7 @@ void ROW::print(          //print
  * Draw the ROW in the given colour.
  **********************************************************************/
 
+#ifndef GRAPHICS_DISABLED
 void ROW::plot(                //draw it
                WINDOW window,  //window to draw in
                COLOUR colour   //colour to draw in
@@ -170,7 +171,7 @@ void ROW::plot(                //draw it
     word->plot (window, colour); //all in one colour
   }
 }
-
+#endif
 
 /**********************************************************************
  * ROW::plot
@@ -178,6 +179,7 @@ void ROW::plot(                //draw it
  * Draw the ROW in rainbow colours.
  **********************************************************************/
 
+#ifndef GRAPHICS_DISABLED
 void ROW::plot(               //draw it
                WINDOW window  //window to draw in
               ) {
@@ -189,7 +191,7 @@ void ROW::plot(               //draw it
     word->plot (window);         //in rainbow colours
   }
 }
-
+#endif
 
 /**********************************************************************
  * ROW::operator=

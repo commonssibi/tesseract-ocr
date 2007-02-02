@@ -166,7 +166,7 @@ void c_check_mem(                     //check consistency
   check_mem(string, level); 
 }
 
-
+#ifndef GRAPHICS_DISABLED
 void *c_create_window(                   /*create a window */
                       const char *name,  /*name/title of window */
                       INT16 xpos,        /*coords of window */
@@ -242,7 +242,7 @@ char window_wait(  /*move pen */
   else
     return '\0';
 }
-
+#endif
 
 void reverse32(void *ptr) { 
   char tmp;

@@ -28,7 +28,7 @@
 ----------------------------------------------------------------------*/
 #include "mfcpch.h"
 #include "blobs.h"
-#include "util.h"
+#include "cutil.h"
 #include "emalloc.h"
 #include "structures.h"
 

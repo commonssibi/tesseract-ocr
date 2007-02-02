@@ -83,6 +83,7 @@ static void position_outline(                          //put in place
  * in the child colour.
  **********************************************************************/
 
+#ifndef GRAPHICS_DISABLED
 static void plot_outline_list(                       //draw outlines
                               C_OUTLINE_LIST *list,  //outline to draw
                               WINDOW window,         //window to draw in
@@ -101,6 +102,7 @@ static void plot_outline_list(                       //draw outlines
         child_colour, child_colour);
   }
 }
+#endif
 
 
 /**********************************************************************
@@ -264,6 +266,7 @@ void C_BLOB::move(                  // reposition blob
  * Draw the C_BLOB in the given colour.
  **********************************************************************/
 
+#ifndef GRAPHICS_DISABLED
 void C_BLOB::plot(                     //draw it
                   WINDOW window,       //window to draw in
                   COLOUR blob_colour,  //main colour
@@ -271,3 +274,4 @@ void C_BLOB::plot(                     //draw it
                  ) {
   plot_outline_list(&outlines, window, blob_colour, child_colour); 
 }
+#endif

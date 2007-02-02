@@ -367,6 +367,7 @@ void OUTLINE::scale(                     // scale OUTLINE
  * Draw the outline in the given colour.
  **********************************************************************/
 
+#ifndef GRAPHICS_DISABLED
 void OUTLINE::plot(                //draw it
                    WINDOW window,  //window to draw in
                    COLOUR colour   //colour to draw in
@@ -384,6 +385,7 @@ void OUTLINE::plot(                //draw it
   }
   while (!it.at_first ());
 }
+#endif
 
 
 /**********************************************************************

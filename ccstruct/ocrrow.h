@@ -88,12 +88,14 @@ class ROW:public ELIST_LINK
     void plot(                 //draw one
               WINDOW window);  //in rainbow colours
 
+#ifndef GRAPHICS_DISABLED
     void plot_baseline(                  //draw the baseline
                        WINDOW window,    //window to draw in
                        COLOUR colour) {  //colour to draw
                                  //draw it
       baseline.plot (window, colour);
     }
+#endif
 
     void prep_serialise() {  //set ptrs to counts
       words.prep_serialise ();

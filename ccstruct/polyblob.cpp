@@ -92,6 +92,7 @@ static void position_outline(                        //put in place
  * in the child colour.
  **********************************************************************/
 
+#ifndef GRAPHICS_DISABLED
 static void plot_outline_list(                     //draw outlines
                               OUTLINE_LIST *list,  //outline to draw
                               WINDOW window,       //window to draw in
@@ -110,6 +111,7 @@ static void plot_outline_list(                     //draw outlines
         child_colour, child_colour);
   }
 }
+#endif
 
 
 /**********************************************************************
@@ -331,6 +333,7 @@ void PBLOB::scale(                  // scale blob
  * Draw the PBLOB in the given colour.
  **********************************************************************/
 
+#ifndef GRAPHICS_DISABLED
 void PBLOB::plot(                     //draw it
                  WINDOW window,       //window to draw in
                  COLOUR blob_colour,  //main colour
@@ -338,3 +341,4 @@ void PBLOB::plot(                     //draw it
                 ) {
   plot_outline_list(&outlines, window, blob_colour, child_colour); 
 }
+#endif

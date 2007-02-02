@@ -787,6 +787,7 @@ void WERD::print(        //print
  * Draw the WERD in the given colour.
  **********************************************************************/
 
+#ifndef GRAPHICS_DISABLED
 void WERD::plot(                //draw it
                 WINDOW window,  //window to draw in
                 COLOUR colour,  //colour to draw in
@@ -818,6 +819,7 @@ void WERD::plot(                //draw it
   }
   plot_rej_blobs(window, solid); 
 }
+#endif
 
 
 /**********************************************************************
@@ -826,6 +828,7 @@ void WERD::plot(                //draw it
  * Draw the WERD in rainbow colours.
  **********************************************************************/
 
+#ifndef GRAPHICS_DISABLED
 void WERD::plot(                //draw it
                 WINDOW window,  //window to draw in
                 BOOL8 solid     //draw larcs solid
@@ -866,6 +869,7 @@ void WERD::plot(                //draw it
   }
   plot_rej_blobs(window, solid); 
 }
+#endif
 
 
 /**********************************************************************
@@ -874,6 +878,7 @@ void WERD::plot(                //draw it
  * Draw the WERD rejected blobs - ALWAYS GREY
  **********************************************************************/
 
+#ifndef GRAPHICS_DISABLED
 void WERD::plot_rej_blobs(                //draw it
                           WINDOW window,  //window to draw in
                           BOOL8 solid     //draw larcs solid
@@ -903,6 +908,7 @@ void WERD::plot_rej_blobs(                //draw it
     }
   }
 }
+#endif
 
 
 /**********************************************************************

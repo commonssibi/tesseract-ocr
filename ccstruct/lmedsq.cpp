@@ -435,6 +435,7 @@ float LMS::compute_quadratic_errors(                          //fit sample
  * Plot the fitted line of a LMS.
  **********************************************************************/
 
+#ifndef GRAPHICS_DISABLED
 void LMS::plot(               //plot fit
                WINDOW win,    //window
                COLOUR colour  //colour to draw in
@@ -449,3 +450,4 @@ void LMS::plot(               //plot fit
       1].x () * a));
   }
 }
+#endif

@@ -129,6 +129,7 @@ void PDBLK::move(                  // reposition block
  * Plot the outline of a block in the given colour.
  **********************************************************************/
 
+#ifndef GRAPHICS_DISABLED
 void PDBLK::plot(                //draw outline
                  WINDOW window,  //window to draw in
                  INT32 serial,   //serial number
@@ -184,6 +185,7 @@ void PDBLK::plot(                //draw outline
       hand_block->plot (window, colour, serial);
   }
 }
+#endif
 
 
 /**********************************************************************
@@ -192,6 +194,7 @@ void PDBLK::plot(                //draw outline
  * Show the image corresponding to a block as its set of rectangles.
  **********************************************************************/
 
+#ifndef GRAPHICS_DISABLED
 void PDBLK::show(               //show image block
                  IMAGE *image,  //image to show
                  WINDOW window  //window to show in
@@ -208,6 +211,7 @@ void PDBLK::show(               //show image block
     show_sub_image (image, bleft.x (), bleft.y (), tright.x () - bleft.x (), tright.y () - bleft.y (), window, bleft.x (), bleft.y ());
   }
 }
+#endif
 
 
 /**********************************************************************

@@ -354,6 +354,7 @@ void QSPLINE::extrapolate(                  //linear extrapolation
  * Draw the QSPLINE in the given colour.
  **********************************************************************/
 
+#ifndef GRAPHICS_DISABLED
 void QSPLINE::plot(                //draw it
                    WINDOW window,  //window to draw in
                    COLOUR colour   //colour to draw in
@@ -378,3 +379,4 @@ void QSPLINE::plot(                //draw it
     }
   }
 }
+#endif

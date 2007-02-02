@@ -343,7 +343,7 @@ void PAGE_BLOCK::move(ICOORD shift  //amount to move
     POLY_BLOCK::move(shift); 
 }
 
-
+#ifndef GRAPHICS_DISABLED
 void PAGE_BLOCK::basic_plot(WINDOW window, COLOUR colour) { 
   PAGE_BLOCK_IT c = &children;
 
@@ -374,7 +374,7 @@ void PAGE_BLOCK::plot(WINDOW window, COLOUR colour) {
       break;
   }
 }
-
+#endif
 
 void show_all_in(PAGE_BLOCK *pblock, POLY_BLOCK *show_area, DEBUG_WIN *f) { 
   PAGE_BLOCK_IT c;
@@ -522,6 +522,7 @@ void TEXT_BLOCK::de_serialise_asc(         //convert from ascii
 }
 
 
+#ifndef GRAPHICS_DISABLED
 void TEXT_BLOCK::plot(WINDOW window,
                       COLOUR colour,
                       COLOUR region_colour,
@@ -539,6 +540,7 @@ void TEXT_BLOCK::plot(WINDOW window,
         tc.data ()->plot (window, subregion_colour, -1);
   }
 }
+#endif
 
 
 void TEXT_BLOCK::show_attrs(DEBUG_WIN *f) { 
@@ -814,6 +816,7 @@ PB_WEIRD) {
 }
 
 
+#ifndef GRAPHICS_DISABLED
 void WEIRD_BLOCK::plot(WINDOW window, COLOUR colour) { 
   PAGE_BLOCK_IT c = this->child ();
 
@@ -823,6 +826,7 @@ void WEIRD_BLOCK::plot(WINDOW window, COLOUR colour) {
     for (c.mark_cycle_pt (); !c.cycled_list (); c.forward ())
       c.data ()->plot (window, colour);
 }
+#endif
 
 
 void WEIRD_BLOCK::set_id(INT32 id_no) { 

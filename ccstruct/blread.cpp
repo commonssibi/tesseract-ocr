@@ -22,6 +22,7 @@
 #ifdef __UNIX__
 #include          <assert.h>
 #endif
+#include          "scanutils.h"
 #include          "fileerr.h"
 #include          "imgtiff.h"
 #include          "pdclass.h"
@@ -160,7 +161,7 @@ BOOL8 read_pd_file(                    //print list of sides
       block_count--;             //count read blocks
     }
   }
-  fclose(pdfp); 
+  fclose(pdfp);
   return TRUE;                   //read one
 }
 
@@ -227,7 +228,7 @@ BOOL8 read_hpd_file(                    //print list of sides
   if ((pdfp = fopen (name.string (), "r")) == NULL) {
     return FALSE;                //can't find it
   }
-  fclose(pdfp); 
+  fclose(pdfp);
   page_blocks = read_poly_blocks (name.string ());
   block_no = 0;
   scan_hpd_blocks (name.string (), page_blocks, block_no, &block_it);
@@ -296,6 +297,9 @@ void scan_hpd_blocks(                               //print list of sides
 }
 
 
+
+
+
 /**********************************************************************
  * BLOCK::read_vec_file
  *
@@ -344,10 +348,10 @@ BOOL8 read_vec_file(                    //print list of sides
   xsize = header.width;          //real image size
   ysize = header.height;
   if (fread (vec_blocks, sizeof (BLOCK_HEADER), header.arraysize, pdfp)
-    != header.arraysize)
+    != static_cast<size_t>(header.arraysize))
     READFAILED.error ("read_vec_file", EXIT, "Blocks");
   if (fread (vec_entries, sizeof (VEC_ENTRY), vector_count, pdfp)
-    != vector_count)
+    != static_cast<size_t>(vector_count))
     READFAILED.error ("read_vec_file", EXIT, "Vectors");
   for (block_index = 0; block_index < header.arraysize; block_index++) {
     vec_blocks[block_index].offset =
@@ -391,10 +395,10 @@ BOOL8 read_vec_file(                    //print list of sides
       }
     }
   }
-  free_mem(vec_blocks); 
-  free_mem(vec_entries); 
+  free_mem(vec_blocks);
+  free_mem(vec_entries);
   tprintf ("%d valid\n", block_it.length ());
-  fclose(pdfp); 
+  fclose(pdfp);
   return TRUE;                   //read one
 }
 
@@ -527,7 +531,7 @@ BOOL8 read_unlv_file(                    //print list of sides
                                  //on end of list
       block_it.add_to_end (block);
     }
-    fclose(pdfp); 
+    fclose(pdfp);
   }
   return true;
 }

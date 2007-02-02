@@ -75,9 +75,11 @@ class QSPLINE
                      int left,         //new left edge
                      int right);       //new right edge
 
+#ifndef GRAPHICS_DISABLED
     void plot(                       //draw it
               WINDOW window,         //in window
               COLOUR colour) const;  //in colour
+#endif
 
     void prep_serialise() {  //set ptrs to counts
     }                            //not required

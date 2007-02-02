@@ -217,6 +217,7 @@ void POLY_BLOCK::move(              //constructor
 }
 
 
+#ifndef GRAPHICS_DISABLED
 void POLY_BLOCK::plot(WINDOW window, COLOUR colour, INT32 num) { 
   ICOORDELT_IT v = &vertices;
 
@@ -270,6 +271,7 @@ void POLY_BLOCK::fill(WINDOW window, COLOUR colour) {
     }
   }
 }
+#endif
 
 
 BOOL8 POLY_BLOCK::overlap(  // do polys overlap
