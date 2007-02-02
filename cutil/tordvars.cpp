@@ -77,19 +77,19 @@ make_toggle_var (show_bold, 1, make_show_bold,
  *
  * Create variables to be used by the texord section of code.
  **********************************************************************/
-void init_textord_vars() { 
-  int_variable (write_output, "write_output", 1);
-  int_variable (write_raw_output, "write_raw_output", 1);
-  make_certainty_threshold(); 
-  make_num_word_choices(); 
-  make_blob_skip(); 
-  make_overlap_threshold(); 
-  make_show_bold(); 
+void init_textord_vars() {
+  int_variable (write_output, "write_output", 0);
+  int_variable (write_raw_output, "write_raw_output", 0);
+  make_certainty_threshold();
+  make_num_word_choices();
+  make_blob_skip();
+  make_overlap_threshold();
+  make_show_bold();
 
-  make_debug_3(); 
-  make_debug_5(); 
-  make_debug_8(); 
+  make_debug_3();
+  make_debug_5();
+  make_debug_8();
 
-  make_display_ratings(); 
-  make_display_text(); 
+  make_display_ratings();
+  make_display_text();
 }
