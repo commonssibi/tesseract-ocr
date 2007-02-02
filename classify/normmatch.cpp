@@ -26,6 +26,7 @@
 #include "efio.h"
 #include "emalloc.h"
 #include "globals.h"
+#include "scanutils.h"
 
 #include <stdio.h>
 #include <math.h>
@@ -46,14 +47,14 @@ NORM_PROTOS;
 /**----------------------------------------------------------------------------
           Private Function Prototypes
 ----------------------------------------------------------------------------**/
-FLOAT32 NormEvidenceOf(register FLOAT32 NormAdj); 
+FLOAT32 NormEvidenceOf(register FLOAT32 NormAdj);
 
 void PrintNormMatch(FILE *File,
                     int NumParams,
                     PROTOTYPE *Proto,
                     FEATURE Feature);
 
-NORM_PROTOS *ReadNormProtos(FILE *File); 
+NORM_PROTOS *ReadNormProtos(FILE *File);
 
 /**----------------------------------------------------------------------------
         Global Data Definitions and Declarations
@@ -74,7 +75,7 @@ make_float_var (NormAdjCurl, 2.0, MakeNormAdjCurl,
               Public Code
 ----------------------------------------------------------------------------**/
 /*---------------------------------------------------------------------------*/
-FLOAT32 ComputeNormMatch(CLASS_ID ClassId, FEATURE Feature, BOOL8 DebugMatch) { 
+FLOAT32 ComputeNormMatch(CLASS_ID ClassId, FEATURE Feature, BOOL8 DebugMatch) {
 /*
  **	Parameters:
  **		ClassId		id of class to match against
@@ -113,11 +114,11 @@ FLOAT32 ComputeNormMatch(CLASS_ID ClassId, FEATURE Feature, BOOL8 DebugMatch) {
 
   if (DebugMatch) {
     cprintf ("\nFeature = ");
-    WriteFeature(stdout, Feature); 
+    WriteFeature(stdout, Feature);
   }
 
   ProtoId = 0;
-  iterate(Protos) { 
+  iterate(Protos) {
     Proto = (PROTOTYPE *) first (Protos);
     Delta = ParamOf (Feature, CharNormY) - Proto->Mean[CharNormY];
     Match = Delta * Delta * Proto->Weight.Elliptical[CharNormY];
@@ -143,7 +144,7 @@ FLOAT32 ComputeNormMatch(CLASS_ID ClassId, FEATURE Feature, BOOL8 DebugMatch) {
 
 
 /*---------------------------------------------------------------------------*/
-void GetNormProtos() { 
+void GetNormProtos() {
 /*
  **	Parameters: none
  **	Globals:
@@ -158,17 +159,26 @@ void GetNormProtos() {
   FILE *File;
   char name[1024];
 
-  strcpy(name, demodir); 
-  strcat(name, NormProtoFile); 
+  strcpy(name, demodir);
+  strcat(name, NormProtoFile);
   File = Efopen (name, "r");
   NormProtos = ReadNormProtos (File);
-  fclose(File); 
+  fclose(File);
 
 }                                /* GetNormProtos */
 
+void FreeNormProtos() {
+  if (NormProtos != NULL) {
+    for (int i = 0; i <= MAX_CLASS_ID; i++)
+      FreeProtoList(&NormProtos->Protos[i]);
+    Efree(NormProtos->ParamDesc);
+    Efree(NormProtos);
+    NormProtos = NULL;
+  }
+}
 
 /*---------------------------------------------------------------------------*/
-void InitNormProtoVars() { 
+void InitNormProtoVars() {
 /*
  **	Parameters: none
  **	Globals:
@@ -183,8 +193,8 @@ void InitNormProtoVars() {
 
   string_variable (NormProtoFile, "NormProtoFile", NORM_PROTO_FILE);
 
-  MakeNormAdjMidpoint(); 
-  MakeNormAdjCurl(); 
+  MakeNormAdjMidpoint();
+  MakeNormAdjCurl();
 
 }                                /* InitNormProtoVars */
 
@@ -199,7 +209,7 @@ void InitNormProtoVars() {
  * normalization adjustment.  The equation that represents the transform is:
  *       1 / (1 + (NormAdj / midpoint) ^ curl)
  **********************************************************************/
-FLOAT32 NormEvidenceOf(register FLOAT32 NormAdj) { 
+FLOAT32 NormEvidenceOf(register FLOAT32 NormAdj) {
   NormAdj /= NormAdjMidpoint;
 
   if (NormAdjCurl == 3)
@@ -249,7 +259,7 @@ void PrintNormMatch(FILE *File,
 
 
 /*---------------------------------------------------------------------------*/
-NORM_PROTOS *ReadNormProtos(FILE *File) { 
+NORM_PROTOS *ReadNormProtos(FILE *File) {
 /*
  **	Parameters:
  **		File	open text file to read normalization protos from
