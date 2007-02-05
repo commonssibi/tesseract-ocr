@@ -151,12 +151,12 @@ void read_tiff_image(TIFF* tif, IMAGE* image) {
 
   buf = _TIFFmalloc(TIFFScanlineSize(tif));
   int bytes_per_line = (image_width*bpp + 7)/8;
-  UINT8* dest_buf = image->get_buffer() + bytes_per_line*image_height;
+  UINT8* dest_buf = image->get_buffer();
   // This will go badly wrong with one of the more exotic tiff formats,
   // but the majority will work OK.
   for (int y = 0; y < image_height; ++y) {
     TIFFReadScanline(tif, buf, y);
-    dest_buf -= bytes_per_line;
+    dest_buf += bytes_per_line;
     memcpy(dest_buf, buf, bytes_per_line);
   }
   if (high_value == 0)
