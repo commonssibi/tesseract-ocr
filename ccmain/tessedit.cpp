@@ -156,8 +156,8 @@ void read_tiff_image(TIFF* tif, IMAGE* image) {
   // but the majority will work OK.
   for (int y = 0; y < image_height; ++y) {
     TIFFReadScanline(tif, buf, y);
-    dest_buf += bytes_per_line;
     memcpy(dest_buf, buf, bytes_per_line);
+    dest_buf += bytes_per_line;
   }
   if (high_value == 0)
     invert_image(image);
