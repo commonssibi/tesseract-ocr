@@ -22,7 +22,7 @@
  ** limitations under the License.
  *
  ********************************************************************************
-$Log$
+$Log: cutil.h,v $
 Revision 1.1  2007/02/02 23:39:07  theraysmith
 Fixed portability issues
 

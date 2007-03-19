@@ -44,7 +44,7 @@ EnableNewAdaptRules		1
 ################################################################################
 #
 # File:         marks/configs/knobs
-# RCS:          $Header$
+# RCS:          $Header: /cvsroot/tesseract-ocr/tesseract/tessdata/tessconfigs/old_batch,v 1.1 2006/06/16 22:17:08 lvincent Exp $
 # Description:  Control variables for 'marks' code
 # Author:       Mark Seaman, OCR Technology
 # Created:      Wed Feb 27 11:27:27 1991
